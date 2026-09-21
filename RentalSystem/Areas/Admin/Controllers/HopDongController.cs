@@ -79,7 +79,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 sp.MaSanPham,
                 sp.TenSanPham,
                 sp.GiaThueNgay,
-                TonKho = _context.ThietBis.Count(t => t.MaSanPham == sp.MaSanPham && t.TrangThai == 0)
+                TonKho = _context.ThietBis.Count(t => t.MaSanPham == sp.MaSanPham && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now))
             }).ToListAsync();
 
             ViewBag.KhachHangs = khachHangs;
@@ -117,7 +117,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 {
                     int spId = SanPhamIds[i];
                     int slNeed = SoLuongs[i];
-                    int slKho = await _context.ThietBis.CountAsync(t => t.MaSanPham == spId && t.TrangThai == 0);
+                    int slKho = await _context.ThietBis.CountAsync(t => t.MaSanPham == spId && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayBatDau < NgayKetThuc && c.HopDong.NgayKetThuc > NgayBatDau));
                     
                     if (slKho < slNeed)
                     {
@@ -202,7 +202,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     decimal giaThue = spInfo.GiaThueNgay * (decimal)days;
                     
                     var devices = await _context.ThietBis
-                        .Where(t => t.MaSanPham == spId && t.TrangThai == 0)
+                        .Where(t => t.MaSanPham == spId && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayBatDau < NgayKetThuc && c.HopDong.NgayKetThuc > NgayBatDau))
                         .Take(slNeed)
                         .ToListAsync();
 
@@ -240,11 +240,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 _context.PhieuThus.Add(phieuCoc);
             }
 
-            // Lưu số kỳ hạn vào GhiChu tạm để dùng khi Giao máy
-            if (SoKyHan > 1)
-            {
-                hd.GhiChu = (string.IsNullOrEmpty(hd.GhiChu) ? "" : hd.GhiChu + " | ") + $"[SoKy:{SoKyHan}]";
-            }
+            hd.SoKyHan = SoKyHan > 0 ? SoKyHan : 1;
 
             await _context.SaveChangesAsync();
             
@@ -293,21 +289,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 bool hasInstallments = await _context.KyHanThanhToans.AnyAsync(k => k.MaHopDong == id);
                 if (!hasInstallments)
                 {
-                    // Đọc số kỳ từ GhiChu (nếu Admin đã chỉ định lúc tạo đơn)
-                    int soKy = 1;
-                    var ghiChu = hopDong.GhiChu ?? "";
-                    var match = System.Text.RegularExpressions.Regex.Match(ghiChu, @"\[SoKy:(\d+)\]");
-                    if (match.Success && int.TryParse(match.Groups[1].Value, out int parsedSoKy) && parsedSoKy > 0)
-                    {
-                        soKy = parsedSoKy;
-                    }
-                    else
-                    {
-                        // Nếu không chỉ định → tự chia theo 30 ngày
-                        var totalDays = (hopDong.NgayKetThuc - hopDong.NgayBatDau).TotalDays;
-                        soKy = (int)Math.Ceiling(totalDays / 30.0);
-                        if (soKy <= 0) soKy = 1;
-                    }
+                    int soKy = hopDong.SoKyHan > 0 ? hopDong.SoKyHan : 1;
 
                     decimal tienMoiKy = (hopDong.TongTien - hopDong.TienDaCoc) / soKy;
                     if (tienMoiKy < 0) tienMoiKy = 0;
@@ -344,15 +326,30 @@ namespace RentalSystem.Areas.Admin.Controllers
                     }
                 }
             }
-            else if (status == 2 || status == 3) // Hoàn tất hoặc Hủy -> Trả máy về kho 0 (Sẵn sàng)
+            else if (status == 2)
             {
+                if (hopDong.TrangThaiThanhToan != 2)
+                {
+                    TempData["Error"] = "Không thể hoàn tất hợp đồng khi khách hàng chưa thanh toán đủ công nợ!";
+                    return RedirectToAction(nameof(Details), new { id = id });
+                }
                 foreach (var ct in chiTiets)
                 {
                     var tb = await _context.ThietBis.FindAsync(ct.MaThietBi);
-                    if (tb != null)
-                    {
-                        tb.TrangThai = 0; // Sẵn sàng
-                    }
+                    if (tb != null) tb.TrangThai = 0;
+                }
+            }
+            else if (status == 3)
+            {
+                var phieuBaoTris = await _context.PhieuBaoTris.Where(p => p.MaHopDong == id).ToListAsync();
+                _context.PhieuBaoTris.RemoveRange(phieuBaoTris);
+                var kyHans = await _context.KyHanThanhToans.Where(k => k.MaHopDong == id).ToListAsync();
+                _context.KyHanThanhToans.RemoveRange(kyHans);
+
+                foreach (var ct in chiTiets)
+                {
+                    var tb = await _context.ThietBis.FindAsync(ct.MaThietBi);
+                    if (tb != null) tb.TrangThai = 0;
                 }
             }
 
@@ -405,6 +402,12 @@ namespace RentalSystem.Areas.Admin.Controllers
         {
             var kyHan = await _context.KyHanThanhToans.Include(k => k.HopDong).FirstOrDefaultAsync(k => k.MaKyHan == maKyHan);
             if (kyHan == null) return NotFound();
+
+            if (soTienThucThu <= 0)
+            {
+                TempData["Error"] = "Số tiền thu phải lớn hơn 0!";
+                return RedirectToAction(nameof(Details), new { id = kyHan.MaHopDong, returnUrl = returnUrl });
+            }
 
             if (kyHan.TrangThai != 1)
             {
@@ -511,7 +514,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 decimal moiKy = conNo / kyHans.Count;
                 foreach (var k in kyHans)
                 {
-                    k.SoTienPhai = moiKy;
+                    k.SoTienPhai = k.SoTienDaTra + moiKy;
                 }
             }
 

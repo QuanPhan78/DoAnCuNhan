@@ -28,7 +28,7 @@ namespace RentalSystem.Controllers
             
             // Đồng bộ số lượng tồn kho khả dụng thực tế của từng sản phẩm từ Database
             var stockCounts = await _context.ThietBis
-                .Where(t => t.TrangThai == 0)
+                .Where(t => !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now))
                 .GroupBy(t => t.MaSanPham)
                 .Select(g => new { MaSanPham = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.MaSanPham, x => x.Count);
@@ -50,7 +50,7 @@ namespace RentalSystem.Controllers
 
             // Đếm số lượng máy vật lý đang sẵn sàng cho thuê trong kho
             ViewBag.InStock = await _context.ThietBis
-                .CountAsync(t => t.MaSanPham == id && t.TrangThai == 0);
+                .CountAsync(t => t.MaSanPham == id && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now));
 
             // Gợi ý danh sách sản phẩm cùng nhóm phân loại
             ViewBag.RelatedProducts = await _context.SanPhams

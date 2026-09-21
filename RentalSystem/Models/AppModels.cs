@@ -76,6 +76,7 @@ namespace RentalSystem.Models
         [Column(TypeName = "decimal(18,2)")] public decimal TienDaCoc { get; set; }
         [Column(TypeName = "decimal(18,2)")] public decimal TongTien { get; set; }
         public int TrangThai { get; set; } 
+        public int SoKyHan { get; set; } = 1; 
 
         // Các trường mới cho Ký HĐ & Thanh toán
         public string AnhCMND { get; set; }

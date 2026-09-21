@@ -95,9 +95,10 @@ namespace RentalSystem.Areas.Admin.Controllers
             if (ModelState.IsValid)
             {
                 var oldTb = await _context.ThietBis.AsNoTracking().FirstOrDefaultAsync(x => x.MaThietBi == id);
-                if (oldTb != null && oldTb.TrangThai == 1)
+                bool isBooked = await _context.ChiTietHopDongs.AnyAsync(c => c.MaThietBi == id && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3);
+                if (oldTb != null && isBooked)
                 {
-                    TempData["Error"] = "BẢO MẬT: Máy đang được khách thuê, nghiêm cấm chỉnh sửa thông tin để tránh sai lệch Hợp đồng!";
+                    TempData["Error"] = "BẢO MẬT: Máy đang được khách thuê hoặc đã được đặt trước, nghiêm cấm chỉnh sửa thông tin để tránh sai lệch Hợp đồng!";
                     return RedirectToAction(nameof(Index));
                 }
 

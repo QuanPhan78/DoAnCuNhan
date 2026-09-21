@@ -7,7 +7,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 {
     // Controller Báo cáo Thống kê chuyên sâu và Tiện ích sao lưu/khôi phục dữ liệu hệ thống.
     [Area("Admin")]
-    [Authorize]
+    [Authorize(Roles = "Admin,KinhDoanh")]
     public class ThongKeController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -75,7 +75,7 @@ namespace RentalSystem.Models
                     MoTa = "Máy tính bàn Dell OptiPlex 7010 dòng doanh nghiệp, thiết kế nhỏ gọn, bền bỉ, phù hợp cho văn phòng, phòng học, sự kiện hội nghị.",
                     GiaThueNgay = 150000,
                     TienCoc = 8000000,
-                    HinhAnh = "https://cdn.tgdd.vn/Products/Images/5706/325421/dell-optiplex-7010-mff-plus-i5-71010928-600x600.jpg"
+                    HinhAnh = "/images/sanpham/may-tinh.png"
                 },
                 new SanPham{
                     MaLoai = context.LoaiThietBis.Single(l => l.TenLoai == "Máy tính bàn").MaLoai,
@@ -84,7 +84,7 @@ namespace RentalSystem.Models
                     MoTa = "PC HP ProDesk hiệu năng cao, dáng đứng tiết kiệm diện tích, lý tưởng cho thuê theo tháng cho doanh nghiệp vừa và nhỏ.",
                     GiaThueNgay = 180000,
                     TienCoc = 10000000,
-                    HinhAnh = "https://cdn.tgdd.vn/Products/Images/5706/310971/hp-prodesk-400-g9-i7-72k73pa-600x600.jpg"
+                    HinhAnh = "/images/sanpham/may-tinh.png"
                 },
                 // -- Máy lạnh --
                 new SanPham{
@@ -94,7 +94,7 @@ namespace RentalSystem.Models
                     MoTa = "Máy lạnh Daikin Inverter cao cấp, vận hành êm ái, phù hợp cho thuê phòng họp, văn phòng tạm, sự kiện ngoài trời có mái che.",
                     GiaThueNgay = 200000,
                     TienCoc = 5000000,
-                    HinhAnh = "https://cdn.tgdd.vn/Products/Images/2002/235800/daikin-ftkz35vvmv-1-600x600.jpg"
+                    HinhAnh = "/images/sanpham/may-lanh.png"
                 },
                 new SanPham{
                     MaLoai = context.LoaiThietBis.Single(l => l.TenLoai == "Máy lạnh").MaLoai,
@@ -103,7 +103,7 @@ namespace RentalSystem.Models
                     MoTa = "Máy lạnh tủ đứng công suất lớn LG, chuyên dùng cho thuê sự kiện, hội trường, showroom, nhà xưởng. Lắp đặt nhanh trong 30 phút.",
                     GiaThueNgay = 500000,
                     TienCoc = 15000000,
-                    HinhAnh = "https://cdn.tgdd.vn/Products/Images/2002/220137/lg-apnq48gt3e4-600x600.jpg"
+                    HinhAnh = "/images/sanpham/may-lanh.png"
                 },
                 // -- Máy in --
                 new SanPham{
@@ -113,7 +113,7 @@ namespace RentalSystem.Models
                     MoTa = "Máy in HP LaserJet tốc độ cao, bền bỉ, chi phí mực thấp. Lý tưởng cho thuê tại văn phòng dự án, phòng thi, hội thảo.",
                     GiaThueNgay = 100000,
                     TienCoc = 3000000,
-                    HinhAnh = "https://cdn.tgdd.vn/Products/Images/5765/229753/hp-laserjet-pro-m404dn-w1a53a-600x600.jpg"
+                    HinhAnh = "/images/sanpham/may-in.png"
                 },
                 new SanPham{
                     MaLoai = context.LoaiThietBis.Single(l => l.TenLoai == "Máy in").MaLoai,
@@ -122,7 +122,7 @@ namespace RentalSystem.Models
                     MoTa = "Máy in phun màu Canon đa năng với hệ thống mực liên tục tiết kiệm. Phù hợp cho thuê in ấn tài liệu màu, poster nhỏ tại sự kiện.",
                     GiaThueNgay = 80000,
                     TienCoc = 2000000,
-                    HinhAnh = "https://cdn.tgdd.vn/Products/Images/5765/236025/canon-pixma-g3020-600x600.jpg"
+                    HinhAnh = "/images/sanpham/may-in.png"
                 }
             };
             context.SanPhams.AddRange(sanPhams);

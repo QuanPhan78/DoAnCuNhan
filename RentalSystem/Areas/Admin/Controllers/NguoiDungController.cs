@@ -8,7 +8,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 {
     // Controller quản lý Người dùng và Phân quyền nội bộ (Admin, Kinh Doanh, Kế Toán, Kỹ Thuật, Khách Hàng).
     [Area("Admin")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class NguoiDungController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -130,6 +130,13 @@ namespace RentalSystem.Areas.Admin.Controllers
             var nguoiDung = await _context.NguoiDungs.FindAsync(id);
             if (nguoiDung != null)
             {
+                bool hasContracts = await _context.HopDongs.AnyAsync(h => h.MaKhachHang == id || h.MaNhanVien == id);
+                if (hasContracts)
+                {
+                    TempData["Error"] = "KHÔNG THỂ XÓA: Người dùng này đang liên kết với hợp đồng trong hệ thống. Vui lòng vô hiệu hóa tài khoản thay vì xóa!";
+                    return RedirectToAction(nameof(Index));
+                }
+                
                 _context.NguoiDungs.Remove(nguoiDung);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã xóa người dùng thành công!";

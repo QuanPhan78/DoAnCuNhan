@@ -90,12 +90,21 @@
                                     </a>
                                 </td>
                             </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-                            @if (coTheChinhSua)
-                            {
-                                <!-- Modal Xác nhận Xóa -->
-                                <tr style="display:none">
-                                    <td colspan="7">
+@foreach (var item in Model)
+{
+    bool chuaKy = string.IsNullOrEmpty(item.ChuKyKhachHang);
+    bool coTheChinhSua = chuaKy && item.TrangThai == 0;
+    @if (coTheChinhSua)
+    {
+        <!-- Modal Xác nhận Xóa cho HĐ #@item.MaHopDong -->
                                         <div class="modal fade" id="modalXoa_@item.MaHopDong" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
@@ -118,13 +127,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+                                    
+    }
+}

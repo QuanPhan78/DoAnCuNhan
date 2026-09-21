@@ -9,7 +9,7 @@ namespace RentalSystem.Areas.Admin.Controllers
     // Controller quản lý tiếp nhận, điều phối và xử lý sự cố thiết bị (Bảo trì).
     // Hỗ trợ phân công kỹ thuật viên, cập nhật trạng thái sửa chữa và tính phí bồi thường nếu khách làm hỏng.
     [Area("Admin")]
-    [Authorize]
+    [Authorize(Roles = "Admin,KyThuat")]
     public class BaoTriController : Controller
     {
         private readonly ApplicationDbContext _context;

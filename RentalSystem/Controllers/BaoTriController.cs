@@ -103,6 +103,12 @@ namespace RentalSystem.Controllers
 
             if (phieu == null) return NotFound();
 
+            if (phieu.TrangThai != 3)
+            {
+                TempData["Error"] = "Chỉ đánh giá được phiếu đã hoàn thành (sửa xong)!";
+                return RedirectToAction("MyTickets");
+            }
+
             phieu.DanhGiaSao = rating;
             await _context.SaveChangesAsync();
 
