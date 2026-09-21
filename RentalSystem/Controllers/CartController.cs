@@ -54,7 +54,7 @@ namespace RentalSystem.Controllers
             if (product == null) return NotFound();
 
             // Kiểm tra tồn kho khả dụng trước khi thêm vào giỏ
-            int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && t.TrangThai == 0);
+            int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now));
             if (available <= 0)
             {
                 TempData["Error"] = $"Sản phẩm '{product.TenSanPham}' hiện đang tạm hết máy trong kho!";
@@ -118,7 +118,7 @@ namespace RentalSystem.Controllers
                     else
                     {
                         // Kiểm tra tồn kho khả dụng
-                        int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && t.TrangThai == 0);
+                        int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now));
                         if (qty > available)
                         {
                             TempData["Error"] = $"Sản phẩm '{item.TenSanPham}' chỉ còn tối đa {available} máy trong kho!";
@@ -186,7 +186,11 @@ namespace RentalSystem.Controllers
             {
                 var item = cart[i];
                 int available = await _context.ThietBis
-                    .CountAsync(t => t.MaSanPham == item.MaSanPham && t.TrangThai == 0);
+                    .CountAsync(t => t.MaSanPham == item.MaSanPham && !_context.ChiTietHopDongs.Any(c => 
+                        c.MaThietBi == t.MaThietBi && 
+                        c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 &&
+                        c.HopDong.NgayBatDau < NgayKetThuc && 
+                        c.HopDong.NgayKetThuc > NgayBatDau));
                 if (available < item.SoLuong)
                 {
                     cartModified = true;
@@ -251,7 +255,11 @@ namespace RentalSystem.Controllers
                 decimal p = dbProd != null ? dbProd.GiaThueNgay : item.GiaThueNgay;
                 
                 var availableDevices = await _context.ThietBis
-                    .Where(t => t.MaSanPham == item.MaSanPham && t.TrangThai == 0)
+                    .Where(t => t.MaSanPham == item.MaSanPham && !_context.ChiTietHopDongs.Any(c => 
+                        c.MaThietBi == t.MaThietBi && 
+                        c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 &&
+                        c.HopDong.NgayBatDau < NgayKetThuc && 
+                        c.HopDong.NgayKetThuc > NgayBatDau))
                     .Take(item.SoLuong)
                     .ToListAsync();
 
@@ -267,7 +275,7 @@ namespace RentalSystem.Controllers
                     
                     // NGHIỆP VỤ QUAN TRỌNG: Khóa máy ngay lập tức (Chuyển sang trạng thái 3 - Giữ chỗ)
                     // để tránh Race Condition (2 khách hàng cùng đặt 1 máy tại cùng thời điểm)
-                    device.TrangThai = 3; 
+                    // device.TrangThai = 3; 
                 }
             }
 
@@ -316,6 +324,14 @@ namespace RentalSystem.Controllers
                 TempData["Error"] = "Hợp đồng này đã được ký!";
                 return RedirectToAction("MyContracts");
             }
+            
+            decimal tienCocYeuCau = await _context.ChiTietHopDongs
+                .Where(c => c.MaHopDong == id)
+                .Include(c => c.ThietBi)
+                .ThenInclude(t => t.SanPham)
+                .SumAsync(c => c.ThietBi.SanPham.TienCoc);
+                
+            ViewBag.TienCocYeuCau = tienCocYeuCau;
 
             return View(hopDong);
         }
@@ -325,7 +341,7 @@ namespace RentalSystem.Controllers
         [ValidateAntiForgeryToken]
         // Khách hàng ký hợp đồng điện tử. Ghi nhận ảnh chụp bản chính CMND/CCCD và 
         // chuyển đổi nét vẽ chữ ký trên màn hình cảm ứng (Canvas Base64) thành file ảnh PNG.
-        public async Task<IActionResult> SignContract(int id, Microsoft.AspNetCore.Http.IFormFile cmndFile, string signatureData)
+        public async Task<IActionResult> SignContract(int id, int soKyHan, Microsoft.AspNetCore.Http.IFormFile cmndFile, string signatureData)
         {
             var nameIdentifierClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             if (nameIdentifierClaim == null || !int.TryParse(nameIdentifierClaim.Value, out int userId))
@@ -379,6 +395,9 @@ namespace RentalSystem.Controllers
                 TempData["Error"] = "Vui lòng tải lên CMND và Ký tên đầy đủ!";
                 return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
             }
+            
+            if (soKyHan < 1) soKyHan = 1;
+            hopDong.SoKyHan = soKyHan;
 
             await _context.SaveChangesAsync();
             TempData["Success"] = "Đã ký hợp đồng thành công!";
@@ -515,6 +534,12 @@ namespace RentalSystem.Controllers
             // Xóa phiếu thu liên quan (tiền cọc nếu có)
             var phieuThus = await _context.PhieuThus.Where(p => p.MaHopDong == id).ToListAsync();
             _context.PhieuThus.RemoveRange(phieuThus);
+
+            var phieuBaoTris = await _context.PhieuBaoTris.Where(p => p.MaHopDong == id).ToListAsync();
+            _context.PhieuBaoTris.RemoveRange(phieuBaoTris);
+
+            var kyHans = await _context.KyHanThanhToans.Where(k => k.MaHopDong == id).ToListAsync();
+            _context.KyHanThanhToans.RemoveRange(kyHans);
 
             // Xóa chi tiết hợp đồng
             _context.ChiTietHopDongs.RemoveRange(chiTiets);

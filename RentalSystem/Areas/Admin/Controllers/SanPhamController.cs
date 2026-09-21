@@ -32,7 +32,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             // Đồng bộ dữ liệu tồn kho thực tế từ bảng thiết bị con (ThietBi)
             var devices = await _context.ThietBis.ToListAsync();
             ViewBag.TotalMap = devices.GroupBy(t => t.MaSanPham).ToDictionary(g => g.Key, g => g.Count());
-            ViewBag.AvailableMap = devices.Where(t => t.TrangThai == 0).GroupBy(t => t.MaSanPham).ToDictionary(g => g.Key, g => g.Count());
+            ViewBag.AvailableMap = devices.Where(t => !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now)).GroupBy(t => t.MaSanPham).ToDictionary(g => g.Key, g => g.Count());
             ViewBag.RentedMap = devices.Where(t => t.TrangThai == 1).GroupBy(t => t.MaSanPham).ToDictionary(g => g.Key, g => g.Count());
 
             return View(sanPhams);
@@ -131,6 +131,13 @@ namespace RentalSystem.Areas.Admin.Controllers
             var sp = await _context.SanPhams.FindAsync(id);
             if (sp != null)
             {
+                bool hasDevices = await _context.ThietBis.AnyAsync(t => t.MaSanPham == id);
+                if (hasDevices)
+                {
+                    TempData["Error"] = "KHÔNG THỂ XÓA: Sản phẩm này đang có thiết bị trong kho. Vui lòng xóa hết thiết bị trước!";
+                    return RedirectToAction(nameof(Index));
+                }
+                
                 _context.SanPhams.Remove(sp);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã xóa sản phẩm thành công!";
