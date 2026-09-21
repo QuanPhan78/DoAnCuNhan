@@ -1,0 +1,211 @@
+@model RentalSystem.Models.HopDong
+
+@{
+    ViewData["Title"] = "Tạo Hợp Đồng Mới";
+    var khachHangs = ViewBag.KhachHangs as List<RentalSystem.Models.NguoiDung>;
+    var sanPhams = ViewBag.SanPhams as IEnumerable<dynamic>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fas fa-file-signature text-brand me-2"></i> Tạo Hợp Đồng Thủ Công</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary fw-bold shadow-sm"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+}
+
+<form asp-action="Create" method="post" id="createForm">
+    @Html.AntiForgeryToken()
+    <div class="row">
+        <!-- Cột thông tin cơ bản -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header text-brand fw-bold fw-bold">
+                    <i class="fas fa-info-circle me-2"></i> Thông tin chung
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <label class="form-label fw-bold">Họ và Tên Khách <span class="text-danger">*</span></label>
+                            <input type="text" name="KhachHang_HoTen" class="form-control" required placeholder="Nhập tên..." />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" name="KhachHang_SoDienThoai" class="form-control" required placeholder="Nhập SĐT..." />
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email (để đăng nhập)</label>
+                        <input type="email" name="KhachHang_Email" class="form-control" placeholder="Email khách hàng..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Địa chỉ giao máy <span class="text-danger">*</span></label>
+                        <textarea name="KhachHang_DiaChi" class="form-control" rows="2" required placeholder="Nhập địa chỉ..."></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ngày nhận máy <span class="text-danger">*</span></label>
+                            <input type="date" name="NgayBatDau" id="NgayBatDau" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ngày trả máy <span class="text-danger">*</span></label>
+                            <input type="date" name="NgayKetThuc" id="NgayKetThuc" class="form-control" value="@DateTime.Now.AddDays(2).ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi chú / Địa chỉ giao hàng</label>
+                        <textarea name="GhiChu" class="form-control" rows="2" placeholder="Ghi chú thêm..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tiền đã cọc (VNĐ) <span class="text-danger">*</span></label>
+                        <input type="number" name="TienDaCoc" id="TienDaCoc" class="form-control text-success fw-bold" value="0" min="0" step="1000" />
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Hình thức đặt cọc</label>
+                            <select name="HinhThucCoc" class="form-select">
+                                <option value="0">💵 Tiền mặt</option>
+                                <option value="1">🏦 Chuyển khoản</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Số kỳ hạn trả góp</label>
+                            <input type="number" name="SoKyHan" id="SoKyHan" class="form-control" value="1" min="1" max="24" />
+                            <small class="text-muted">Hệ thống sẽ tự chia đều sau khi giao máy</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border mt-4">
+                        <h5 class="fw-bold mb-1">TỔNG TIỀN DỰ KIẾN:</h5>
+                        <h2 class="text-danger fw-bolder mb-0" id="lblTotal">0 đ</h2>
+                        <small class="text-muted">Tổng số ngày thuê: <span id="lblDays" class="fw-bold fs-5 text-dark">2</span> ngày</small>
+                        <div class="mt-2 text-muted small">
+                            Còn lại sau cọc: <strong id="lblConLai" class="text-danger">0 đ</strong>
+                            &nbsp;|&nbsp; Mỗi kỳ hạn: <strong id="lblMoiKy" class="text-primary">0 đ</strong>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột chọn sản phẩm -->
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header text-success fw-bold fw-bold">
+                    <i class="fas fa-boxes me-2"></i> Chọn Sản phẩm & Số lượng
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="">
+                                <tr>
+                                    <th class="text-start ps-3">Tên Sản phẩm</th>
+                                    <th>Giá/Ngày</th>
+                                    <th>Tồn Kho</th>
+                                    <th style="width: 150px;">Số lượng thuê</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (sanPhams != null) {
+                                    foreach (var sp in sanPhams) {
+                                        <tr>
+                                            <td class="text-start ps-3 fw-bold">
+                                                <input type="hidden" name="SanPhamIds" value="@sp.MaSanPham" readonly />
+                                                @sp.TenSanPham
+                                            </td>
+                                            <td class="text-danger">
+                                                @(((decimal)sp.GiaThueNgay).ToString("N0")) đ
+                                                <input type="hidden" class="gia-thue" value="@Convert.ToInt64(sp.GiaThueNgay)" />
+                                            </td>
+                                            <td>
+                                                <span class="badge @(sp.TonKho > 0 ? "bg-success" : "bg-danger")">@sp.TonKho</span>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="SoLuongs" class="form-control text-center input-soluong" value="0" min="0" max="@sp.TonKho" @(sp.TonKho == 0 ? "readonly" : "") />
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 text-end p-3">
+                    <button type="submit" class="btn btn-brand btn-lg fw-bold px-5 shadow"><i class="fas fa-check-circle me-2"></i> TẠO HỢP ĐỒNG NGAY</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const startInput = document.getElementById("NgayBatDau");
+        const endInput = document.getElementById("NgayKetThuc");
+        const lblDays = document.getElementById("lblDays");
+        const lblTotal = document.getElementById("lblTotal");
+        const lblConLai = document.getElementById("lblConLai");
+        const lblMoiKy = document.getElementById("lblMoiKy");
+        const tienCocInput = document.getElementById("TienDaCoc");
+        const soKyInput = document.getElementById("SoKyHan");
+        const qtyInputs = document.querySelectorAll(".input-soluong");
+        const priceInputs = document.querySelectorAll(".gia-thue");
+
+        function formatVND(n) {
+            return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + " đ";
+        }
+
+        function calculateTotal() {
+            let days = 0;
+            if (startInput.value && endInput.value) {
+                let start = new Date(startInput.value + "T00:00:00");
+                let end = new Date(endInput.value + "T00:00:00");
+                if (end < start) { endInput.value = startInput.value; end = start; }
+                let diffMs = end.getTime() - start.getTime();
+                days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                if (days <= 0) days = 1;
+            }
+            lblDays.innerText = days;
+
+            let totalPerDay = 0;
+            for (let i = 0; i < qtyInputs.length; i++) {
+                let qty = parseInt(qtyInputs[i].value) || 0;
+                let price = parseFloat(priceInputs[i].value) || 0;
+                totalPerDay += (qty * price);
+            }
+
+            let finalTotal = totalPerDay * days;
+            lblTotal.innerText = formatVND(finalTotal);
+
+            let coc = parseFloat(tienCocInput?.value) || 0;
+            let soKy = parseInt(soKyInput?.value) || 1;
+            if (soKy < 1) soKy = 1;
+
+            let conLai = finalTotal - coc;
+            if (conLai < 0) conLai = 0;
+            let moiKy = conLai / soKy;
+
+            if (lblConLai) lblConLai.innerText = formatVND(conLai);
+            if (lblMoiKy) lblMoiKy.innerText = formatVND(moiKy);
+        }
+
+        startInput.addEventListener("input", function() { endInput.setAttribute('min', startInput.value); calculateTotal(); });
+        startInput.addEventListener("change", function() { endInput.setAttribute('min', startInput.value); calculateTotal(); });
+        endInput.addEventListener("input", calculateTotal);
+        endInput.addEventListener("change", calculateTotal);
+        if (tienCocInput) { tienCocInput.addEventListener("input", calculateTotal); tienCocInput.addEventListener("change", calculateTotal); }
+        if (soKyInput) { soKyInput.addEventListener("input", calculateTotal); soKyInput.addEventListener("change", calculateTotal); }
+        qtyInputs.forEach(input => { input.addEventListener("input", calculateTotal); input.addEventListener("change", calculateTotal); });
+
+        calculateTotal();
+    });
+</script>

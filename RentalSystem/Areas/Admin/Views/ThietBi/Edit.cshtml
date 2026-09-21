@@ -1,0 +1,50 @@
+@model RentalSystem.Models.ThietBi
+@{
+    ViewData["Title"] = "Chỉnh Sửa Serial";
+}
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Index" class="btn btn-light shadow-sm me-3"><i class="fas fa-arrow-left"></i></a>
+    <h3 class="fw-bold text-dark mb-0"><i class="fas fa-edit me-2 text-warning"></i> Cập nhật Serial: @Model.SoSerial</h3>
+</div>
+<div class="row">
+    <div class="col-lg-6">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+        }
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="MaThietBi" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Thuộc Dòng Sản phẩm <span class="text-danger">*</span></label>
+                        <select asp-for="MaSanPham" class="form-select" asp-items="ViewBag.MaSanPham" required></select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Mã Serial / Service Tag <span class="text-danger">*</span></label>
+                        <input asp-for="SoSerial" class="form-control font-monospace" required />
+                        <span asp-validation-for="SoSerial" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Trạng thái hiện tại</label>
+                        <select asp-for="TrangThai" class="form-select">
+                            <option value="0">Sẵn sàng</option>
+                            <option value="1">Đang cho thuê</option>
+                            <option value="2">Bảo trì / Hỏng</option>
+                        </select>
+                        <div class="form-text text-danger mt-1"><i class="fas fa-exclamation-circle"></i> Cảnh báo: Việc đổi trạng thái thủ công có thể gây lệch số liệu nếu máy đang nằm trong một Hợp đồng chưa kết thúc!</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-brand fw-bold px-4 py-2 w-100 shadow-sm"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

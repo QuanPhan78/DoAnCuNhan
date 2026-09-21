@@ -1,0 +1,130 @@
+@model IEnumerable<RentalSystem.Models.HopDong>
+@{
+    ViewData["Title"] = "Hợp đồng của tôi";
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-file-contract text-brand me-2"></i> Hợp đồng của tôi</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success shadow-sm"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+    }
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead>
+                        <tr>
+                            <th>Mã HĐ</th>
+                            <th>Ngày Nhận</th>
+                            <th>Ngày Trả</th>
+                            <th>Tổng Tiền</th>
+                            <th>Trạng Thái</th>
+                            <th>Chữ ký</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="7" class="text-center py-4">Bạn chưa có đơn thuê nào.</td></tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            bool chuaKy = string.IsNullOrEmpty(item.ChuKyKhachHang);
+                            bool coTheChinhSua = chuaKy && item.TrangThai == 0;
+                            <tr>
+                                <td class="fw-bold">#@item.MaHopDong</td>
+                                <td>@item.NgayBatDau.ToString("dd/MM/yyyy")</td>
+                                <td class="text-danger">@item.NgayKetThuc.ToString("dd/MM/yyyy")</td>
+                                <td class="fw-bold text-brand">@item.TongTien.ToString("N0") đ</td>
+                                <td>
+                                    @if (item.TrangThai == 0) { <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Chờ duyệt</span> }
+                                    else if (item.TrangThai == 1) { <span class="badge bg-brand"><i class="fas fa-truck"></i> Đang cho thuê</span> }
+                                    else if (item.TrangThai == 2) { <span class="badge bg-success"><i class="fas fa-check"></i> Hoàn tất</span> }
+                                    else if (item.TrangThai == 3) { <span class="badge bg-danger"><i class="fas fa-times"></i> Đã hủy</span> }
+                                </td>
+                                <td>
+                                    @if (chuaKy)
+                                    {
+                                        <span class="badge bg-secondary">Chưa ký</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success"><i class="fas fa-signature"></i> Đã ký</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (chuaKy)
+                                    {
+                                        <a asp-action="SignContract" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-brand fw-bold shadow-sm mb-1">
+                                            <i class="fas fa-pen-nib"></i> Ký HĐ
+                                        </a>
+                                    }
+                                    @if (coTheChinhSua)
+                                    {
+                                        <a asp-action="EditContract" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-outline-dark fw-bold mb-1">
+                                            <i class="fas fa-edit"></i> Sửa
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold mb-1"
+                                                data-bs-toggle="modal" data-bs-target="#modalXoa_@item.MaHopDong">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    }
+                                    @if (item.TrangThai == 1)
+                                    {
+                                        <a asp-controller="BaoTri" asp-action="TaoPhieu" asp-route-hopDongId="@item.MaHopDong" class="btn btn-sm btn-danger fw-bold shadow-sm mb-1">
+                                            <i class="fas fa-exclamation-triangle"></i> Báo Lỗi
+                                        </a>
+                                    }
+                                    <a href="/Document/InHopDong/@item.MaHopDong" target="_blank" class="btn btn-sm btn-brand fw-bold shadow-sm mb-1 text-white">
+                                        <i class="fas fa-file-pdf"></i> Xem HĐ
+                                    </a>
+                                </td>
+                            </tr>
+
+                            @if (coTheChinhSua)
+                            {
+                                <!-- Modal Xác nhận Xóa -->
+                                <tr style="display:none">
+                                    <td colspan="7">
+                                        <div class="modal fade" id="modalXoa_@item.MaHopDong" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title fw-bold text-danger">Xác nhận Xóa Đơn Hàng</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Bạn có chắc muốn <strong>xóa đơn hàng #@item.MaHopDong</strong> không?</p>
+                                                        <p class="text-muted small">Thao tác này không thể hoàn tác. Toàn bộ thiết bị đang giữ chỗ sẽ được trả về kho.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy bỏ</button>
+                                                        <form asp-action="DeleteContract" method="post" style="display:inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.MaHopDong" />
+                                                            <button type="submit" class="btn btn-danger fw-bold">Xác nhận Xóa</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

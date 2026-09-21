@@ -1,0 +1,123 @@
+@model IEnumerable<RentalSystem.Models.CartItem>
+@{
+    ViewData["Title"] = "Thanh toán & Chốt ngày thuê";
+    decimal totalPerDay = Model != null ? Model.Sum(x => x.ThanhTien) : 0;
+    long totalPerDayLong = (long)totalPerDay;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+        }
+
+        <div class="card shadow border-0">
+            <div class="card-header text-warning fw-bold text-dark fw-bold py-3">
+                <h4 class="mb-0"><i class="fas fa-calendar-check me-2"></i> Thông tin Nhận Máy</h4>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Checkout" method="post" id="checkoutForm">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ngày nhận máy <span class="text-danger">*</span></label>
+                            <input type="date" name="NgayBatDau" id="NgayBatDau" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ngày trả máy <span class="text-danger">*</span></label>
+                            <input type="date" name="NgayKetThuc" id="NgayKetThuc" class="form-control" value="@DateTime.Now.AddDays(2).ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Địa chỉ nhận máy tận nơi <span class="text-danger">*</span></label>
+                        <textarea name="DiaChi" class="form-control" rows="2" required placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                    </div>
+
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Hóa đơn Tạm tính</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tổng tiền 1 ngày:</span>
+                                <span class="fw-bold">@totalPerDay.ToString("N0") đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                                <span class="text-muted">Số ngày thuê:</span>
+                                <span class="fw-bold text-brand fs-5" id="rentalDays">2 ngày</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="fw-bold mb-0">TỔNG CỘNG:</h5>
+                                <h3 class="text-danger fw-bolder mb-0" id="finalTotal">@((totalPerDay * 2).ToString("N0")) đ</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand btn-lg w-100 fw-bold shadow-sm">
+                        <i class="fas fa-paper-plane me-2"></i> GỬI YÊU CẦU THUÊ MÁY
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const startInput = document.getElementById("NgayBatDau");
+        const endInput = document.getElementById("NgayKetThuc");
+        const daysLabel = document.getElementById("rentalDays");
+        const finalTotal = document.getElementById("finalTotal");
+        
+        const pricePerDay = @totalPerDayLong;
+
+        function updatePrice() {
+            if (!startInput.value || !endInput.value) {
+                daysLabel.innerText = "0 ngày";
+                finalTotal.innerText = "0 đ";
+                return;
+            }
+
+            // Dùng định dạng ISO Local T00:00:00 để triệt tiêu lệch múi giờ UTC
+            let start = new Date(startInput.value + "T00:00:00");
+            let end = new Date(endInput.value + "T00:00:00");
+            
+            // Nếu ngày trả nhỏ hơn ngày nhận -> Tự động ép ngày trả bằng ngày nhận
+            if (end < start) {
+                endInput.value = startInput.value;
+                end = start;
+            }
+            
+            let diffMs = end.getTime() - start.getTime();
+            let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            
+            // Nếu thuê và trả trong cùng 1 ngày -> Tính tròn 1 ngày
+            if (diffDays <= 0) {
+                diffDays = 1;
+            }
+            
+            daysLabel.innerText = diffDays + " ngày";
+            
+            let total = pricePerDay * diffDays;
+            finalTotal.innerText = new Intl.NumberFormat('vi-VN').format(total) + " đ";
+        }
+
+        // Bắt cả sự kiện input (khi đang gõ) và change (khi chọn từ lịch popup)
+        startInput.addEventListener("input", function() {
+            endInput.setAttribute('min', startInput.value);
+            updatePrice();
+        });
+        startInput.addEventListener("change", function() {
+            endInput.setAttribute('min', startInput.value);
+            updatePrice();
+        });
+
+        endInput.addEventListener("input", updatePrice);
+        endInput.addEventListener("change", updatePrice);
+        
+        // Tính toán ngay khi trang vừa tải xong
+        updatePrice();
+    });
+</script>

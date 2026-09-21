@@ -1,0 +1,69 @@
+@model IEnumerable<RentalSystem.Models.HopDong>
+@{
+    ViewData["Title"] = "Quản lý Đơn Thuê";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fas fa-file-contract text-brand me-2"></i> Danh Sách Hợp Đồng</h2>
+    <a asp-action="Create" class="btn btn-brand fw-bold shadow-sm">
+        <i class="fas fa-plus-circle me-1"></i> Tạo Hợp Đồng Thủ Công
+    </a>
+</div>
+
+<div class="card shadow border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="">
+                    <tr>
+                        <th style="width: 10%">Mã Đơn</th>
+                        <th style="width: 25%" class="text-start">Khách Hàng</th>
+                        <th style="width: 20%">Thời gian thuê</th>
+                        <th style="width: 15%">Tổng Tiền</th>
+                        <th style="width: 15%">Thanh toán</th>
+                        <th style="width: 15%">Trạng thái</th>
+                        <th style="width: 10%">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(!Model.Any()) {
+                        <tr><td colspan="7" class="text-center py-4">Chưa có đơn hàng nào.</td></tr>
+                    }
+                    @foreach (var item in Model)
+                    {
+                        var overdueList = ViewBag.Overdue as List<int>;
+                        bool isOverdue = overdueList != null && overdueList.Contains(item.MaHopDong);
+                        
+                        <tr class="@(isOverdue ? " border-danger" : "")">
+                            <td class="fw-bold text-muted">#@item.MaHopDong</td>
+                            <td class="text-start">
+                                <span class="fw-bold d-block">@(item.KhachHang?.HoTen ?? "Khách Vãng Lai")</span>
+                                <small class="text-muted"><i class="fas fa-phone-alt me-1"></i> @item.KhachHang?.SoDienThoai</small>
+                            </td>
+                            <td class="small">
+                                <div class="text-success fw-bold">Nhận: @item.NgayBatDau.ToString("dd/MM/yyyy")</div>
+                                <div class="text-danger fw-bold">Trả: &nbsp;&nbsp;@item.NgayKetThuc.ToString("dd/MM/yyyy")</div>
+                            </td>
+                            <td class="text-danger fw-bold fs-6">@item.TongTien.ToString("N0") đ</td>
+                            <td>
+                                @if (isOverdue) { <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> TRỄ HẠN</span> }
+                                else if (item.TrangThaiThanhToan == 0) { <span class="badge bg-secondary">Chưa TT</span> }
+                                else if (item.TrangThaiThanhToan == 1) { <span class="badge bg-warning text-dark">Còn nợ</span> }
+                                else if (item.TrangThaiThanhToan == 2) { <span class="badge bg-success">Đã TT đủ</span> }
+                            </td>
+                            <td>
+                                @if (item.TrangThai == 0) { <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-clock"></i> Chờ duyệt</span> }
+                                else if (item.TrangThai == 1) { <span class="badge bg-brand px-2 py-1"><i class="fas fa-truck"></i> Đang thuê</span> }
+                                else if (item.TrangThai == 2) { <span class="badge bg-success px-2 py-1"><i class="fas fa-check"></i> Hoàn tất</span> }
+                                else if (item.TrangThai == 3) { <span class="badge bg-danger px-2 py-1"><i class="fas fa-times"></i> Đã hủy</span> }
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-outline-info fw-bold"><i class="fas fa-eye"></i> Xem</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,46 @@
+@{
+    ViewData["Title"] = "Đăng nhập hệ thống";
+}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 rounded-lg">
+            <div class="card-header text-brand fw-bold text-center py-4">
+                <h4 class="mb-0 fw-bold"><i class="fas fa-sign-in-alt me-2"></i> ĐĂNG NHẬP</h4>
+            </div>
+            <div class="card-body p-5">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success shadow-sm"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]</div>
+                }
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@ViewBag.Error</div>
+                }
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Địa chỉ Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+                            <input type="email" name="email" class="form-control" required placeholder="Nhập email..." />
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Mật khẩu</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-lock text-muted"></i></span>
+                            <input type="password" name="matKhau" class="form-control" required placeholder="Nhập mật khẩu..." />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-brand w-100 fw-bold py-2 shadow-sm">
+                        <i class="fas fa-sign-in-alt me-1"></i> Đăng Nhập
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3 bg-light border-0">
+                <div class="small mb-2">Chưa có tài khoản? <a href="/Account/Register" class="text-decoration-none fw-bold text-brand">Đăng ký ngay</a></div>
+                <div class="small"><a href="#" class="text-decoration-none text-muted">Quên mật khẩu? (Vui lòng liên hệ Admin)</a></div>
+            </div>
+        </div>
+    </div>
+</div>

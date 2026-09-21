@@ -1,0 +1,76 @@
+@model IEnumerable<RentalSystem.Models.ThietBi>
+@{
+    ViewData["Title"] = "Quản lý Kho Máy (Serials)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark"><i class="fas fa-barcode me-2 text-info"></i> Quản lý Serial Kho Máy</h2>
+    <a asp-action="Create" class="btn btn-brand fw-bold text-white shadow-sm"><i class="fas fa-plus me-1"></i> Nhập máy mới</a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="">
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 35%" class="text-start">Dòng Sản Phẩm</th>
+                        <th style="width: 25%">Số Serial</th>
+                        <th style="width: 20%">Tình trạng</th>
+                        <th style="width: 15%">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(!Model.Any()) {
+                        <tr><td colspan="5" class="text-center py-4">Kho máy đang trống.</td></tr>
+                    }
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold text-muted">@item.MaThietBi</td>
+                            <td class="text-start fw-bold">
+                                @item.SanPham?.TenSanPham
+                            </td>
+                            <td><span class="badge bg-light text-dark border p-2 font-monospace fs-6">@item.SoSerial</span></td>
+                            <td>
+                                @if (item.TrangThai == 0) { <span class="badge bg-success px-3 py-2"><i class="fas fa-check me-1"></i> Sẵn sàng</span> }
+                                else if (item.TrangThai == 1) { <span class="badge bg-brand px-3 py-2"><i class="fas fa-truck me-1"></i> Đang cho thuê</span> }
+                                else if (item.TrangThai == 2) { <span class="badge bg-danger px-3 py-2"><i class="fas fa-wrench me-1"></i> Bảo trì / Hỏng</span> }
+                                else if (item.TrangThai == 3) { <span class="badge bg-warning text-dark px-3 py-2"><i class="fas fa-clock me-1"></i> Đang giữ (chờ duyệt HĐ)</span> }
+                            </td>
+                            <td>
+                                @if (item.TrangThai == 1)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary mb-1" disabled title="Máy đang cho thuê - Đã khóa"><i class="fas fa-lock"></i></button>
+                                }
+                                else
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.MaThietBi" class="btn btn-sm btn-outline-warning mb-1" title="Sửa"><i class="fas fa-edit"></i></a>
+                                    <form asp-action="Delete" asp-route-id="@item.MaThietBi" method="post" class="d-inline" onsubmit="return confirm('Xác nhận xóa máy này khỏi kho?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger mb-1"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

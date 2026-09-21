@@ -1,0 +1,64 @@
+@model RentalSystem.Models.SanPham
+@{
+    ViewData["Title"] = "Thêm Sản phẩm mới";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Index" class="btn btn-light shadow-sm me-3"><i class="fas fa-arrow-left"></i></a>
+    <h3 class="fw-bold text-dark mb-0"><i class="fas fa-plus-circle me-2 text-brand"></i> Đăng Sản phẩm mới</h3>
+</div>
+
+<div class="card shadow border-0">
+    <div class="card-body p-4">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Tên thiết bị <span class="text-danger">*</span></label>
+                    <input asp-for="TenSanPham" class="form-control" required placeholder="VD: Laptop Dell Latitude 5420" />
+                    <span asp-validation-for="TenSanPham" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Loại thiết bị <span class="text-danger">*</span></label>
+                    <select asp-for="MaLoai" class="form-select" asp-items="ViewBag.MaLoai" required>
+                        <option value="">-- Chọn loại --</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Giá cho thuê (1 ngày) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input asp-for="GiaThueNgay" type="number" step="1000" class="form-control" required />
+                        <span class="input-group-text">VNĐ</span>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Tiền cọc <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input asp-for="TienCoc" type="number" step="1000" class="form-control" required />
+                        <span class="input-group-text">VNĐ</span>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Link Hình ảnh (URL)</label>
+                    <input asp-for="HinhAnh" class="form-control" placeholder="https://..." />
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">Cấu hình chi tiết</label>
+                    <textarea asp-for="CauHinh" class="form-control" rows="3" placeholder="CPU: ...&#10;RAM: ...&#10;Ổ cứng: ..."></textarea>
+                </div>
+                <div class="col-md-12 mb-4">
+                    <label class="form-label fw-bold">Mô tả giới thiệu</label>
+                    <textarea asp-for="MoTa" class="form-control" rows="4"></textarea>
+                </div>
+            </div>
+            
+            <div class="text-end border-top pt-3">
+                <button type="submit" class="btn btn-brand fw-bold px-5 py-2 shadow-sm"><i class="fas fa-save me-1"></i> Lưu Sản Phẩm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

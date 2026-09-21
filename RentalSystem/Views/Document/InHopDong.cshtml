@@ -1,0 +1,173 @@
+@model RentalSystem.Models.HopDong
+@{
+    Layout = null;
+    var chiTiets = ViewBag.ChiTiets as IEnumerable<RentalSystem.Models.ChiTietHopDong>;
+    int soNgayThue = (int)(Model.NgayKetThuc - Model.NgayBatDau).TotalDays;
+    if (soNgayThue <= 0) soNgayThue = 1;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>Hợp Đồng #@Model.MaHopDong</title>
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5; padding: 40px; margin: 0 auto; max-width: 900px; }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; text-align: center; }
+        .header { margin-bottom: 30px; }
+        .title { text-transform: uppercase; font-size: 16pt; margin-top: 20px; margin-bottom: 20px; }
+        @@media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: right; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">🖨️ In Hợp Đồng / Lưu PDF</button>
+    </div>
+
+    <div class="header text-center">
+        <div class="fw-bold fs-5">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+        <div class="fw-bold" style="text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
+        <br />
+        <div style="text-align: right; font-style: italic;">
+            TP.HCM, ngày @(Model.NgayKy?.ToString("dd") ?? "...") tháng @(Model.NgayKy?.ToString("MM") ?? "...") năm @(Model.NgayKy?.ToString("yyyy") ?? "...")
+        </div>
+    </div>
+
+    <div class="text-center title fw-bold">HỢP ĐỒNG THUÊ THIẾT BỊ</div>
+    <div class="text-center fw-bold mb-4">Số: @Model.MaHopDong/HĐTTB-ABCRENTAL</div>
+
+    <div style="font-style: italic; margin-bottom: 20px;">
+        - Căn cứ Bộ luật Dân sự số 91/2015/QH13 ngày 24/11/2015 của Quốc hội nước Cộng hoà xã hội chủ nghĩa Việt Nam;<br/>
+        - Căn cứ Luật Thương mại số 36/2005/QH11 ngày 14/6/2005 của Quốc hội nước Cộng hoà xã hội chủ nghĩa Việt Nam;<br/>
+        - Căn cứ vào nhu cầu và năng lực của hai bên.
+    </div>
+
+    <p>Hôm nay, ngày @(Model.NgayKy?.ToString("dd/MM/yyyy") ?? "...................."), tại TP.HCM, chúng tôi gồm có:</p>
+
+    <div class="fw-bold" style="margin-top:15px;">BÊN A (BÊN THUÊ):</div>
+    <ul>
+        <li><strong>Ông/Bà:</strong> @Model.KhachHang?.HoTen</li>
+        <li><strong>CCCD/CMND số:</strong> @(string.IsNullOrEmpty(Model.KhachHang?.CCCD) ? ".............................." : Model.KhachHang.CCCD)</li>
+        <li><strong>Địa chỉ giao máy:</strong> @Model.GhiChu</li>
+        <li><strong>Điện thoại:</strong> @Model.KhachHang?.SoDienThoai</li>
+        <li><strong>Email:</strong> @Model.KhachHang?.Email</li>
+    </ul>
+
+    <div class="fw-bold" style="margin-top:15px;">BÊN B (BÊN CHO THUÊ): CÔNG TY CHO THUÊ THIẾT BỊ ABC RENTAL</div>
+    <ul>
+        <li><strong>Đại diện:</strong> @(Model.NhanVien?.HoTen ?? "Đại diện Hệ thống")</li>
+        <li><strong>Chức vụ:</strong> Trưởng bộ phận Kinh Doanh</li>
+        <li><strong>Địa chỉ:</strong> 123 Đường ABC, Quận X, TP.HCM</li>
+        <li><strong>Điện thoại:</strong> 1900 1234</li>
+        <li><strong>Email:</strong> support@abcrental.vn</li>
+    </ul>
+
+    <p>Sau khi trao đổi bàn bạc, hai bên thống nhất ký kết hợp đồng thuê thiết bị, thực hiện các điều khoản sau:</p>
+
+    <div class="fw-bold" style="margin-top:15px;">ĐIỀU 1: NỘI DUNG HỢP ĐỒNG</div>
+    <p>Bên A có nhu cầu thuê và Bên B đồng ý cho Bên A thuê thiết bị theo danh sách chi tiết dưới đây:</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Tên Thiết Bị / Cấu hình</th>
+                <th>Số Serial</th>
+                <th>Giá thuê/Ngày</th>
+                <th>Thời gian thuê</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int stt = 1; }
+            @if(chiTiets != null)
+            {
+                foreach(var ct in chiTiets)
+                {
+                    <tr>
+                        <td class="text-center">@(stt++)</td>
+                        <td>@ct.ThietBi.SanPham.TenSanPham</td>
+                        <td class="text-center">@ct.ThietBi.SoSerial</td>
+                        <td class="text-right">@((ct.GiaChotThu / soNgayThue).ToString("N0")) đ</td>
+                        <td class="text-center">@soNgayThue ngày</td>
+                        <td class="text-right fw-bold">@ct.GiaChotThu.ToString("N0") đ</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <div style="text-align: right; font-size: 16pt;">
+        <strong>Tổng giá trị hợp đồng: @Model.TongTien.ToString("N0") VNĐ</strong>
+    </div>
+
+    <div class="fw-bold" style="margin-top:15px;">ĐIỀU 2: PHƯƠNG THỨC VÀ THỜI HẠN THANH TOÁN</div>
+    <ol>
+        <li><strong>Hình thức thanh toán:</strong> Tiền mặt hoặc chuyển khoản (theo kỳ hạn hoặc thanh toán 1 lần).</li>
+        <li><strong>Tiền đặt cọc:</strong> Bên A thanh toán trước cho Bên B số tiền cọc là <strong>@Model.TienDaCoc.ToString("N0") VNĐ</strong> ngay khi ký hợp đồng.</li>
+        <li><strong>Thanh toán phần còn lại:</strong> Bên A thanh toán cho Bên B số tiền còn lại căn cứ theo Lịch trả góp/kỳ hạn thanh toán đính kèm (nếu có) hoặc thanh toán 1 lần khi kết thúc hợp đồng.</li>
+    </ol>
+
+    <div class="fw-bold" style="margin-top:15px;">ĐIỀU 3: THỜI HẠN VÀ ĐỊA ĐIỂM GIAO NHẬN</div>
+    <ul>
+        <li><strong>Ngày bắt đầu thuê:</strong> @Model.NgayBatDau.ToString("dd/MM/yyyy")</li>
+        <li><strong>Ngày kết thúc dự kiến:</strong> @Model.NgayKetThuc.ToString("dd/MM/yyyy")</li>
+        <li><strong>Địa điểm giao nhận máy:</strong> @Model.GhiChu</li>
+    </ul>
+
+    <div class="fw-bold" style="margin-top:15px;">ĐIỀU 4: TRÁCH NHIỆM CỦA MỖI BÊN</div>
+    <p><strong>4.1 Trách nhiệm của Bên A:</strong></p>
+    <ul>
+        <li>Chịu trách nhiệm bảo quản máy cho thuê trong suốt thời gian thuê.</li>
+        <li>Trong thời gian thuê, nếu các thiết bị hư hỏng (cháy, vỡ, trầy xước, biến dạng, v.v.) hoặc mất mát thiết bị/linh kiện do lỗi của Bên A, Bên A phải bồi thường cho Bên B căn cứ theo tình trạng thực tế và giá thị trường của thiết bị đó.</li>
+        <li>Nếu có sự cố kỹ thuật về thiết bị thuê, Bên A có trách nhiệm thông báo ngay (hoặc qua hệ thống Báo lỗi trên Website) để Bên B khắc phục kịp thời.</li>
+        <li>Thanh toán cho Bên B đúng thời hạn quy định.</li>
+        <li>Hoàn trả lại thiết bị đúng tình trạng như khi nhận máy sau khi hết thời hạn thuê.</li>
+        <li>Báo trước 01 ngày nếu có nhu cầu gia hạn hợp đồng.</li>
+        <li>Ký xác nhận bàn giao (chữ ký số) đầy đủ khi nhận thiết bị.</li>
+    </ul>
+    
+    <p><strong>4.2 Trách nhiệm của Bên B:</strong></p>
+    <ul>
+        <li>Giao thiết bị cho thuê đúng cấu hình, đúng hạn và đúng địa điểm đã thoả thuận.</li>
+        <li>Đảm bảo thiết bị hoạt động tốt trong suốt thời gian thuê.</li>
+        <li>Có trách nhiệm sửa chữa, bảo trì hoặc thay thế thiết bị khác (máy Backup) cho Bên A nếu thiết bị gặp sự cố kỹ thuật không do lỗi của Bên A, đảm bảo không làm gián đoạn công việc của Bên A.</li>
+        <li>Không chịu trách nhiệm pháp lý về các dữ liệu, hệ thống phần mềm mà Bên A sử dụng trong quá trình thuê.</li>
+        <li>Hoàn trả lại tiền cọc (sau khi cấn trừ các chi phí nếu có) cho Bên A khi hợp đồng kết thúc và Bên B đã thu hồi thiết bị an toàn.</li>
+    </ul>
+
+    <div class="fw-bold" style="margin-top:15px;">ĐIỀU 5: ĐIỀU KHOẢN CHUNG</div>
+    <ol>
+        <li>Hợp đồng này có hiệu lực kể từ ngày ký (chữ ký số điện tử có giá trị tương đương chữ ký tươi).</li>
+        <li>Hai bên cam kết thực hiện nghiêm chỉnh các điều khoản đã quy định. Không bên nào được tự ý đơn phương thay đổi hợp đồng. Bất kỳ sự thay đổi nào cũng phải được lập thành Phụ lục hợp đồng.</li>
+        <li>Trong trường hợp có tranh chấp, hai bên sẽ giải quyết trên tinh thần hợp tác thương lượng. Nếu không thoả thuận được, sự việc sẽ được đưa ra Toà án nhân dân có thẩm quyền tại <strong>TP.HCM</strong> để giải quyết.</li>
+        <li>Hợp đồng được lưu trữ trên hệ thống phần mềm của ABC Rental, mỗi bên có quyền truy cập và trích xuất hợp đồng điện tử có giá trị pháp lý như nhau.</li>
+    </ol>
+
+    <div style="display: flex; justify-content: space-between; margin-top: 50px; text-align: center;">
+        <div style="width: 45%;">
+            <div class="fw-bold">ĐẠI DIỆN BÊN A (KHÁCH HÀNG)</div>
+            <em>(Đã ký điện tử)</em><br><br>
+            @if (!string.IsNullOrEmpty(Model.ChuKyKhachHang))
+            {
+                <img src="@Model.ChuKyKhachHang" alt="Chữ ký Bên A" style="max-height: 80px;" /><br>
+            }
+            <div class="fw-bold" style="margin-top: 10px;">@Model.KhachHang?.HoTen</div>
+        </div>
+        <div style="width: 45%;">
+            <div class="fw-bold">ĐẠI DIỆN BÊN B (ABC RENTAL)</div>
+            <em>(Đã ký điện tử)</em><br><br>
+            @if (!string.IsNullOrEmpty(Model.ChuKyNhanVien))
+            {
+                <img src="@Model.ChuKyNhanVien" alt="Chữ ký Bên B" style="max-height: 80px;" /><br>
+            }
+            <div class="fw-bold" style="margin-top: 10px;">@(Model.NhanVien?.HoTen ?? "Đại diện Hệ thống")</div>
+        </div>
+    </div>
+</body>
+</html>

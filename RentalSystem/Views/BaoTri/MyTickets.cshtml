@@ -1,0 +1,74 @@
+@model IEnumerable<RentalSystem.Models.PhieuBaoTri>
+@{ ViewData["Title"] = "Lịch sử báo cáo sự cố"; }
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-tools text-danger me-2"></i> Lịch sử báo cáo sự cố</h2>
+        <a href="/Cart/MyContracts" class="btn btn-brand"><i class="fas fa-file-contract"></i> Về danh sách hợp đồng</a>
+    </div>
+
+    @if (TempData["Success"] != null) {
+        <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
+    }
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="">
+                        <tr>
+                            <th>Mã Phiếu</th>
+                            <th>Hợp Đồng</th>
+                            <th>Thiết Bị</th>
+                            <th>Ngày Báo Lỗi</th>
+                            <th>Trạng Thái</th>
+                            <th>Đánh Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any()) {
+                            <tr><td colspan="6" class="text-center py-4">Bạn chưa báo lỗi thiết bị nào.</td></tr>
+                        }
+                        @foreach (var item in Model) {
+                            <tr>
+                                <td class="fw-bold">#@item.MaPhieu</td>
+                                <td>#@item.MaHopDong</td>
+                                <td>@item.ThietBi.SanPham.TenSanPham</td>
+                                <td>@item.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (item.TrangThai == 1) { <span class="badge bg-warning text-dark">Mới báo</span> }
+                                    else if (item.TrangThai == 2) { <span class="badge bg-brand">Đang sửa</span> }
+                                    else if (item.TrangThai == 3) { <span class="badge bg-success">Hoàn thành</span> }
+                                </td>
+                                <td>
+                                    @if (item.TrangThai == 3) {
+                                        @if (item.DanhGiaSao.HasValue) {
+                                            <span class="text-warning">
+                                                @for (int i = 0; i < item.DanhGiaSao.Value; i++) { <i class="fas fa-star"></i> }
+                                            </span>
+                                        } else {
+                                            <form asp-action="DanhGia" method="post" class="d-flex align-items-center justify-content-center gap-2">
+                                                <input type="hidden" name="maPhieu" value="@item.MaPhieu" />
+                                                <select name="rating" class="form-select form-select-sm" style="width: auto;" required>
+                                                    <option value="">--</option>
+                                                    <option value="5">5 Sao</option>
+                                                    <option value="4">4 Sao</option>
+                                                    <option value="3">3 Sao</option>
+                                                    <option value="2">2 Sao</option>
+                                                    <option value="1">1 Sao</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">Gửi</button>
+                                            </form>
+                                        }
+                                    } else {
+                                        <span class="text-muted">Chưa thể đánh giá</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
