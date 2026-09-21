@@ -1,0 +1,100 @@
+@model RentalSystem.Models.HopDong
+@{
+    ViewData["Title"] = "Ký Hợp Đồng";
+}
+
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold"><i class="fas fa-signature text-brand me-2"></i> Xác nhận & Ký Hợp Đồng</h2>
+            <a asp-action="MyContracts" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+        }
+
+        <div class="card shadow border-0 mb-4">
+            <div class="card-header text-warning fw-bold text-dark fw-bold">
+                <i class="fas fa-info-circle me-2"></i> Thông tin hợp đồng #@Model.MaHopDong
+            </div>
+            <div class="card-body">
+                <p><strong>Ngày nhận:</strong> @Model.NgayBatDau.ToString("dd/MM/yyyy")</p>
+                <p><strong>Ngày trả:</strong> @Model.NgayKetThuc.ToString("dd/MM/yyyy")</p>
+                <p><strong>Tổng tiền:</strong> <span class="text-danger fw-bold">@Model.TongTien.ToString("N0") đ</span></p>
+                <p><strong>Tiền đã cọc:</strong> <span class="text-success fw-bold">@Model.TienDaCoc.ToString("N0") đ</span></p>
+            </div>
+        </div>
+
+        <form asp-action="SignContract" method="post" enctype="multipart/form-data" id="signForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.MaHopDong" />
+            
+            <div class="alert alert-primary shadow-sm mt-3">
+                <i class="fas fa-file-contract me-2"></i> Vui lòng 
+                <a href="/Document/InHopDong/@Model.MaHopDong" target="_blank" class="fw-bold text-decoration-underline text-brand">ĐỌC KỸ CÁC ĐIỀU KHOẢN TRONG HỢP ĐỒNG TẠI ĐÂY</a> 
+                trước khi thực hiện ký tên xác nhận bên dưới.
+            </div>
+
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header text-info fw-bold fw-bold">
+                    <i class="fas fa-id-card me-2"></i> Bước 1: Tải lên Ảnh CMND/CCCD (Bắt buộc)
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted">Vui lòng tải lên ảnh chụp 2 mặt CMND hoặc CCCD rõ nét để làm hồ sơ thuê máy.</p>
+                    <input type="file" name="cmndFile" class="form-control" accept="image/jpeg, image/png" required />
+                </div>
+            </div>
+
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header text-success fw-bold fw-bold">
+                    <i class="fas fa-pen-nib me-2"></i> Bước 2: Ký tên xác nhận
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted">Dùng chuột hoặc ngón tay (trên điện thoại) để ký vào khung bên dưới.</p>
+                    <div class="border rounded bg-light d-inline-block p-1">
+                        <canvas id="signature-pad" width="600" height="250" class="bg-white rounded"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-light" id="clearBtn"><i class="fas fa-eraser me-1"></i> Xóa chữ ký làm lại</button>
+                    </div>
+                    <input type="hidden" name="signatureData" id="signatureData" />
+                </div>
+                <div class="card-footer text-center bg-white border-0 py-4">
+                    <button type="submit" class="btn btn-brand btn-lg fw-bold shadow px-5" id="submitBtn"><i class="fas fa-check-circle me-2"></i> HOÀN TẤT KÝ HỢP ĐỒNG</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var canvas = document.getElementById('signature-pad');
+            var signaturePad = new SignaturePad(canvas, {
+                backgroundColor: 'rgba(255, 255, 255, 0)',
+                penColor: 'rgb(0, 0, 0)'
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', function () {
+                signaturePad.clear();
+            });
+
+            document.getElementById('signForm').addEventListener('submit', function (e) {
+                if (signaturePad.isEmpty()) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Thiếu chữ ký',
+                        text: 'Vui lòng ký tên vào khung chữ ký trước khi hoàn tất!'
+                    });
+                } else {
+                    document.getElementById('signatureData').value = signaturePad.toDataURL();
+                }
+            });
+        });
+    </script>
+}

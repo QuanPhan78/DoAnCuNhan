@@ -1,0 +1,157 @@
+@model IEnumerable<RentalSystem.Models.HopDong>
+@{
+    ViewData["Title"] = "Quản lý Công Nợ";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold text-dark mb-0">Quản lý Công Nợ</h3>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="congNoTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">Tất cả nợ</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark fw-bold" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab">Đang trễ hạn</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link text-dark fw-bold" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">Sắp đến hạn (7 ngày)</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="congNoTabsContent">
+    <!-- TẤT CẢ NỢ -->
+    <div class="tab-pane fade show active" id="all" role="tabpanel">
+        <div class="card border">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng Tiền</th>
+                                <th>Đã Thu (gồm cọc)</th>
+                                <th>Còn Nợ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var hd in Model)
+                            {
+                                var daThu = hd.TienDaCoc + hd.KyHanThanhToans.Sum(k => k.SoTienDaTra);
+                                var conNo = hd.TongTien - daThu;
+                                if (conNo > 0)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">#@hd.MaHopDong</td>
+                                        <td>
+                                            @hd.KhachHang?.HoTen<br />
+                                            <span class="text-muted small">@hd.KhachHang?.SoDienThoai</span>
+                                        </td>
+                                        <td>@hd.TongTien.ToString("N0") đ</td>
+                                        <td class="text-success fw-bold">@daThu.ToString("N0") đ</td>
+                                        <td class="text-danger fw-bold fs-6">@conNo.ToString("N0") đ</td>
+                                        <td>
+                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-dark">Xem chi tiết / Thu tiền</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ĐANG TRỄ HẠN -->
+    <div class="tab-pane fade" id="overdue" role="tabpanel">
+        <div class="card border">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Khách hàng</th>
+                                <th>Kỳ hạn trễ</th>
+                                <th>Ngày đến hạn</th>
+                                <th>Số tiền trễ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var hd in Model)
+                            {
+                                var overdueKyHans = hd.KyHanThanhToans.Where(k => k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date).ToList();
+                                foreach (var k in overdueKyHans)
+                                {
+                                    var thieu = k.SoTienPhai - k.SoTienDaTra;
+                                    <tr>
+                                        <td class="fw-bold">#@hd.MaHopDong</td>
+                                        <td>
+                                            @hd.KhachHang?.HoTen<br />
+                                            <span class="text-muted small">@hd.KhachHang?.SoDienThoai</span>
+                                        </td>
+                                        <td><span class="badge bg-secondary">Kỳ @k.SoKyHan</span></td>
+                                        <td class="text-dark fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-dark fw-bold fs-6">@thieu.ToString("N0") đ</td>
+                                        <td>
+                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-outline-dark">Xử lý thu hồi</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SẮP ĐẾN HẠN (7 ngày tới) -->
+    <div class="tab-pane fade" id="upcoming" role="tabpanel">
+        <div class="card border">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Khách hàng</th>
+                                <th>Kỳ sắp thu</th>
+                                <th>Ngày đến hạn</th>
+                                <th>Số tiền thu</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var hd in Model)
+                            {
+                                var upcomingKyHans = hd.KyHanThanhToans.Where(k => k.TrangThai == 0 && k.NgayDenHan.Date >= DateTime.Now.Date && k.NgayDenHan.Date <= DateTime.Now.Date.AddDays(7)).ToList();
+                                foreach (var k in upcomingKyHans)
+                                {
+                                    var thieu = k.SoTienPhai - k.SoTienDaTra;
+                                    <tr>
+                                        <td class="fw-bold">#@hd.MaHopDong</td>
+                                        <td>
+                                            @hd.KhachHang?.HoTen<br />
+                                            <span class="text-muted small">@hd.KhachHang?.SoDienThoai</span>
+                                        </td>
+                                        <td><span class="badge bg-secondary">Kỳ @k.SoKyHan</span></td>
+                                        <td class="text-dark fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-dark fw-bold fs-6">@thieu.ToString("N0") đ</td>
+                                        <td>
+                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-outline-dark">Nhắc nợ</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

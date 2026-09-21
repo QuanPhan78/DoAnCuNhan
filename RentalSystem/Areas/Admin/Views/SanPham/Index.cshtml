@@ -1,0 +1,135 @@
+@model IEnumerable<RentalSystem.Models.SanPham>
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+    var totalMap = ViewBag.TotalMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var availableMap = ViewBag.AvailableMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var rentedMap = ViewBag.RentedMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark"><i class="fas fa-laptop me-2 text-brand"></i> Quản lý Dòng Sản Phẩm</h2>
+    <div class="d-flex align-items-center">
+        <!-- Nút Lọc Dạng Dropdown -->
+        <div class="dropdown shadow-sm me-3">
+            <button class="btn btn-outline-dark dropdown-toggle fw-bold" type="button" id="filterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-filter me-1"></i> Lọc loại máy: Tất cả
+            </button>
+            <ul class="dropdown-menu shadow" aria-labelledby="filterDropdownBtn" style="max-height: 300px; overflow-y: auto;">
+                <li><a class="dropdown-item filter-btn active bg-brand text-white" href="#" data-filter="all" data-name="Tất cả">Tất cả</a></li>
+                @if(ViewBag.Categories != null)
+                {
+                    <li><hr class="dropdown-divider"></li>
+                    foreach(var loai in ViewBag.Categories)
+                    {
+                        <li><a class="dropdown-item filter-btn" href="#" data-filter="@loai.MaLoai" data-name="@loai.TenLoai">@loai.TenLoai</a></li>
+                    }
+                }
+            </ul>
+        </div>
+        <a asp-action="Create" class="btn btn-brand fw-bold shadow-sm"><i class="fas fa-plus me-1"></i> Thêm máy mới</a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold text-muted">Danh sách sản phẩm đang cho thuê & Tồn kho thực tế</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center">
+                <thead class="">
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 10%">Hình ảnh</th>
+                        <th style="width: 25%" class="text-start">Tên thiết bị</th>
+                        <th style="width: 15%">Giá Thuê</th>
+                        <th style="width: 25%">Tồn Kho Vật Lý</th>
+                        <th style="width: 15%">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(!Model.Any()) {
+                        <tr id="emptyRow"><td colspan="6" class="text-center py-4">Chưa có sản phẩm nào trong kho.</td></tr>
+                    }
+                    @foreach (var item in Model)
+                    {
+                        int total = totalMap.ContainsKey(item.MaSanPham) ? totalMap[item.MaSanPham] : 0;
+                        int available = availableMap.ContainsKey(item.MaSanPham) ? availableMap[item.MaSanPham] : 0;
+                        int rented = rentedMap.ContainsKey(item.MaSanPham) ? rentedMap[item.MaSanPham] : 0;
+
+                        <tr class="product-row" data-loai="@item.MaLoai">
+                            <td class="fw-bold text-muted">#@item.MaSanPham</td>
+                            <td>
+                                <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "https://via.placeholder.com/80" : item.HinhAnh)" alt="Img" style="width: 70px; height: 70px; object-fit: contain;" class="rounded shadow-sm border bg-white p-1" />
+                            </td>
+                            <td class="text-start">
+                                <span class="fw-bold d-block text-dark">@item.TenSanPham</span>
+                                @if(item.LoaiThietBi != null) { 
+                                    <span class="badge bg-brand opacity-75">@item.LoaiThietBi.TenLoai</span> 
+                                }
+                            </td>
+                            <td class="text-danger fw-bold fs-6">@item.GiaThueNgay.ToString("N0") đ/ngày</td>
+                            <td>
+                                <div class="d-flex justify-content-center gap-1">
+                                    <span class="badge bg-success py-2 px-2" title="Sẵn sàng cho thuê"><i class="fas fa-check-circle me-1"></i>Sẵn: @available</span>
+                                    <span class="badge bg-brand py-2 px-2" title="Đang cho khách thuê"><i class="fas fa-truck me-1"></i>Thuê: @rented</span>
+                                    <span class="badge bg-secondary py-2 px-2" title="Tổng số máy trong kho">Tổng: @total</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.MaSanPham" class="btn btn-sm btn-outline-warning mb-1" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <form asp-action="Delete" asp-route-id="@item.MaSanPham" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi hệ thống?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger mb-1"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const rows = document.querySelectorAll('.product-row');
+        const dropdownBtn = document.getElementById('filterDropdownBtn');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault(); 
+
+                filterBtns.forEach(b => b.classList.remove('active', 'bg-brand', 'text-white'));
+                this.classList.add('active', 'bg-brand', 'text-white');
+
+                const filterName = this.getAttribute('data-name');
+                dropdownBtn.innerHTML = '<i class="fas fa-filter me-1"></i> Lọc loại máy: ' + filterName;
+
+                const filterValue = this.getAttribute('data-filter');
+                rows.forEach(row => {
+                    if (filterValue === 'all' || row.getAttribute('data-loai') === filterValue) {
+                        row.style.display = ''; 
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+</script>

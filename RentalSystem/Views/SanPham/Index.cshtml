@@ -1,0 +1,158 @@
+@model IEnumerable<RentalSystem.Models.SanPham>
+@{
+    ViewData["Title"] = "Cho Thuê Thiết Bị - Máy Tính Bàn, Máy Lạnh, Máy In";
+    var categories = ViewBag.Categories as IEnumerable<RentalSystem.Models.LoaiThietBi>;
+    var stockMap = ViewBag.StockMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4 bg-white p-3 rounded shadow-sm">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-brand"><i class="fas fa-home"></i> Trang chủ</a></li>
+    <li class="breadcrumb-item active fw-bold" aria-current="page">Danh mục Thiết bị cho thuê</li>
+  </ol>
+</nav>
+
+<div class="row">
+    <!-- Cột Filter (Bên trái) -->
+    <div class="col-lg-3 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 position-sticky" style="top: 20px;">
+            <div class="card-header text-brand fw-bold fw-bold rounded-top-4 py-3">
+                <i class="fas fa-filter me-2"></i> Lọc Dòng Máy
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush rounded-bottom-4">
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center fw-bold py-3 filter-category active" data-id="all">
+                        Tất cả thiết bị
+                        <span class="badge bg-secondary rounded-pill">@Model.Count()</span>
+                    </a>
+                    @if(categories != null)
+                    {
+                        foreach(var loai in categories)
+                        {
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 filter-category" data-id="@loai.MaLoai">
+                                @loai.TenLoai
+                                <span class="badge bg-light text-dark border rounded-pill">@Model.Count(x => x.MaLoai == loai.MaLoai)</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột Danh sách Sản phẩm (Bên phải) -->
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="fas fa-boxes me-2 text-warning"></i> Sẵn sàng cho thuê</h4>
+            <span class="text-muted small">Hiển thị @Model.Count() dòng thiết bị</span>
+        </div>
+
+        <div class="row g-4" id="productList">
+            @if(!Model.Any())
+            {
+                <div class="col-12 text-center py-5">
+                    <h5 class="text-muted">Hệ thống đang cập nhật sản phẩm. Vui lòng quay lại sau!</h5>
+                </div>
+            }
+            @foreach (var item in Model)
+            {
+                int inStock = stockMap.ContainsKey(item.MaSanPham) ? stockMap[item.MaSanPham] : 0;
+                <div class="col-md-6 col-xl-4 product-item" data-loai="@item.MaLoai">
+                    <div class="card h-100 shadow-sm border-0 product-card rounded-4 overflow-hidden">
+                        <div class="position-relative bg-light border-bottom text-center">
+                            <span class="badge bg-brand position-absolute top-0 start-0 m-3 px-3 py-2 rounded-pill shadow-sm">
+                                @item.LoaiThietBi?.TenLoai
+                            </span>
+                            @if (inStock > 0)
+                            {
+                                <span class="badge bg-success position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill shadow-sm">
+                                    <i class="fas fa-check-circle me-1"></i> Còn @inStock máy
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill shadow-sm">
+                                    <i class="fas fa-times-circle me-1"></i> Tạm hết
+                                </span>
+                            }
+                            <a href="/SanPham/Details/@item.MaSanPham">
+                                <img src="@(string.IsNullOrEmpty(item.HinhAnh) ? "https://via.placeholder.com/300" : item.HinhAnh)" class="card-img-top p-4" style="height: 250px; object-fit: contain;" alt="@item.TenSanPham">
+                            </a>
+                        </div>
+                        <div class="card-body p-4 d-flex flex-column bg-white">
+                            <h5 class="card-title fw-bold mb-2">
+                                <a href="/SanPham/Details/@item.MaSanPham" class="text-dark text-decoration-none">@item.TenSanPham</a>
+                            </h5>
+                            <p class="card-text text-muted small flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                @item.CauHinh
+                            </p>
+                            <div class="d-flex justify-content-between align-items-end mt-3">
+                                <div>
+                                    <span class="text-muted small d-block mb-1">Giá thuê:</span>
+                                    <h4 class="text-danger fw-bolder mb-0">@item.GiaThueNgay.ToString("N0") đ<span class="fs-6 text-muted fw-normal">/ngày</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-0 p-3 pt-0">
+                            @if (inStock > 0)
+                            {
+                                <a asp-controller="Cart" asp-action="AddToCart" asp-route-id="@item.MaSanPham" class="btn btn-brand fw-bold w-100 py-2 shadow-sm rounded-pill hover-btn">
+                                    <i class="fas fa-shopping-cart me-2"></i> THUÊ NGAY
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-light fw-bold w-100 py-2 shadow-sm rounded-pill" disabled>
+                                    <i class="fas fa-ban me-2"></i> TẠM HẾT MÁY
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+    }
+    .hover-btn {
+        transition: all 0.3s ease;
+    }
+    .hover-btn:hover {
+        background-color: #0056b3;
+        transform: scale(1.02);
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const filterLinks = document.querySelectorAll('.filter-category');
+        const productItems = document.querySelectorAll('.product-item');
+
+        filterLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                filterLinks.forEach(l => l.classList.remove('active', 'bg-brand', 'text-white'));
+                this.classList.add('active');
+
+                const categoryId = this.getAttribute('data-id');
+                productItems.forEach(item => {
+                    if (categoryId === 'all' || item.getAttribute('data-loai') === categoryId) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+</script>

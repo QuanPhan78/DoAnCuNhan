@@ -1,0 +1,330 @@
+@model RentalSystem.Models.HopDong
+@{
+    ViewData["Title"] = "Chi tiết Hợp đồng #" + Model.MaHopDong;
+    var chiTiets = ViewBag.ChiTiets as IEnumerable<RentalSystem.Models.ChiTietHopDong>;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center">
+        <a href="@(ViewBag.ReturnUrl ?? "/Admin/HopDong")" class="btn btn-light border me-3"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="fw-bold text-dark mb-0">Chi tiết Hợp đồng #@Model.MaHopDong</h3>
+    </div>
+    <div>
+        <a href="/Document/InHopDong/@Model.MaHopDong" target="_blank" class="btn btn-outline-dark fw-bold">
+            <i class="fas fa-print me-1"></i> In Hợp Đồng
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger border">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success border">@TempData["Success"]</div>
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Thông tin Khách hàng</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Họ tên:</strong> @(Model.KhachHang?.HoTen ?? "Chưa cập nhật")</p>
+                <p class="mb-2"><strong>Điện thoại:</strong> @(Model.KhachHang?.SoDienThoai ?? "Chưa cập nhật")</p>
+                <p class="mb-0"><strong>Nhân viên phụ trách:</strong> @(Model.NhanVien?.HoTen ?? "Hệ thống tự động")</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Thời gian &amp; Tài chính</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Ngày nhận máy:</strong> @Model.NgayBatDau.ToString("dd/MM/yyyy")</p>
+                <p class="mb-2"><strong>Ngày trả máy:</strong> @Model.NgayKetThuc.ToString("dd/MM/yyyy")</p>
+                <p class="mb-2 text-danger fw-bold"><strong>TỔNG TIỀN THUÊ:</strong> @Model.TongTien.ToString("N0") đ</p>
+                <p class="mb-2 text-success fw-bold"><strong>Tiền đã cọc trước:</strong> @Model.TienDaCoc.ToString("N0") đ</p>
+                @if (Model.TrangThai != 2 && Model.TrangThai != 3)
+                {
+                    <button class="btn btn-sm btn-outline-dark mt-1" data-bs-toggle="modal" data-bs-target="#modalThuCoc">
+                        <i class="fas fa-plus me-1"></i> Thu cọc bổ sung
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thu Cọc Bổ Sung -->
+<div class="modal fade" id="modalThuCoc" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="ThemTienCoc" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                <input type="hidden" name="maHopDong" value="@Model.MaHopDong" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Thu Tiền Cọc Bổ Sung</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số tiền cọc thêm (đ) <span class="text-danger">*</span></label>
+                        <input type="number" name="soTienCoc" class="form-control" min="1000" step="1000" placeholder="VD: 500000" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Hình thức thanh toán</label>
+                        <select name="hinhThuc" class="form-select">
+                            <option value="0">Tiền mặt</option>
+                            <option value="1">Chuyển khoản</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi chú</label>
+                        <input type="text" name="ghiChu" class="form-control" placeholder="Thu cọc bổ sung lần 2..." />
+                    </div>
+                    <div class="alert alert-light border small">
+                        Sau khi thu cọc bổ sung, hệ thống sẽ tự <strong>tái tính lại tiền mỗi kỳ hạn</strong> còn lại.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-dark">Xác nhận Thu Cọc</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card border mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Danh sách Máy được cấp phát</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle text-center mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Dòng Máy</th>
+                        <th>Số Serial (S/N)</th>
+                        <th>Tình trạng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(chiTiets != null && chiTiets.Any()) {
+                        foreach (var item in chiTiets) {
+                            <tr>
+                                <td class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</td>
+                                <td><span class="badge bg-secondary">@item.ThietBi?.SoSerial</span></td>
+                                <td>
+                                    @if(Model.TrangThai == 0) { <span class="badge bg-warning text-dark">Chờ duyệt</span> }
+                                    else if(Model.TrangThai == 1) { <span class="badge bg-success">Đang cho thuê</span> }
+                                    else if(Model.TrangThai == 2) { <span class="badge bg-secondary">Đã hoàn tất</span> }
+                                </td>
+                            </tr>
+                        }
+                    } else {
+                        <tr>
+                            <td colspan="3" class="text-muted py-3">Không có dữ liệu thiết bị</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        @{
+            var kyHans = ViewBag.KyHans as IEnumerable<RentalSystem.Models.KyHanThanhToan>;
+            var phieuThus = ViewBag.PhieuThus as IEnumerable<RentalSystem.Models.PhieuThu>;
+        }
+        <div class="card border mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Lịch trả góp / Thu tiền kỳ hạn</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle text-center mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Kỳ</th>
+                                <th>Ngày Đến Hạn</th>
+                                <th>Phải Trả</th>
+                                <th>Đã Trả / Còn Lại</th>
+                                <th>Trạng Thái</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                decimal tongDaTra = 0;
+                            }
+                            @if (kyHans == null || !kyHans.Any()) {
+                                <tr><td colspan="6" class="text-muted py-3">Chưa có kỳ hạn trả góp nào được tạo.</td></tr>
+                            }
+                            @foreach(var k in kyHans) {
+                                tongDaTra += k.SoTienDaTra;
+                                var conLai = k.SoTienPhai - k.SoTienDaTra;
+                                bool isOverdue = k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date && (Model.TrangThai == 1 || Model.TrangThai == 0);
+                                <tr>
+                                    <td class="fw-bold">@k.SoKyHan</td>
+                                    <td>
+                                        @k.NgayDenHan.ToString("dd/MM/yyyy")
+                                        @if(isOverdue) { <span class="badge bg-danger ms-1">Trễ</span> }
+                                    </td>
+                                    <td class="text-dark fw-bold">@k.SoTienPhai.ToString("N0") đ</td>
+                                    <td>
+                                        <span class="text-success small">Đã: @k.SoTienDaTra.ToString("N0") đ</span><br/>
+                                        @if (conLai > 0) { <span class="text-danger small fw-bold">Còn: @conLai.ToString("N0") đ</span> }
+                                    </td>
+                                    <td>
+                                        @if(k.TrangThai == 1) { <span class="badge bg-success">Đã trả</span> }
+                                        else if (isOverdue) { <span class="badge bg-danger">Quá hạn</span> }
+                                        else { <span class="badge bg-warning text-dark">Chưa trả</span> }
+                                    </td>
+                                    <td>
+                                        @if (k.TrangThai != 1 && (Model.TrangThai == 0 || Model.TrangThai == 1)) {
+                                            <button type="button" class="btn btn-sm btn-outline-dark"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#payForm_@k.MaKyHan"
+                                                    aria-expanded="false">
+                                                Thu tiền
+                                            </button>
+                                        } else {
+                                            <span class="text-success small fw-bold">@k.NgayThanhToan?.ToString("dd/MM/yyyy")</span><br/>
+                                            <span class="text-muted small">@k.GhiChu</span>
+                                        }
+                                    </td>
+                                </tr>
+                                @if (k.TrangThai != 1 && (Model.TrangThai == 0 || Model.TrangThai == 1)) {
+                                    <tr class="table-light">
+                                        <td colspan="6" class="p-0">
+                                            <div class="collapse" id="payForm_@k.MaKyHan">
+                                                <div class="p-3">
+                                                    <form asp-action="ConfirmPayment" method="post" class="row g-2 align-items-end">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                                                        <input type="hidden" name="maKyHan" value="@k.MaKyHan" />
+                                                        <div class="col-md-3">
+                                                            <label class="form-label fw-bold small mb-1">Số tiền thu (đ)</label>
+                                                            <input type="number" name="soTienThucThu" class="form-control form-control-sm" value="@((long)(k.SoTienPhai - k.SoTienDaTra))" min="1000" step="1000" required />
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label fw-bold small mb-1">Hình thức</label>
+                                                            <select name="hinhThuc" class="form-select form-select-sm">
+                                                                <option value="0">Tiền mặt</option>
+                                                                <option value="1">Chuyển khoản</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-bold small mb-1">Ghi chú</label>
+                                                            <input type="text" name="ghiChu" class="form-control form-control-sm" placeholder="Ghi chú thu tiền..." />
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <button type="submit" class="btn btn-dark btn-sm w-100">Xác nhận thu</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            <tr class="bg-light">
+                                <td colspan="3" class="text-end fw-bold">TỔNG ĐÃ THU (Kỳ Hạn)</td>
+                                <td colspan="3" class="text-success text-start fw-bold fs-5">@tongDaTra.ToString("N0") đ</td>
+                            </tr>
+                            <tr class="bg-light">
+                                <td colspan="3" class="text-end fw-bold text-danger">TỔNG CÒN NỢ (Hợp Đồng)</td>
+                                <td colspan="3" class="text-danger text-start fw-bold fs-5">@((Model.TongTien - Model.TienDaCoc - tongDaTra).ToString("N0")) đ</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Lịch sử giao dịch (Phiếu thu)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle text-center mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Mã PT</th>
+                                <th>Ngày thu</th>
+                                <th>Số tiền</th>
+                                <th>Loại phiếu</th>
+                                <th>Hình thức</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (phieuThus == null || !phieuThus.Any()) {
+                                <tr><td colspan="6" class="text-muted py-3">Chưa có giao dịch nào được ghi nhận.</td></tr>
+                            }
+                            @foreach (var p in phieuThus) {
+                                <tr>
+                                    <td class="fw-bold text-muted">#@p.MaPhieuThu</td>
+                                    <td>@p.NgayGiaoDich.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-success fw-bold">@p.SoTien.ToString("N0") đ</td>
+                                    <td>
+                                        @if (p.LoaiPhieu == 1) { <span class="badge bg-dark">Thu cọc</span> }
+                                        else if (p.LoaiPhieu == 0) { <span class="badge bg-secondary">Thu kỳ hạn</span> }
+                                        else { <span class="badge bg-light text-dark border">Khác</span> }
+                                    </td>
+                                    <td>
+                                        @if (p.HinhThucThanhToan == 0) { <span class="badge bg-dark">Tiền mặt</span> }
+                                        else if (p.HinhThucThanhToan == 1) { <span class="badge bg-secondary">Chuyển khoản</span> }
+                                        else { <span class="badge bg-light text-dark border">Khác</span> }
+                                    </td>
+                                    <td class="text-muted small">@p.GhiChu</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border">
+    <div class="card-body p-4 text-center">
+        <h5 class="fw-bold mb-4">XỬ LÝ ĐƠN HÀNG</h5>
+        <form asp-action="UpdateStatus" method="post" id="statusForm" class="d-flex justify-content-center gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.MaHopDong" />
+            <input type="hidden" name="status" id="statusInput" value="" />
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+            @{
+                bool isDone = (Model.TrangThai == 2 || Model.TrangThai == 3);
+            }
+            <button type="button" class="btn btn-outline-warning fw-bold px-4" @(Model.TrangThai == 0 || isDone ? "disabled" : "") onclick="submitStatus(0, '')">Chờ duyệt</button>
+            <button type="button" class="btn btn-outline-dark fw-bold px-4" @(Model.TrangThai == 1 || isDone ? "disabled" : "") onclick="submitStatus(1, '')">Giao máy &amp; Cho thuê</button>
+            <button type="button" class="btn btn-outline-success fw-bold px-4" @(Model.TrangThai == 2 || isDone ? "disabled" : "") onclick="submitStatus(2, 'Khách đã trả máy? Các số Serial trong đơn này sẽ tự động được giải phóng!')">Hoàn tất (Thu hồi)</button>
+            <button type="button" class="btn btn-outline-danger fw-bold px-4" @(Model.TrangThai == 3 || isDone ? "disabled" : "") onclick="submitStatus(3, 'Xác nhận hủy đơn hàng này và trả thiết bị về kho?')">Hủy đơn</button>
+        </form>
+        <script>
+            function submitStatus(statusVal, message) {
+                if (!message) {
+                    document.getElementById('statusInput').value = statusVal;
+                    document.getElementById('statusForm').submit();
+                    return;
+                }
+                if (confirm(message)) {
+                    document.getElementById('statusInput').value = statusVal;
+                    document.getElementById('statusForm').submit();
+                }
+            }
+        </script>
+    </div>
+</div>
