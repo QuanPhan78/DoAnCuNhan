@@ -1,0 +1,24 @@
+[
+  {
+    "id": "P001",
+    "title": "Giảm 20% Laptop cho Sinh viên",
+    "description": "Ưu đãi đặc biệt mùa Back to School. Áp dụng cho tất cả các dòng Laptop từ 6 tháng trở lên.",
+    "discountValue": "20%",
+    "validFrom": "01/09/2026",
+    "validTo": "30/10/2026",
+    "conditions": "Cung cấp thẻ sinh viên hợp lệ. Thời hạn thuê tối thiểu 6 tháng.",
+    "status": "Đang diễn ra",
+    "imageAsset": "assets/images/promotions/promo1.png"
+  },
+  {
+    "id": "P002",
+    "title": "Thuê 1 tặng 1 - Thiết bị mạng",
+    "description": "Thuê Router tặng kèm Access Point miễn phí.",
+    "discountValue": "Tặng Access Point",
+    "validFrom": "15/09/2026",
+    "validTo": "15/12/2026",
+    "conditions": "Áp dụng cho hợp đồng doanh nghiệp.",
+    "status": "Sắp diễn ra",
+    "imageAsset": "assets/images/promotions/promo2.png"
+  }
+]

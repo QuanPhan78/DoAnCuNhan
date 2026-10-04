@@ -1,0 +1,46 @@
+{
+  "deviceStats": {
+    "total": 120,
+    "available": 50,
+    "rented": 60,
+    "maintenance": 8,
+    "broken": 2
+  },
+  "contractStats": {
+    "total": 60,
+    "active": 45,
+    "completed": 15
+  },
+  "maintenanceStats": {
+    "total": 25,
+    "processing": 5,
+    "completed": 20
+  },
+  "revenue": 150000000,
+  "revenueChart": [
+    {
+      "label": "T1",
+      "value": 15000000
+    },
+    {
+      "label": "T2",
+      "value": 18000000
+    },
+    {
+      "label": "T3",
+      "value": 22000000
+    },
+    {
+      "label": "T4",
+      "value": 20000000
+    },
+    {
+      "label": "T5",
+      "value": 25000000
+    },
+    {
+      "label": "T6",
+      "value": 30000000
+    }
+  ]
+}
