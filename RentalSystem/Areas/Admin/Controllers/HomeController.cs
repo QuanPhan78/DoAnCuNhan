@@ -10,8 +10,7 @@ using System.Text.Json;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
-    // Controller Bảng điều khiển (Dashboard) trung tâm dành cho Quản trị viên và Bộ phận Kinh doanh.
-    // Tổng hợp số liệu thống kê doanh thu, tình trạng thiết bị, khách hàng và biểu đồ kinh doanh.
+    // Bảng điều khiển tổng quan cho quản trị viên
     [Area("Admin")]
     [Authorize(Roles = "Admin,KinhDoanh")]
     public class HomeController : Controller
@@ -23,13 +22,10 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
-        // Màn hình Dashboard chính:
-        // 1. Tính toán các chỉ số KPI tổng quan (Doanh thu thực tế, tổng số hợp đồng, máy đang cho thuê).
-        // 2. Xuất dữ liệu biểu đồ doanh thu 6 tháng gần nhất sang định dạng JSON cho Chart.js.
-        // 3. Lấy 5 đơn thuê gần nhất và danh sách cảnh báo các kỳ hạn nợ đã quá hạn thanh toán.
+        // Màn hình Dashboard chính: thống kê chỉ số tổng quan, biểu đồ doanh thu và các kỳ hạn nợ cần theo dõi
         public IActionResult Index()
         {
-            // 1. Thống kê Card tổng quan
+            // Thống kê các chỉ số tổng quan
             // Doanh thu thực tế: Chỉ tính các hợp đồng đã hoàn tất chu kỳ thuê (TrangThai = 2)
             ViewBag.TotalRevenue = _context.HopDongs
                 .Where(h => h.TrangThai == 2)
@@ -49,7 +45,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             ViewBag.OverduePayments = _context.KyHanThanhToans
                 .Count(k => k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date && (k.HopDong.TrangThai == 0 || k.HopDong.TrangThai == 1));
 
-            // 2. Dữ liệu Biểu đồ Doanh thu (6 tháng gần nhất)
+            // Dữ liệu biểu đồ doanh thu 6 tháng gần nhất
             var allCompletedOrders = _context.HopDongs
                 .Where(h => h.TrangThai == 2)
                 .ToList();
@@ -78,14 +74,14 @@ namespace RentalSystem.Areas.Admin.Controllers
             ViewBag.ChartLabels = JsonSerializer.Serialize(chartLabels, jsonOptions);
             ViewBag.ChartData = JsonSerializer.Serialize(chartData, jsonOptions);
 
-            // 3. Top 5 hợp đồng mới nhất phát sinh trên hệ thống
+            // Top 5 hợp đồng mới nhất
             ViewBag.RecentOrders = _context.HopDongs
                 .Include(h => h.KhachHang)
                 .OrderByDescending(h => h.MaHopDong)
                 .Take(5)
                 .ToList();
 
-            // 4. Danh sách 10 khoản kỳ hạn nợ quá hạn thanh toán khẩn cấp nhất
+            // Danh sách 10 kỳ hạn quá hạn gần nhất
             ViewBag.OverdueInstallments = _context.KyHanThanhToans
                 .Include(k => k.HopDong)
                 .ThenInclude(h => h.KhachHang)

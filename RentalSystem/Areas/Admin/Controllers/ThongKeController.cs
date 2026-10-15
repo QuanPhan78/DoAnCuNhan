@@ -5,7 +5,7 @@ using RentalSystem.Models;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
-    // Controller Báo cáo Thống kê chuyên sâu và Tiện ích sao lưu/khôi phục dữ liệu hệ thống.
+    // Báo cáo thống kê tài chính và thiết bị
     [Area("Admin")]
     [Authorize(Roles = "Admin,KinhDoanh")]
     public class ThongKeController : Controller
@@ -17,12 +17,21 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
-        // Báo cáo tổng hợp số liệu tài chính, quản lý kho máy và tỷ lệ sự cố thiết bị.
+        // Thống kê doanh thu, tình trạng kho máy và phiếu bảo trì
         public async Task<IActionResult> Index()
         {
             var hopDongs = await _context.HopDongs.ToListAsync();
-            // Doanh thu chỉ tính các đơn Hoàn tất thành công (TrangThai = 2)
-            var tongDoanhThu = hopDongs.Where(h => h.TrangThai == 2).Sum(h => h.TongTien);
+
+            // Doanh thu theo dòng tiền thực thu: Tổng PhieuThu (LoaiPhieu == 0 || LoaiPhieu == 2, !DaHuy) trừ PhieuChi
+            var tongThu = await _context.PhieuThus
+                .Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2))
+                .SumAsync(pt => (decimal?)pt.SoTien) ?? 0m;
+
+            var tongChi = await _context.PhieuChis
+                .SumAsync(pc => (decimal?)pc.SoTien) ?? 0m;
+
+            var tongDoanhThu = tongThu - tongChi;
+
             // Tiền cọc giữ chỗ: Tính các đơn Chờ duyệt hoặc Đang cho thuê (0, 1)
             var tongCoc = hopDongs.Where(h => h.TrangThai == 0 || h.TrangThai == 1).Sum(h => h.TienDaCoc);
             
@@ -36,6 +45,8 @@ namespace RentalSystem.Areas.Admin.Controllers
             var baoTris = await _context.PhieuBaoTris.ToListAsync();
 
             ViewBag.TongDoanhThu = tongDoanhThu;
+            ViewBag.TongThu = tongThu;
+            ViewBag.TongChi = tongChi;
             ViewBag.TongCoc = tongCoc;
             ViewBag.DangChoThue = dangChoThue;
             ViewBag.SanSang = sanSang;
@@ -46,8 +57,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View();
         }
 
-        // Sao lưu cơ sở dữ liệu dự phòng.
-        // Mô phỏng nghiệp vụ Backup Database phục vụ báo cáo đồ án.
+        // Sao lưu cơ sở dữ liệu dự phòng
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult BackupDatabase()
@@ -56,8 +66,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Phục hồi cơ sở dữ liệu từ bản sao lưu.
-        // Mô phỏng nghiệp vụ Restore Database phục vụ báo cáo đồ án.
+        // Phục hồi cơ sở dữ liệu từ bản sao lưu
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult RestoreDatabase()

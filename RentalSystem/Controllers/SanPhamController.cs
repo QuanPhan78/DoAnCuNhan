@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace RentalSystem.Controllers
 {
-    // Controller Sản phẩm phía giao diện Khách hàng:
-    // Cho phép duyệt danh mục sản phẩm, xem chi tiết cấu hình, giá thuê và số lượng máy sẵn sàng.
+    // Danh mục và chi tiết sản phẩm cho khách hàng
     public class SanPhamController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -18,15 +17,13 @@ namespace RentalSystem.Controllers
             _context = context;
         }
 
-        // Trang danh mục tất cả sản phẩm cho thuê:
-        // Đồng bộ số lượng máy thực tế đang 'Sẵn sàng' (TrangThai = 0) trong kho
-        // để khách biết còn máy hay đã hết hàng trước khi thêm vào giỏ.
+        // Danh sách sản phẩm cho thuê kèm số lượng máy khả dụng trong kho
         public async Task<IActionResult> Index()
         {
             var sanPhams = await _context.SanPhams.Include(s => s.LoaiThietBi).ToListAsync();
             ViewBag.Categories = await _context.LoaiThietBis.ToListAsync();
             
-            // Đồng bộ số lượng tồn kho khả dụng thực tế của từng sản phẩm từ Database
+            // Tính số lượng máy sẵn sàng cho thuê của từng sản phẩm
             var stockCounts = await _context.ThietBis
                 .Where(t => !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now))
                 .GroupBy(t => t.MaSanPham)
@@ -38,8 +35,7 @@ namespace RentalSystem.Controllers
             return View(sanPhams);
         }
 
-        // Xem trang chi tiết một sản phẩm:
-        // Hiển thị thông số kỹ thuật, cấu hình, đơn giá và các sản phẩm cùng phân khúc liên quan.
+        // Chi tiết sản phẩm
         public async Task<IActionResult> Details(int id)
         {
             var sp = await _context.SanPhams

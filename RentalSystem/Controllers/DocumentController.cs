@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace RentalSystem.Controllers
 {
-    // Controller xuất văn bản, hóa đơn và in Hợp đồng điện tử.
-    // Tích hợp tính năng bảo mật phân quyền xem hợp đồng theo đúng chủ sở hữu.
+    // Xuất văn bản và in hợp đồng điện tử
     [Authorize]
     public class DocumentController : Controller
     {
@@ -19,9 +18,7 @@ namespace RentalSystem.Controllers
             _context = context;
         }
 
-        // Xem bản in Hợp Đồng Thuê Thiết Bị chuẩn pháp lý:
-        // Bao gồm điều khoản thuê, thông tin 2 bên, danh sách máy serial kèm chữ ký số điện tử Base64.
-        // Bảo mật: Khách hàng thông thường chỉ được in hợp đồng của chính mình.
+        // Xem bản in hợp đồng thuê thiết bị
         [HttpGet]
         public async Task<IActionResult> InHopDong(int id)
         {
@@ -36,7 +33,7 @@ namespace RentalSystem.Controllers
             var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             if (claim != null && int.TryParse(claim.Value, out int userId))
             {
-                // Nếu người dùng không phải Admin hoặc Kinh Doanh, chỉ được phép xem hợp đồng của chính mình
+                // Khách hàng chỉ xem được hợp đồng của chính mình
                 if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh"))
                 {
                     if (hopDong.MaKhachHang != userId)
@@ -54,6 +51,71 @@ namespace RentalSystem.Controllers
 
             ViewBag.ChiTiets = chiTiets;
             return View(hopDong);
+        }
+
+        // Xem và in Biên bản bàn giao / thu hồi thiết bị
+        [HttpGet]
+        public async Task<IActionResult> InBienBanBanGiao(int id)
+        {
+            var bienBan = await _context.BienBanBanGiaos
+                .Include(b => b.NhanVienLap)
+                .Include(b => b.HopDong)
+                    .ThenInclude(h => h.KhachHang)
+                .Include(b => b.HopDong)
+                    .ThenInclude(h => h.NhanVien)
+                .FirstOrDefaultAsync(b => b.MaBienBan == id);
+
+            if (bienBan == null) return NotFound();
+
+            var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (claim != null && int.TryParse(claim.Value, out int userId))
+            {
+                if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh"))
+                {
+                    if (bienBan.HopDong.MaKhachHang != userId)
+                    {
+                        return Unauthorized("BẢO MẬT: Bạn không có quyền xem biên bản bàn giao của khách hàng khác.");
+                    }
+                }
+            }
+
+            var chiTiets = await _context.ChiTietHopDongs
+                .Include(c => c.ThietBi).ThenInclude(t => t.SanPham)
+                .Where(c => c.MaHopDong == bienBan.MaHopDong)
+                .ToListAsync();
+
+            ViewBag.ChiTiets = chiTiets;
+            return View(bienBan);
+        }
+
+        // Xem và in Phiếu thu tiền
+        [HttpGet]
+        public async Task<IActionResult> InPhieuThu(int id)
+        {
+            var phieuThu = await _context.PhieuThus
+                .Include(p => p.NhanVienThu)
+                .Include(p => p.KyHanThanhToan)
+                .Include(p => p.HopDong)
+                    .ThenInclude(h => h.KhachHang)
+                .Include(p => p.HopDong)
+                    .ThenInclude(h => h.NhanVien)
+                .FirstOrDefaultAsync(p => p.MaPhieuThu == id);
+
+            if (phieuThu == null) return NotFound("Không tìm thấy phiếu thu yêu cầu.");
+
+            var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (claim != null && int.TryParse(claim.Value, out int userId))
+            {
+                if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh") && !User.IsInRole("KeToan"))
+                {
+                    if (phieuThu.HopDong != null && phieuThu.HopDong.MaKhachHang != userId)
+                    {
+                        return Unauthorized("BẢO MẬT: Bạn không có quyền xem phiếu thu của khách hàng khác.");
+                    }
+                }
+            }
+
+            return View(phieuThu);
         }
     }
 }

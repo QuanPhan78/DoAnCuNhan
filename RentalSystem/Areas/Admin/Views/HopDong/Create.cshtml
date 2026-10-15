@@ -11,9 +11,17 @@
     <a asp-action="Index" class="btn btn-outline-secondary fw-bold shadow-sm"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
 </div>
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Success"]</div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Warning"]</div>
+}
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
+    <div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
 }
 
 <form asp-action="Create" method="post" id="createForm">
@@ -43,6 +51,11 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label fw-bold">Số CCCD / CMND <span class="text-danger">*</span></label>
+                        <input type="text" name="KhachHang_CCCD" class="form-control" placeholder="Nhập số CCCD/CMND..." />
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label fw-bold">Địa chỉ giao máy <span class="text-danger">*</span></label>
                         <textarea name="KhachHang_DiaChi" class="form-control" rows="2" required placeholder="Nhập địa chỉ..."></textarea>
                     </div>
@@ -51,6 +64,9 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Ngày nhận máy <span class="text-danger">*</span></label>
                             <input type="date" name="NgayBatDau" id="NgayBatDau" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                            <small id="pastDateWarning" class="text-warning fw-bold d-block mt-1" style="display:none;">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Ngày nhận máy ở trong quá khứ (Hệ thống sẽ lưu với cảnh báo)
+                            </small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Ngày trả máy <span class="text-danger">*</span></label>
@@ -63,9 +79,22 @@
                         <textarea name="GhiChu" class="form-control" rows="2" placeholder="Ghi chú thêm..."></textarea>
                     </div>
 
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <label class="form-label fw-bold">Tiền cọc bảo đảm máy (VNĐ)</label>
+                            <input type="number" name="TienCocBaoDamMay" id="TienCocBaoDamMay" class="form-control text-primary fw-bold" value="0" min="0" step="1000" placeholder="0" />
+                            <small class="text-muted">Cọc bảo lãnh tài sản, hoàn trả khi trả máy</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tiền thuê trả trước (VNĐ)</label>
+                            <input type="number" name="TienThueTraTruoc" id="TienThueTraTruoc" class="form-control text-success fw-bold" value="0" min="0" step="1000" placeholder="0" />
+                            <small class="text-muted">Khấu trừ trực tiếp vào các kỳ trả góp</small>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tiền đã cọc (VNĐ) <span class="text-danger">*</span></label>
-                        <input type="number" name="TienDaCoc" id="TienDaCoc" class="form-control text-success fw-bold" value="0" min="0" step="1000" />
+                        <label class="form-label fw-bold">Tổng tiền đã cọc/trả trước (VNĐ) <span class="text-danger">*</span></label>
+                        <input type="number" name="TienDaCoc" id="TienDaCoc" class="form-control text-dark fw-bold" value="0" min="0" step="1000" readonly />
                     </div>
 
                     <div class="row mb-3">
@@ -156,6 +185,8 @@
         const lblConLai = document.getElementById("lblConLai");
         const lblMoiKy = document.getElementById("lblMoiKy");
         const tienCocInput = document.getElementById("TienDaCoc");
+        const depositInput = document.getElementById("TienCocBaoDamMay");
+        const rentAdvanceInput = document.getElementById("TienThueTraTruoc");
         const soKyInput = document.getElementById("SoKyHan");
         const qtyInputs = document.querySelectorAll(".input-soluong");
         const priceInputs = document.querySelectorAll(".gia-thue");
@@ -176,6 +207,27 @@
             }
             lblDays.innerText = days;
 
+            let today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let pastWarning = document.getElementById("pastDateWarning");
+            if (startInput.value) {
+                let startDate = new Date(startInput.value + "T00:00:00");
+                if (startDate < today) {
+                    if (pastWarning) pastWarning.style.display = "";
+                } else {
+                    if (pastWarning) pastWarning.style.display = "none";
+                }
+            }
+
+            let maxInstallments = Math.max(1, Math.floor(days / 7));
+            if (soKyInput) {
+                soKyInput.max = maxInstallments;
+                soKyInput.setAttribute('max', maxInstallments);
+                if (parseInt(soKyInput.value) > maxInstallments) {
+                    soKyInput.value = maxInstallments;
+                }
+            }
+
             let totalPerDay = 0;
             for (let i = 0; i < qtyInputs.length; i++) {
                 let qty = parseInt(qtyInputs[i].value) || 0;
@@ -186,11 +238,18 @@
             let finalTotal = totalPerDay * days;
             lblTotal.innerText = formatVND(finalTotal);
 
-            let coc = parseFloat(tienCocInput?.value) || 0;
+            let depositVal = parseFloat(depositInput?.value) || 0;
+            let rentAdvanceVal = parseFloat(rentAdvanceInput?.value) || 0;
+            let totalDeposit = depositVal + rentAdvanceVal;
+            if (tienCocInput) {
+                tienCocInput.value = totalDeposit;
+            }
+
             let soKy = parseInt(soKyInput?.value) || 1;
             if (soKy < 1) soKy = 1;
 
-            let conLai = finalTotal - coc;
+            // Tiền cọc bảo đảm máy giữ nguyên; chỉ tiền thuê trả trước cấn trừ vào các kỳ
+            let conLai = finalTotal - rentAdvanceVal;
             if (conLai < 0) conLai = 0;
             let moiKy = conLai / soKy;
 
@@ -202,6 +261,8 @@
         startInput.addEventListener("change", function() { endInput.setAttribute('min', startInput.value); calculateTotal(); });
         endInput.addEventListener("input", calculateTotal);
         endInput.addEventListener("change", calculateTotal);
+        if (depositInput) { depositInput.addEventListener("input", calculateTotal); depositInput.addEventListener("change", calculateTotal); }
+        if (rentAdvanceInput) { rentAdvanceInput.addEventListener("input", calculateTotal); rentAdvanceInput.addEventListener("change", calculateTotal); }
         if (tienCocInput) { tienCocInput.addEventListener("input", calculateTotal); tienCocInput.addEventListener("change", calculateTotal); }
         if (soKyInput) { soKyInput.addEventListener("input", calculateTotal); soKyInput.addEventListener("change", calculateTotal); }
         qtyInputs.forEach(input => { input.addEventListener("input", calculateTotal); input.addEventListener("change", calculateTotal); });

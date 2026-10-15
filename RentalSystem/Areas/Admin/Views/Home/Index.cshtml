@@ -89,13 +89,20 @@
                             <tbody>
                                 @foreach (var k in overdueInstallments)
                                 {
+                                    var soTienTre = k.SoTienPhai - k.SoTienDaTra;
                                     <tr>
                                         <td class="fw-bold">#@k.MaHopDong</td>
                                         <td>@k.HopDong?.KhachHang?.HoTen</td>
                                         <td class="fw-bold">@k.HopDong?.KhachHang?.SoDienThoai</td>
                                         <td><span class="badge bg-secondary">Kỳ @k.SoKyHan</span></td>
                                         <td class="text-danger fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</td>
-                                        <td class="text-brand fw-bold">@k.SoTienPhai.ToString("N0") đ</td>
+                                        <td>
+                                            <span class="text-brand fw-bold">@soTienTre.ToString("N0") đ</span>
+                                            @if (k.SoTienDaTra > 0)
+                                            {
+                                                <small class="text-muted d-block">(Đã trả: @k.SoTienDaTra.ToString("N0") đ)</small>
+                                            }
+                                        </td>
                                         <td>
                                             <a asp-controller="HopDong" asp-action="Details" asp-route-id="@k.MaHopDong" class="btn btn-sm btn-danger shadow-sm"><i class="fas fa-eye me-1"></i> Xử lý ngay</a>
                                         </td>

@@ -1,0 +1,67 @@
+@model RentalSystem.Models.ThietBi
+@{
+    ViewData["Title"] = "Xóa Thiết Bị";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-trash me-2"></i> Xác Nhận Xóa Thiết Bị Vật Lý</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-danger fw-bold">Bạn có chắc chắn muốn xóa thiết bị (Serial) này khỏi hệ thống?</p>
+                    <table class="table table-bordered mb-4">
+                        <tr>
+                            <th class="w-25 bg-light">Mã thiết bị</th>
+                            <td>#@Model.MaThietBi</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Số Serial</th>
+                            <td><code>@Model.SoSerial</code></td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Dòng sản phẩm</th>
+                            <td>@Model.SanPham?.TenSanPham</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Tình trạng máy</th>
+                            <td>@Model.TinhTrangMay</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Trạng thái</th>
+                            <td>
+                                @if (Model.TrangThai == 0)
+                                {
+                                    <span class="badge bg-success">Sẵn sàng</span>
+                                }
+                                else if (Model.TrangThai == 1)
+                                {
+                                    <span class="badge bg-danger">Đang cho thuê</span>
+                                }
+                                else if (Model.TrangThai == 3)
+                                {
+                                    <span class="badge bg-warning text-dark">Khóa giữ chỗ</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Khác (@Model.TrangThai)</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+
+                    <form asp-action="Delete" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.MaThietBi" />
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-light">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-danger fw-bold"><i class="fas fa-trash me-1"></i> Xác Nhận Xóa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

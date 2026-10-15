@@ -4,65 +4,98 @@
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold"><i class="fas fa-tools text-danger me-2"></i> Lịch sử báo cáo sự cố</h2>
-        <a href="/Cart/MyContracts" class="btn btn-brand"><i class="fas fa-file-contract"></i> Về danh sách hợp đồng</a>
+        <a href="/Cart/MyContracts" class="btn btn-outline-primary"><i class="fas fa-file-contract"></i> Về danh sách hợp đồng</a>
     </div>
 
     @if (TempData["Success"] != null) {
         <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null) {
+        <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
     }
 
     <div class="card shadow border-0">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-center">
-                    <thead class="">
+                    <thead class="table-light">
                         <tr>
                             <th>Mã Phiếu</th>
                             <th>Hợp Đồng</th>
                             <th>Thiết Bị</th>
                             <th>Ngày Báo Lỗi</th>
                             <th>Trạng Thái</th>
-                            <th>Đánh Giá</th>
+                            <th>Đánh Giá / Phản Hồi</th>
+                            <th>Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (!Model.Any()) {
-                            <tr><td colspan="6" class="text-center py-4">Bạn chưa báo lỗi thiết bị nào.</td></tr>
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Bạn chưa báo lỗi thiết bị nào.</td></tr>
                         }
                         @foreach (var item in Model) {
                             <tr>
                                 <td class="fw-bold">#@item.MaPhieu</td>
-                                <td>#@item.MaHopDong</td>
-                                <td>@item.ThietBi.SanPham.TenSanPham</td>
+                                <td>
+                                    @if (item.MaHopDong.HasValue) {
+                                        <a href="/Cart/ContractDetail/@item.MaHopDong" class="text-decoration-none">#@item.MaHopDong</a>
+                                    } else {
+                                        <span class="text-muted">Bảo dưỡng kho</span>
+                                    }
+                                </td>
+                                <td class="text-start">
+                                    <div class="fw-bold">@item.ThietBi.SanPham.TenSanPham</div>
+                                    <small class="text-muted">Serial: @item.ThietBi.SoSerial</small>
+                                </td>
                                 <td>@item.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>
-                                    @if (item.TrangThai == 1) { <span class="badge bg-warning text-dark">Mới báo</span> }
-                                    else if (item.TrangThai == 2) { <span class="badge bg-brand">Đang sửa</span> }
-                                    else if (item.TrangThai == 3) { <span class="badge bg-success">Hoàn thành</span> }
+                                    @if (item.TrangThai == 1) { 
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Mới tiếp nhận</span> 
+                                    }
+                                    else if (item.TrangThai == 2) { 
+                                        <span class="badge bg-info text-dark"><i class="fas fa-wrench"></i> Đang sửa</span> 
+                                    }
+                                    else if (item.TrangThai == 3) { 
+                                        <span class="badge bg-primary"><i class="fas fa-check"></i> Đã sửa xong</span> 
+                                    }
+                                    else if (item.TrangThai == 4) { 
+                                        <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Không thể sửa / Hỏng</span> 
+                                    }
+                                    else if (item.TrangThai == 5) { 
+                                        <span class="badge bg-success"><i class="fas fa-check-double"></i> Đã nghiệm thu & Đóng</span> 
+                                    }
                                 </td>
                                 <td>
-                                    @if (item.TrangThai == 3) {
-                                        @if (item.DanhGiaSao.HasValue) {
-                                            <span class="text-warning">
-                                                @for (int i = 0; i < item.DanhGiaSao.Value; i++) { <i class="fas fa-star"></i> }
-                                            </span>
-                                        } else {
-                                            <form asp-action="DanhGia" method="post" class="d-flex align-items-center justify-content-center gap-2">
-                                                <input type="hidden" name="maPhieu" value="@item.MaPhieu" />
-                                                <select name="rating" class="form-select form-select-sm" style="width: auto;" required>
-                                                    <option value="">--</option>
-                                                    <option value="5">5 Sao</option>
-                                                    <option value="4">4 Sao</option>
-                                                    <option value="3">3 Sao</option>
-                                                    <option value="2">2 Sao</option>
-                                                    <option value="1">1 Sao</option>
-                                                </select>
-                                                <button type="submit" class="btn btn-sm btn-outline-warning">Gửi</button>
-                                            </form>
+                                    @if (item.DanhGiaSao.HasValue) {
+                                        <span class="text-warning">
+                                            @for (int i = 0; i < item.DanhGiaSao.Value; i++) { <i class="fas fa-star"></i> }
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(item.YKienPhanHoi)) {
+                                            <div class="small text-muted text-truncate" style="max-width: 150px;" title="@item.YKienPhanHoi">
+                                                "@item.YKienPhanHoi"
+                                            </div>
                                         }
+                                    } else if (item.TrangThai == 3 || item.TrangThai == 5) {
+                                        <form asp-action="DanhGia" method="post" class="d-flex align-items-center justify-content-center gap-1">
+                                            <input type="hidden" name="maPhieu" value="@item.MaPhieu" />
+                                            <select name="rating" class="form-select form-select-sm" style="width: auto;" required>
+                                                <option value="">Sao</option>
+                                                <option value="5">5 ⭐</option>
+                                                <option value="4">4 ⭐</option>
+                                                <option value="3">3 ⭐</option>
+                                                <option value="2">2 ⭐</option>
+                                                <option value="1">1 ⭐</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">Gửi</button>
+                                        </form>
                                     } else {
-                                        <span class="text-muted">Chưa thể đánh giá</span>
+                                        <span class="text-muted small">Chờ hoàn tất</span>
                                     }
+                                </td>
+                                <td>
+                                    <a asp-action="ChiTiet" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> Chi tiết
+                                    </a>
                                 </td>
                             </tr>
                         }

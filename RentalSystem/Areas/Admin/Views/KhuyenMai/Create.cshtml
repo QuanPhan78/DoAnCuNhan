@@ -1,0 +1,88 @@
+@model RentalSystem.Models.KhuyenMai
+@{
+    ViewData["Title"] = "Thêm mới Mã Khuyến Mãi";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Index" class="btn btn-light shadow-sm me-3"><i class="fas fa-arrow-left"></i></a>
+    <div>
+        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-plus-circle me-2 text-success"></i> Thêm mới Mã Khuyến Mãi</h3>
+        <span class="text-muted small">Khởi tạo mã giảm giá với số lượng và hạn sử dụng tùy chỉnh.</span>
+    </div>
+</div>
+
+<div class="card shadow border-0">
+    <div class="card-body p-4">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-4"></div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Mã Code Voucher <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-barcode"></i></span>
+                        <input asp-for="Code" class="form-control text-uppercase font-monospace fw-bold" required placeholder="VD: GIAM10, TET2026, VIPRENTAL" />
+                    </div>
+                    <span asp-validation-for="Code" class="text-danger small"></span>
+                    <div class="form-text">Mã viết liền không dấu, hệ thống tự động chuẩn hóa chữ hoa.</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Phần trăm giảm giá (%) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input asp-for="PhanTramGiam" type="number" min="1" max="100" class="form-control fw-bold text-success" required />
+                        <span class="input-group-text bg-light fw-bold">%</span>
+                    </div>
+                    <span asp-validation-for="PhanTramGiam" class="text-danger small"></span>
+                    <div class="form-text">Tỷ lệ giảm giá từ 1% đến 100% tính trên tổng tiền thuê hợp đồng.</div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Ngày bắt đầu áp dụng <span class="text-danger">*</span></label>
+                    <input asp-for="NgayBatDau" type="date" class="form-control" value="@Model.NgayBatDau.ToString("yyyy-MM-dd")" required />
+                    <span asp-validation-for="NgayBatDau" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Ngày kết thúc <span class="text-danger">*</span></label>
+                    <input asp-for="NgayKetThuc" type="date" class="form-control" value="@Model.NgayKetThuc.ToString("yyyy-MM-dd")" required />
+                    <span asp-validation-for="NgayKetThuc" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Số lượng lượt sử dụng <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input asp-for="SoLuong" type="number" min="0" class="form-control fw-bold" required />
+                        <span class="input-group-text bg-light">lượt</span>
+                    </div>
+                    <span asp-validation-for="SoLuong" class="text-danger small"></span>
+                    <div class="form-text">Số lượt có thể áp dụng thành công khi thanh toán.</div>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">Mô tả chương trình khuyến mãi</label>
+                    <textarea asp-for="MoTa" class="form-control" rows="3" placeholder="Nhập ghi chú hoặc điều kiện áp dụng cho khách hàng..."></textarea>
+                    <span asp-validation-for="MoTa" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-12 mb-4">
+                    <div class="form-check form-switch fs-5">
+                        <input asp-for="KichHoat" class="form-check-input" type="checkbox" id="kichHoatCheck" />
+                        <label class="form-check-label fs-6 fw-bold" for="kichHoatCheck">
+                            Kích hoạt mã khuyến mãi ngay sau khi lưu
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end border-top pt-3">
+                <a asp-action="Index" class="btn btn-outline-secondary me-2">Hủy bỏ</a>
+                <button type="submit" class="btn btn-brand fw-bold px-4 py-2 shadow-sm">
+                    <i class="fas fa-save me-1"></i> Lưu Mã Khuyến Mãi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

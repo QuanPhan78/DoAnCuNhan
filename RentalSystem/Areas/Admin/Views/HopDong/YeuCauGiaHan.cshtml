@@ -1,0 +1,264 @@
+@model IEnumerable<RentalSystem.Models.YeuCauGiaHan>
+@{
+    ViewData["Title"] = "Quản lý Yêu cầu Gia hạn Hợp đồng";
+    int? currentStatus = ViewBag.CurrentStatus as int?;
+    int allCount = ViewBag.AllCount ?? 0;
+    int pendingCount = ViewBag.PendingCount ?? 0;
+    int approvedCount = ViewBag.ApprovedCount ?? 0;
+    int rejectedCount = ViewBag.RejectedCount ?? 0;
+}
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/Admin/HopDong">Hợp đồng</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Yêu cầu gia hạn</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold mb-0"><i class="fas fa-calendar-plus text-info me-2"></i>Danh sách Yêu cầu Gia hạn Hợp đồng</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/HopDong" class="btn btn-outline-secondary">
+                <i class="fas fa-file-contract me-1"></i> Danh sách Đơn thuê
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm mb-3">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+        </div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm mb-3">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Warning"]
+        </div>
+    }
+
+    <!-- Bộ lọc trạng thái -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="fw-bold text-muted me-2"><i class="fas fa-filter me-1"></i> Lọc trạng thái:</span>
+                <a href="/Admin/HopDong/YeuCauGiaHan" class="btn btn-sm @(currentStatus == null ? "btn-dark" : "btn-outline-secondary")">
+                    Tất cả <span class="badge @(currentStatus == null ? "bg-light text-dark" : "bg-secondary") ms-1">@allCount</span>
+                </a>
+                <a href="/Admin/HopDong/YeuCauGiaHan?status=0" class="btn btn-sm @(currentStatus == 0 ? "btn-warning text-dark fw-bold" : "btn-outline-warning text-dark")">
+                    <i class="fas fa-clock me-1"></i>Chờ duyệt <span class="badge @(currentStatus == 0 ? "bg-dark text-white" : "bg-warning text-dark") ms-1">@pendingCount</span>
+                </a>
+                <a href="/Admin/HopDong/YeuCauGiaHan?status=1" class="btn btn-sm @(currentStatus == 1 ? "btn-success fw-bold" : "btn-outline-success")">
+                    <i class="fas fa-check-circle me-1"></i>Đã chấp nhận <span class="badge @(currentStatus == 1 ? "bg-light text-success" : "bg-success") ms-1">@approvedCount</span>
+                </a>
+                <a href="/Admin/HopDong/YeuCauGiaHan?status=2" class="btn btn-sm @(currentStatus == 2 ? "btn-danger fw-bold" : "btn-outline-danger")">
+                    <i class="fas fa-times-circle me-1"></i>Từ chối <span class="badge @(currentStatus == 2 ? "bg-light text-danger" : "bg-danger") ms-1">@rejectedCount</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách yêu cầu -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Mã YC</th>
+                            <th>Hợp đồng / Khách hàng</th>
+                            <th>Số ngày gia hạn</th>
+                            <th class="text-start">Lý do gia hạn</th>
+                            <th>Thời gian gửi</th>
+                            <th>Chi phí phát sinh</th>
+                            <th>Trạng thái</th>
+                            <th>Người duyệt</th>
+                            <th style="width: 180px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="py-5 text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3 text-secondary d-block"></i>
+                                    Không có yêu cầu gia hạn nào trong danh mục này.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold font-monospace">#@item.MaYeuCau</td>
+                                    <td>
+                                        <div class="fw-bold">
+                                            <a href="/Admin/HopDong/Details/@item.MaHopDong" class="text-decoration-none text-primary">
+                                                HĐ #@item.MaHopDong
+                                            </a>
+                                        </div>
+                                        <small class="text-muted d-block">
+                                            @(item.HopDong?.KhachHang?.HoTen ?? "Khách hàng") 
+                                            @if (!string.IsNullOrEmpty(item.HopDong?.KhachHang?.SoDienThoai))
+                                            {
+                                                <span>(@item.HopDong?.KhachHang?.SoDienThoai)</span>
+                                            }
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary fs-6">+@item.SoNgayGiaHan ngày</span>
+                                        <small class="text-muted d-block mt-1">
+                                            Hạn cũ: @item.HopDong?.NgayKetThuc.ToString("dd/MM/yyyy")
+                                        </small>
+                                    </td>
+                                    <td class="text-start small" style="max-width: 250px;">
+                                        <div class="text-break">@(string.IsNullOrEmpty(item.LyDo) ? "—" : item.LyDo)</div>
+                                        @if (!string.IsNullOrEmpty(item.GhiChuAdmin))
+                                        {
+                                            <div class="mt-1 p-1 bg-light rounded text-muted">
+                                                <i class="fas fa-comment-dots me-1"></i>Admin: @item.GhiChuAdmin
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="small">
+                                        @item.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td>
+                                        @if (item.ChiPhiPhatSinh > 0)
+                                        {
+                                            <span class="text-danger fw-bold">+@item.ChiPhiPhatSinh.ToString("N0") đ</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.TrangThai == 0)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ duyệt</span>
+                                        }
+                                        else if (item.TrangThai == 1)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã duyệt</span>
+                                        }
+                                        else if (item.TrangThai == 2)
+                                        {
+                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Từ chối</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Khác</span>
+                                        }
+                                    </td>
+                                    <td class="small text-muted">
+                                        @if (item.TrangThai != 0)
+                                        {
+                                            <div>@(item.NguoiDuyet?.HoTen ?? "Quản trị viên")</div>
+                                            <small class="text-muted">@item.NgayDuyet?.ToString("dd/MM/yyyy HH:mm")</small>
+                                        }
+                                        else
+                                        {
+                                            <span>—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center gap-1">
+                                            @if (item.TrangThai == 0)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-success fw-bold" 
+                                                        data-bs-toggle="modal" data-bs-target="#modalApprove_@item.MaYeuCau" title="Duyệt gia hạn">
+                                                    <i class="fas fa-check me-1"></i> Duyệt
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger fw-bold" 
+                                                        data-bs-toggle="modal" data-bs-target="#modalReject_@item.MaYeuCau" title="Từ chối">
+                                                    <i class="fas fa-times me-1"></i> Từ chối
+                                                </button>
+                                            }
+                                            <a href="/Admin/HopDong/Details/@item.MaHopDong" class="btn btn-sm btn-light border" title="Xem chi tiết hợp đồng">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+
+                                        @if (item.TrangThai == 0)
+                                        {
+                                            <!-- Modal Duyệt -->
+                                            <div class="modal fade" id="modalApprove_@item.MaYeuCau" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content text-start">
+                                                        <form asp-action="DuyetGiaHan" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.MaHopDong" />
+                                                            <input type="hidden" name="chapNhan" value="true" />
+                                                            <input type="hidden" name="returnUrl" value="/Admin/HopDong/YeuCauGiaHan@(currentStatus.HasValue ? $"?status={currentStatus.Value}" : "")" />
+                                                            <div class="modal-header bg-success text-white">
+                                                                <h5 class="modal-title fw-bold"><i class="fas fa-check-circle me-2"></i>Duyệt Gia Hạn Hợp Đồng #@item.MaHopDong</h5>
+                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p>Bạn có chắc chắn muốn <strong>phê duyệt</strong> gia hạn thêm <strong>@item.SoNgayGiaHan ngày</strong> cho đơn hàng <strong>#@item.MaHopDong</strong>?</p>
+                                                                <div class="alert alert-info small mb-3">
+                                                                    <i class="fas fa-info-circle me-1"></i> Hệ thống sẽ tự động cập nhật ngày kết thúc mới và sinh đúng <strong>1 kỳ hạn thanh toán mới</strong> cho chi phí thuê phát sinh.
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-bold">Ghi chú phê duyệt (tùy chọn):</label>
+                                                                    <input type="text" name="ghiChu" class="form-control" placeholder="VD: Đã đối chiếu thiết bị khả dụng, đồng ý gia hạn..." />
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
+                                                                <button type="submit" class="btn btn-success fw-bold">Xác Nhận Duyệt</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Modal Từ chối -->
+                                            <div class="modal fade" id="modalReject_@item.MaYeuCau" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content text-start">
+                                                        <form asp-action="DuyetGiaHan" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@item.MaHopDong" />
+                                                            <input type="hidden" name="chapNhan" value="false" />
+                                                            <input type="hidden" name="returnUrl" value="/Admin/HopDong/YeuCauGiaHan@(currentStatus.HasValue ? $"?status={currentStatus.Value}" : "")" />
+                                                            <div class="modal-header bg-danger text-white">
+                                                                <h5 class="modal-title fw-bold"><i class="fas fa-times-circle me-2"></i>Từ Chối Gia Hạn Hợp Đồng #@item.MaHopDong</h5>
+                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p>Bạn có chắc chắn muốn <strong>từ chối</strong> yêu cầu gia hạn này của khách hàng?</p>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-bold">Lý do từ chối:</label>
+                                                                    <textarea name="ghiChu" class="form-control" rows="3" placeholder="VD: Thiết bị đã có lịch khách khác đặt trước, không thể gia hạn thêm..."></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Đóng</button>
+                                                                <button type="submit" class="btn btn-danger fw-bold">Xác Nhận Từ Chối</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

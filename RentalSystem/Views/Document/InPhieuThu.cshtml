@@ -1,0 +1,393 @@
+@model RentalSystem.Models.PhieuThu
+@{
+    Layout = null;
+    string hinhThucText = Model.HinhThucThanhToan switch
+    {
+        0 => "Tiền mặt",
+        1 => "Chuyển khoản ngân hàng",
+        2 => "Cổng thanh toán trực tuyến VNPay",
+        _ => "Khác"
+    };
+
+    string loaiPhieuText = Model.LoaiPhieu switch
+    {
+        1 => "Thu tiền đặt cọc thiết bị",
+        0 => "Thu tiền thuê thiết bị",
+        2 => "Thu phí bảo trì / bồi thường hư hỏng",
+        _ => "Thu tiền dịch vụ"
+    };
+}
+@functions {
+    public static string NumberToWords(decimal inputNumber)
+    {
+        long number = (long)Math.Round(inputNumber);
+        if (number == 0) return "Không đồng";
+        if (number < 0) return "Âm " + NumberToWords(Math.Abs(number));
+
+        string[] units = { "", "nghìn", "triệu", "tỷ", "nghìn tỷ", "triệu tỷ" };
+        string words = "";
+        int unitIndex = 0;
+
+        while (number > 0)
+        {
+            long group = number % 1000;
+            if (group > 0)
+            {
+                string groupWords = ThreeDigitsToWords((int)group, number >= 1000);
+                string unit = units[unitIndex];
+                words = $"{groupWords} {unit} {words}".Trim();
+            }
+            number /= 1000;
+            unitIndex++;
+        }
+
+        words = words.Trim() + " đồng chẵn";
+        return char.ToUpper(words[0]) + words.Substring(1);
+    }
+
+    private static string ThreeDigitsToWords(int number, bool hasHigherGroups)
+    {
+        string[] digits = { "không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín" };
+        int h = number / 100;
+        int t = (number % 100) / 10;
+        int u = number % 10;
+
+        string res = "";
+        if (h > 0 || hasHigherGroups)
+        {
+            res += $"{digits[h]} trăm";
+        }
+
+        if (t > 1)
+        {
+            res += $" {digits[t]} mươi";
+            if (u == 1) res += " mốt";
+            else if (u == 5) res += " lăm";
+            else if (u > 0) res += $" {digits[u]}";
+        }
+        else if (t == 1)
+        {
+            res += " mười";
+            if (u == 5) res += " lăm";
+            else if (u > 0) res += $" {digits[u]}";
+        }
+        else if (t == 0)
+        {
+            if (u > 0)
+            {
+                if (h > 0 || hasHigherGroups) res += " lẻ";
+                res += $" {digits[u]}";
+            }
+        }
+
+        return res.Trim();
+    }
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phiếu Thu #@Model.MaPhieuThu - HĐ #@Model.MaHopDong</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 13pt;
+            line-height: 1.5;
+            color: #111;
+            background: #f4f6f9;
+            padding: 30px 15px;
+            margin: 0;
+        }
+        .receipt-container {
+            background: #fff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 35px 45px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #222;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .company-info {
+            flex: 1;
+        }
+        .company-name {
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #0b3d91;
+            margin-bottom: 4px;
+        }
+        .company-sub {
+            font-size: 10.5pt;
+            color: #333;
+            line-height: 1.35;
+        }
+        .receipt-code-box {
+            text-align: right;
+            min-width: 190px;
+        }
+        .receipt-code-box .code {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #c00;
+        }
+        .receipt-title {
+            text-align: center;
+            font-size: 19pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #111;
+            margin-top: 15px;
+            margin-bottom: 3px;
+        }
+        .receipt-subtitle {
+            text-align: center;
+            font-size: 11pt;
+            font-style: italic;
+            color: #444;
+            margin-bottom: 25px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .info-table td {
+            padding: 6px 4px;
+            vertical-align: top;
+        }
+        .info-label {
+            width: 190px;
+            color: #333;
+        }
+        .info-dots {
+            font-weight: 500;
+        }
+        .amount-highlight {
+            font-size: 15pt;
+            font-weight: bold;
+            color: #0b3d91;
+        }
+        .amount-words {
+            font-style: italic;
+            font-weight: bold;
+            color: #222;
+        }
+        .signatures {
+            margin-top: 35px;
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+        }
+        .sign-col {
+            width: 45%;
+        }
+        .sign-title {
+            font-weight: bold;
+            font-size: 12pt;
+            text-transform: uppercase;
+        }
+        .sign-note {
+            font-size: 10pt;
+            font-style: italic;
+            color: #666;
+            margin-bottom: 75px;
+        }
+        .sign-name {
+            font-weight: bold;
+            font-size: 12pt;
+            border-top: 1px dotted #888;
+            display: inline-block;
+            min-width: 180px;
+            padding-top: 4px;
+        }
+        .receipt-footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px dashed #aaa;
+            font-size: 9.5pt;
+            color: #666;
+            text-align: center;
+            font-style: italic;
+        }
+        .actions-bar {
+            max-width: 800px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-print {
+            background-color: #0b3d91;
+            color: #fff;
+            border: none;
+            padding: 10px 22px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .btn-print:hover {
+            background-color: #082b66;
+        }
+        .btn-back {
+            background-color: #6c757d;
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        .void-watermark {
+            color: #dc3545;
+            font-size: 14pt;
+            font-weight: bold;
+            border: 2px dashed #dc3545;
+            padding: 8px 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            background: #fff5f5;
+        }
+        @@media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            .receipt-container {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+            @@page {
+                size: A5 landscape;
+                margin: 12mm 15mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="actions-bar no-print">
+        <button onclick="window.history.back()" class="btn-back">⬅ Quay lại</button>
+        <button onclick="window.print()" class="btn-print">🖨️ In Phiếu Thu (Ctrl + P)</button>
+    </div>
+
+    <div class="receipt-container">
+        @if (Model.DaHuy)
+        {
+            <div class="void-watermark">
+                ⚠️ PHIẾU THU ĐÃ BỊ HỦY BỎ (@Model.NgayHuy?.ToString("dd/MM/yyyy HH:mm")) - Lý do: @Model.LyDoHuy
+            </div>
+        }
+
+        <div class="header-row">
+            <div class="company-info">
+                <div class="company-name">CÔNG TY TNHH ABC RENTAL</div>
+                <div class="company-sub">
+                    Hệ Thống Cho Thuê Thiết Bị Công Nghệ Cao Cấp<br />
+                    Địa chỉ: 123 Đường Công Nghệ, Q. Ninh Kiều, TP. Cần Thơ<br />
+                    Hotline: 1900 6868 | Email: hotro@abcrental.vn | MST: 0312345678
+                </div>
+            </div>
+            <div class="receipt-code-box">
+                <div>Mẫu số: <strong>01-TT</strong></div>
+                <div class="code">Số: PT-@Model.MaPhieuThu.ToString("D6")</div>
+                <div style="font-size: 10pt; color: #555;">HĐ: #@Model.MaHopDong</div>
+            </div>
+        </div>
+
+        <div class="receipt-title">PHIẾU THU TIỀN</div>
+        <div class="receipt-subtitle">
+            Ngày @Model.NgayGiaoDich.Day tháng @Model.NgayGiaoDich.Month năm @Model.NgayGiaoDich.Year (Thời gian: @Model.NgayGiaoDich.ToString("HH:mm"))
+        </div>
+
+        <table class="info-table">
+            <tr>
+                <td class="info-label">Họ và tên người nộp:</td>
+                <td class="info-dots"><strong>@(Model.HopDong?.KhachHang?.HoTen ?? "Khách hàng")</strong></td>
+            </tr>
+            <tr>
+                <td class="info-label">Số điện thoại / Email:</td>
+                <td class="info-dots">
+                    @(Model.HopDong?.KhachHang?.SoDienThoai ?? "—")
+                    @if (!string.IsNullOrEmpty(Model.HopDong?.KhachHang?.Email))
+                    {
+                        <span> | @Model.HopDong.KhachHang.Email</span>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td class="info-label">CCCD / CMND số:</td>
+                <td class="info-dots">@(Model.HopDong?.KhachHang?.CCCD ?? "—")</td>
+            </tr>
+            <tr>
+                <td class="info-label">Địa chỉ người nộp:</td>
+                <td class="info-dots">@(Model.HopDong?.KhachHang?.DiaChi ?? Model.HopDong?.GhiChu ?? "—")</td>
+            </tr>
+            <tr>
+                <td class="info-label">Nội dung thu:</td>
+                <td class="info-dots">
+                    @loaiPhieuText - Căn cứ Hợp đồng số <strong>#@Model.MaHopDong</strong>
+                    @if (Model.KyHanThanhToan != null)
+                    {
+                        <span> (Kỳ @Model.KyHanThanhToan.SoKyHan, hạn: @Model.KyHanThanhToan.NgayDenHan.ToString("dd/MM/yyyy"))</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.GhiChu))
+                    {
+                        <div style="font-style: italic; color: #444; font-size: 11pt;">(@Model.GhiChu)</div>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td class="info-label">Số tiền thu:</td>
+                <td class="info-dots amount-highlight">@Model.SoTien.ToString("N0") VNĐ</td>
+            </tr>
+            <tr>
+                <td class="info-label">Viết bằng chữ:</td>
+                <td class="info-dots amount-words">@NumberToWords(Model.SoTien)</td>
+            </tr>
+            <tr>
+                <td class="info-label">Hình thức thanh toán:</td>
+                <td class="info-dots">
+                    <strong>@hinhThucText</strong>
+                    @if (!string.IsNullOrEmpty(Model.MaGiaoDichNganHang))
+                    {
+                        <span> (Mã GD: <code>@Model.MaGiaoDichNganHang</code> - Ngân hàng: @(Model.NganHangNhan ?? "VNPAY/MBBank"))</span>
+                    }
+                </td>
+            </tr>
+        </table>
+
+        <div class="signatures">
+            <div class="sign-col">
+                <div class="sign-title">Người nộp tiền</div>
+                <div class="sign-note">(Ký, ghi rõ họ tên)</div>
+                <div class="sign-name">@(Model.HopDong?.KhachHang?.HoTen ?? "Khách hàng")</div>
+            </div>
+            <div class="sign-col">
+                <div class="sign-title">Người lập phiếu / Thu ngân</div>
+                <div class="sign-note">(Ký, đóng dấu hoặc ký điện tử)</div>
+                <div class="sign-name">@(Model.NhanVienThu?.HoTen ?? "Hệ thống / Đại diện ABC Rental")</div>
+            </div>
+        </div>
+
+        <div class="receipt-footer">
+            * Chứng từ điện tử được khởi tạo tự động từ Hệ thống ABC Rental. Quý khách vui lòng kiểm tra và lưu giữ phiếu thu để đối soát khi cần thiết.
+        </div>
+    </div>
+</body>
+</html>

@@ -4,11 +4,11 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow border-0">
-                <div class="card-header text-danger fw-bold fw-bold">
+                <div class="card-header bg-danger text-white fw-bold">
                     <i class="fas fa-exclamation-triangle"></i> Báo Sự Cố / Yêu Cầu Bảo Trì
                 </div>
                 <div class="card-body">
-                    <form asp-action="TaoPhieu" method="post">
+                    <form asp-action="TaoPhieu" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="maHopDong" value="@ViewBag.HopDong.MaHopDong" />
                         
                         <div class="mb-3">
@@ -17,7 +17,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Chọn thiết bị bị lỗi</label>
+                            <label class="form-label fw-bold">Chọn thiết bị bị lỗi <span class="text-danger">*</span></label>
                             <select name="maThietBi" class="form-select" required>
                                 <option value="">-- Chọn thiết bị --</option>
                                 @foreach (var ct in ViewBag.ThietBis)
@@ -28,12 +28,33 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Mô tả tình trạng lỗi chi tiết</label>
-                            <textarea name="moTaLoi" class="form-control" rows="5" required placeholder="Máy bị vô nước, không lên nguồn, màn hình bị sọc..."></textarea>
+                            <label class="form-label fw-bold">Mức độ khẩn cấp (Cam kết SLA)</label>
+                            <select name="mucDoKhanCap" class="form-select">
+                                <option value="1" selected>Tiêu chuẩn (Thời hạn xử lý 48h)</option>
+                                <option value="2">Khẩn cấp (Thời hạn xử lý 12h)</option>
+                                <option value="3">Ưu tiên cao (Thời hạn xử lý 24h)</option>
+                            </select>
                         </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="/Cart/MyContracts" class="btn btn-light">Hủy bỏ</a>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mô tả tình trạng lỗi chi tiết <span class="text-danger">*</span></label>
+                            <textarea name="moTaLoi" class="form-control" rows="4" required placeholder="Mô tả cụ thể hiện tượng: Máy bị sập nguồn, rơi vỡ nứt màn hình, không nhận sạc..."></textarea>
+                        </div>
+
+                        <!-- Tải lên hình ảnh / video minh chứng sự cố -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-camera text-primary"></i> Hình ảnh / Video bằng chứng sự cố
+                            </label>
+                            <input type="file" name="hinhAnhSuCo" multiple accept="image/*,video/*" class="form-control" id="fileUploadSuCo" onchange="previewMedia(this)" />
+                            <div class="form-text">
+                                Hỗ trợ tải lên ảnh JPG, PNG, WEBP (tối đa 10MB) và video MP4, MOV, WEBM (tối đa 50MB). Có thể chọn nhiều tệp.
+                            </div>
+                            <div id="mediaPreviewContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="/Cart/MyContracts" class="btn btn-light border">Hủy bỏ</a>
                             <button type="submit" class="btn btn-danger fw-bold"><i class="fas fa-paper-plane"></i> Gửi Yêu Cầu</button>
                         </div>
                     </form>
@@ -42,3 +63,39 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    function previewMedia(input) {
+        var container = document.getElementById('mediaPreviewContainer');
+        container.innerHTML = '';
+        if (input.files) {
+            Array.from(input.files).forEach(file => {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var div = document.createElement('div');
+                    div.className = 'border rounded p-1 position-relative';
+                    div.style.maxWidth = '120px';
+                    if (file.type.startsWith('image/')) {
+                        var img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'img-thumbnail';
+                        img.style.maxHeight = '90px';
+                        img.style.objectFit = 'cover';
+                        div.appendChild(img);
+                    } else if (file.type.startsWith('video/')) {
+                        var vid = document.createElement('video');
+                        vid.src = e.target.result;
+                        vid.style.maxHeight = '90px';
+                        vid.style.maxWidth = '110px';
+                        vid.controls = false;
+                        div.appendChild(vid);
+                    }
+                    container.appendChild(div);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+</script>
+}

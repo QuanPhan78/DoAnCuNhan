@@ -1,0 +1,410 @@
+@model IEnumerable<RentalSystem.Models.PhanCongCongViec>
+@{
+    ViewData["Title"] = "Quản lý Phân Công Công Việc";
+    var nhanViens = ViewBag.NhanViens as List<RentalSystem.Models.NguoiDung> ?? new List<RentalSystem.Models.NguoiDung>();
+    int? currentTrangThai = ViewBag.CurrentTrangThai as int?;
+    int? currentMaNhanVien = ViewBag.CurrentMaNhanVien as int?;
+    string currentSearch = ViewBag.Search as string ?? "";
+
+    int totalTasks = ViewBag.TotalTasks ?? (Model?.Count() ?? 0);
+    int newTasks = ViewBag.NewTasks ?? (Model?.Count(t => t.TrangThai == 0) ?? 0);
+    int inProgressTasks = ViewBag.InProgressTasks ?? (Model?.Count(t => t.TrangThai == 1) ?? 0);
+    int completedTasks = ViewBag.CompletedTasks ?? (Model?.Count(t => t.TrangThai == 2) ?? 0);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold text-dark mb-1"><i class="fas fa-tasks me-2 text-primary"></i> Quản lý Phân Công Công Việc</h2>
+        <span class="text-muted small">Điều phối và theo dõi tiến độ thực hiện nhiệm vụ của nhân viên nội bộ.</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="MyTasks" class="btn btn-outline-warning fw-bold shadow-sm px-3 py-2">
+            <i class="fas fa-clipboard-check me-1"></i> Việc của tôi
+        </a>
+        <a asp-action="Create" class="btn btn-brand fw-bold shadow-sm px-3 py-2">
+            <i class="fas fa-plus me-1"></i> Giao việc mới
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Thống kê tổng quan -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary fs-4">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Tổng công việc</div>
+                    <div class="fs-4 fw-bold text-dark">@totalTasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3 text-info fs-4">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Chưa thực hiện (Mới)</div>
+                    <div class="fs-4 fw-bold text-info">@newTasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 text-warning fs-4">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Đang tiến hành</div>
+                    <div class="fs-4 fw-bold text-warning">@inProgressTasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-body p-3 d-flex align-items-center">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 text-success fs-4">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Đã hoàn thành</div>
+                    <div class="fs-4 fw-bold text-success">@completedTasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-start-0" placeholder="Tìm theo tiêu đề, nội dung, nhân viên..." value="@currentSearch" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="maNhanVien" class="form-select">
+                    <option value="">-- Tất cả nhân viên --</option>
+                    @foreach (var nv in nhanViens)
+                    {
+                        if (currentMaNhanVien.HasValue && currentMaNhanVien.Value == nv.MaNguoiDung)
+                        {
+                            <option value="@nv.MaNguoiDung" selected="selected">@nv.HoTen (@nv.VaiTro?.TenVaiTro)</option>
+                        }
+                        else
+                        {
+                            <option value="@nv.MaNguoiDung">@nv.HoTen (@nv.VaiTro?.TenVaiTro)</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="trangThai" class="form-select">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    @if (currentTrangThai == 0) { <option value="0" selected>0 - Mới (Chờ nhận)</option> } else { <option value="0">0 - Mới (Chờ nhận)</option> }
+                    @if (currentTrangThai == 1) { <option value="1" selected>1 - Đang thực hiện</option> } else { <option value="1">1 - Đang thực hiện</option> }
+                    @if (currentTrangThai == 2) { <option value="2" selected>2 - Đã hoàn thành</option> } else { <option value="2">2 - Đã hoàn thành</option> }
+                    @if (currentTrangThai == 3) { <option value="3" selected>3 - Đã hủy</option> } else { <option value="3">3 - Đã hủy</option> }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="fas fa-filter me-1"></i> Lọc</button>
+                <a asp-action="Index" class="btn btn-light border" title="Đặt lại"><i class="fas fa-undo"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng danh sách công việc -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 py-3" style="width: 70px;">Mã</th>
+                        <th class="py-3">Công việc & Nội dung</th>
+                        <th class="py-3">Nhân viên phụ trách</th>
+                        <th class="py-3">Liên kết</th>
+                        <th class="py-3">Hạn xử lý</th>
+                        <th class="py-3 text-center">Trạng thái</th>
+                        <th class="py-3 text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold text-muted">#@item.MaPhanCong</td>
+                                <td>
+                                    <div class="fw-bold text-dark fs-6">@item.TieuDe</div>
+                                    <div class="text-muted small text-truncate" style="max-width: 320px;" title="@item.NoiDung">
+                                        @item.NoiDung
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(item.GhiChuTienDo))
+                                    {
+                                        <div class="mt-1 small text-primary fst-italic">
+                                            <i class="fas fa-comment-dots me-1"></i>Tiến độ: @item.GhiChuTienDo
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.NhanVien != null)
+                                    {
+                                        <div class="fw-bold text-dark">
+                                            <i class="fas fa-user-tie me-1 text-secondary"></i>@item.NhanVien.HoTen
+                                        </div>
+                                        <div class="text-muted small">
+                                            <span class="badge bg-light text-dark border">@item.NhanVien.VaiTro?.TenVaiTro</span>
+                                            <span class="ms-1">@item.NhanVien.SoDienThoai</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted italic">Chưa chỉ định</span>
+                                    }
+                                    @if (item.NguoiGiao != null)
+                                    {
+                                        <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                                            Giao bởi: @item.NguoiGiao.HoTen
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.MaHopDong.HasValue)
+                                    {
+                                        <div>
+                                            <a href="/Admin/HopDong/Details/@item.MaHopDong" class="badge bg-light text-primary border text-decoration-none">
+                                                <i class="fas fa-file-contract me-1"></i>HĐ #@item.MaHopDong
+                                            </a>
+                                        </div>
+                                    }
+                                    @if (item.MaPhieuBaoTri.HasValue)
+                                    {
+                                        <div class="mt-1">
+                                            <a href="/Admin/BaoTri" class="badge bg-light text-danger border text-decoration-none">
+                                                <i class="fas fa-tools me-1"></i>PBT #@item.MaPhieuBaoTri
+                                            </a>
+                                        </div>
+                                    }
+                                    @if (!item.MaHopDong.HasValue && !item.MaPhieuBaoTri.HasValue)
+                                    {
+                                        <span class="text-muted small">Việc chung</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.HanHoanThanh.HasValue)
+                                    {
+                                        var isOverdue = item.TrangThai < 2 && item.HanHoanThanh.Value < DateTime.Now;
+                                        <div class="@(isOverdue ? "text-danger fw-bold" : "text-dark")">
+                                            <i class="far fa-calendar-alt me-1"></i>@item.HanHoanThanh.Value.ToString("dd/MM/yyyy")
+                                        </div>
+                                        @if (isOverdue)
+                                        {
+                                            <span class="badge bg-danger">Quá hạn</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Không giới hạn</span>
+                                    }
+                                    <div class="text-muted small" style="font-size: 0.75rem;">
+                                        Tạo: @item.NgayGiao.ToString("dd/MM/yyyy")
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @switch (item.TrangThai)
+                                    {
+                                        case 0:
+                                            <span class="badge bg-primary px-3 py-2"><i class="fas fa-clock me-1"></i> Mới</span>
+                                            break;
+                                        case 1:
+                                            <span class="badge bg-warning text-dark px-3 py-2"><i class="fas fa-spinner fa-spin me-1"></i> Đang thực hiện</span>
+                                            break;
+                                        case 2:
+                                            <span class="badge bg-success px-3 py-2"><i class="fas fa-check-circle me-1"></i> Hoàn thành</span>
+                                            break;
+                                        case 3:
+                                            <span class="badge bg-secondary px-3 py-2"><i class="fas fa-ban me-1"></i> Đã hủy</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-dark px-3 py-2">Khác</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-light border text-info" title="Xem chi tiết" onclick="viewTaskDetail(@item.MaPhanCong)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <a asp-action="Edit" asp-route-id="@item.MaPhanCong" class="btn btn-sm btn-light border text-primary" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-light border text-danger" title="Xóa" onclick="confirmDeleteTask(@item.MaPhanCong, '@item.TieuDe')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fs-1 mb-3 text-secondary d-block"></i>
+                                Chưa có phân công công việc nào phù hợp với bộ lọc.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chi tiết công việc -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="detailModalTitle"><i class="fas fa-tasks me-2"></i>Chi tiết công việc</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="detailModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="mt-2 text-muted">Đang tải dữ liệu...</div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form xóa ẩn -->
+<form id="deleteTaskForm" method="post" asp-action="Delete" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="deleteTaskId" />
+</form>
+
+@section Scripts {
+    <script>
+        function viewTaskDetail(id) {
+            var modal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+            document.getElementById('detailModalBody').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="mt-2 text-muted">Đang tải dữ liệu...</div>
+                </div>`;
+            modal.show();
+
+            fetch('/Admin/PhanCong/Details/' + id)
+                .then(response => {
+                    if (!response.ok) throw new Error('Không thể tải chi tiết');
+                    return response.json();
+                })
+                .then(data => {
+                    let badgeClass = 'bg-primary';
+                    if (data.status === 1) badgeClass = 'bg-warning text-dark';
+                    else if (data.status === 2) badgeClass = 'bg-success';
+                    else if (data.status === 3) badgeClass = 'bg-secondary';
+
+                    let html = `
+                        <div class="mb-3">
+                            <span class="badge ${badgeClass} fs-6 px-3 py-2">${data.statusText}</span>
+                            <span class="text-muted ms-2">Mã nhiệm vụ: #${data.id}</span>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-3">${data.title}</h4>
+                        <div class="card bg-light border-0 mb-3 p-3">
+                            <div class="fw-bold text-muted mb-1">NỘI DUNG NHIỆM VỤ:</div>
+                            <div style="white-space: pre-wrap;">${data.content}</div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="p-2 border rounded">
+                                    <div class="small text-muted">Nhân viên phụ trách:</div>
+                                    <div class="fw-bold text-dark"><i class="fas fa-user-tie me-1"></i>${data.staff}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 border rounded">
+                                    <div class="small text-muted">Người giao việc:</div>
+                                    <div class="fw-bold text-dark"><i class="fas fa-user-shield me-1"></i>${data.creator}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded">
+                                    <div class="small text-muted">Ngày giao:</div>
+                                    <div class="fw-bold text-dark">${data.assignedDate}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded">
+                                    <div class="small text-muted">Hạn hoàn thành:</div>
+                                    <div class="fw-bold text-dark">${data.dueDate}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded">
+                                    <div class="small text-muted">Ngày hoàn thành:</div>
+                                    <div class="fw-bold text-dark">${data.completedDate}</div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    if (data.progressNote) {
+                        html += `
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-1"></i><strong>Ghi chú tiến độ:</strong> ${data.progressNote}
+                            </div>`;
+                    }
+
+                    document.getElementById('detailModalBody').innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('detailModalBody').innerHTML = `
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Đã xảy ra lỗi khi tải dữ liệu chi tiết công việc.
+                        </div>`;
+                });
+        }
+
+        function confirmDeleteTask(id, title) {
+            if (confirm('Bạn có chắc chắn muốn xóa phân công công việc "' + title + '" không?')) {
+                document.getElementById('deleteTaskId').value = id;
+                document.getElementById('deleteTaskForm').submit();
+            }
+        }
+    </script>
+}

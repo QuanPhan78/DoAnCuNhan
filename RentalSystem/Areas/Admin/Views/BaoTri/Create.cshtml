@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "Lập Phiếu Bảo Dưỡng Kho Nội Bộ";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white fw-bold py-3">
+                    <i class="fas fa-warehouse me-2"></i> Lập Phiếu Bảo Dưỡng / Sửa Chữa Thiết Bị Trong Kho
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-4">
+                        Tạo phiếu bảo dưỡng định kỳ, kiểm tra linh kiện hoặc sửa chữa đối với các thiết bị đang lưu kho (không gắn với hợp đồng thuê của khách hàng).
+                    </p>
+
+                    @if (TempData["Error"] != null) {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Chọn thiết bị trong kho <span class="text-danger">*</span></label>
+                            <select name="maThietBi" class="form-select" required>
+                                <option value="">-- Chọn thiết bị tồn kho cần bảo dưỡng --</option>
+                                @if (ViewBag.ThietBis != null) {
+                                    foreach (var tb in ViewBag.ThietBis) {
+                                        <option value="@tb.MaThietBi">
+                                            @tb.SanPham?.TenSanPham - Serial: @tb.SoSerial (@(tb.TrangThai == 0 ? "Sẵn sàng" : "Đang bảo dưỡng"))
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phân công Kỹ thuật viên</label>
+                                <select name="maKtv" class="form-select">
+                                    <option value="">-- Chưa phân công --</option>
+                                    @if (ViewBag.KyThuatViens != null) {
+                                        foreach (var ktv in ViewBag.KyThuatViens) {
+                                            <option value="@ktv.MaNguoiDung">@ktv.HoTen - @ktv.SoDienThoai</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Mức độ khẩn cấp (SLA)</label>
+                                <select name="mucDoKhanCap" class="form-select">
+                                    <option value="1" selected>Tiêu chuẩn (48 giờ)</option>
+                                    <option value="2">Khẩn cấp (12 giờ)</option>
+                                    <option value="3">Ưu tiên cao (24 giờ)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Hạn chót hoàn thành cam kết (SLA)</label>
+                                <input type="datetime-local" name="hanHoanThanh" class="form-control" />
+                                <div class="form-text">Để trống hệ thống sẽ tự động tính theo mức độ khẩn cấp.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Chi phí dự kiến của tiệm (VNĐ)</label>
+                                <input type="number" name="chiPhiDuKien" class="form-control" min="0" step="1000" placeholder="0" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mô tả tình trạng / Hạng mục bảo dưỡng <span class="text-danger">*</span></label>
+                            <textarea name="moTaLoi" class="form-control" rows="4" required placeholder="Ví dụ: Vệ sinh tra keo tản nhiệt định kỳ, thay pin chai, nâng cấp thêm RAM 16GB..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Ghi chú bổ sung</label>
+                            <textarea name="ghiChu" class="form-control" rows="2" placeholder="Ghi chú nội bộ cho kỹ thuật viên..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="fas fa-plus-circle me-1"></i> Tạo Phiếu Bảo Dưỡng
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
