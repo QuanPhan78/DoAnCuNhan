@@ -1,0 +1,106 @@
+@model RentalSystem.Models.PhanCongCongViec
+@{
+    ViewData["Title"] = "Giao Việc Cho Nhân Viên";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Index" class="btn btn-light shadow-sm me-3 border"><i class="fas fa-arrow-left"></i></a>
+    <div>
+        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-user-plus me-2 text-primary"></i> Giao Việc Cho Nhân Viên</h3>
+        <span class="text-muted small">Khởi tạo và phân bổ nhiệm vụ xử lý cho nhân viên kinh doanh hoặc kỹ thuật viên.</span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-4"></div>
+
+                    <!-- Nhân viên thực hiện -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nhân viên phụ trách <span class="text-danger">*</span></label>
+                        <select asp-for="MaNhanVien" class="form-select select2" asp-items="ViewBag.NhanVienList" required>
+                            <option value="">-- Chọn nhân viên thực hiện --</option>
+                        </select>
+                        <span asp-validation-for="MaNhanVien" class="text-danger small"></span>
+                        <div class="form-text">Chỉ hiển thị các tài khoản nhân viên nội bộ (Kinh doanh, Kỹ thuật, Quản trị).</div>
+                    </div>
+
+                    <!-- Tiêu đề công việc -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tiêu đề công việc <span class="text-danger">*</span></label>
+                        <input asp-for="TieuDe" class="form-control" required placeholder="VD: Giao máy HĐ #102, Kiểm tra sự cố laptop Dell serial XYZ..." />
+                        <span asp-validation-for="TieuDe" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Nội dung công việc -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nội dung chi tiết & Hướng dẫn xử lý <span class="text-danger">*</span></label>
+                        <textarea asp-for="NoiDung" class="form-control" rows="5" required placeholder="Ghi chú các yêu cầu cụ thể, địa chỉ giao máy, các lưu ý về linh kiện hoặc hướng xử lý..."></textarea>
+                        <span asp-validation-for="NoiDung" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <!-- Liên kết Hợp đồng -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold"><i class="fas fa-file-contract text-info me-1"></i> Liên kết Đơn thuê / Hợp đồng (Tùy chọn)</label>
+                            <select asp-for="MaHopDong" class="form-select" asp-items="ViewBag.HopDongList">
+                                <option value="">-- Không liên kết --</option>
+                            </select>
+                            <span asp-validation-for="MaHopDong" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Liên kết Phiếu bảo trì -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold"><i class="fas fa-tools text-danger me-1"></i> Liên kết Phiếu bảo trì (Tùy chọn)</label>
+                            <select asp-for="MaPhieuBaoTri" class="form-select" asp-items="ViewBag.PhieuBaoTriList">
+                                <option value="">-- Không liên kết --</option>
+                            </select>
+                            <span asp-validation-for="MaPhieuBaoTri" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hạn hoàn thành -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="far fa-calendar-alt text-warning me-1"></i> Thời hạn hoàn thành (Deadline)</label>
+                        <input asp-for="HanHoanThanh" type="datetime-local" class="form-control" value="@(Model.HanHoanThanh.HasValue ? Model.HanHoanThanh.Value.ToString("yyyy-MM-ddTHH:mm") : "")" />
+                        <span asp-validation-for="HanHoanThanh" class="text-danger small"></span>
+                        <div class="form-text">Nhân viên sẽ nhận thông báo hạn xử lý để sắp xếp độ ưu tiên công việc.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-brand fw-bold px-4 py-2 shadow-sm">
+                            <i class="fas fa-paper-plane me-1"></i> Xác nhận giao việc
+                        </button>
+                        <a asp-action="Index" class="btn btn-light border px-4 py-2">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hướng dẫn / Thông tin bên cạnh -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 bg-light mb-3">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-dark"><i class="fas fa-info-circle text-primary me-2"></i>Quy trình phân công</h5>
+                <p class="small text-muted mb-2">1. <strong>Giao việc</strong>: Quản lý chọn nhân viên phụ trách và nhập đầy đủ yêu cầu.</p>
+                <p class="small text-muted mb-2">2. <strong>Tiếp nhận</strong>: Nhân viên đăng nhập vào hệ thống, xem mục <em>"Việc của tôi"</em> và chuyển trạng thái sang <strong>Đang thực hiện</strong>.</p>
+                <p class="small text-muted mb-0">3. <strong>Báo cáo</strong>: Khi xử lý xong, nhân viên cập nhật ghi chú tiến độ và xác nhận <strong>Hoàn thành</strong>.</p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-link text-secondary me-2"></i>Liên kết nghiệp vụ</h6>
+                <p class="small text-muted mb-0">
+                    Việc gắn kèm <strong>Mã Hợp đồng</strong> hoặc <strong>Phiếu bảo trì</strong> giúp nhân viên có thể xem ngay chi tiết khách hàng và thiết bị cần xử lý chỉ với 1 cú click.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

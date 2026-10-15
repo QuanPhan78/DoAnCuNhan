@@ -1,0 +1,54 @@
+@model RentalSystem.Models.NguoiDung
+@{
+    ViewData["Title"] = "Xóa Người Dùng";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-trash me-2"></i> Xác Nhận Xóa Người Dùng</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-danger fw-bold">Bạn có chắc chắn muốn xóa tài khoản người dùng này không?</p>
+                    <table class="table table-bordered mb-4">
+                        <tr>
+                            <th class="w-25 bg-light">Mã người dùng</th>
+                            <td>#@Model.MaNguoiDung</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Họ và tên</th>
+                            <td>@Model.HoTen</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Email</th>
+                            <td>@Model.Email</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Số điện thoại</th>
+                            <td>@Model.SoDienThoai</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Vai trò</th>
+                            <td>@Model.VaiTro?.TenVaiTro</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Trạng thái</th>
+                            <td>@(Model.TrangThai ? "Hoạt động" : "Bị khóa")</td>
+                        </tr>
+                    </table>
+
+                    <form asp-action="Delete" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.MaNguoiDung" />
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-light">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-danger fw-bold"><i class="fas fa-trash me-1"></i> Xác Nhận Xóa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

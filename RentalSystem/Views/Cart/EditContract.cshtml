@@ -22,16 +22,17 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Ngày nhận máy <span class="text-danger">*</span></label>
-                    <input type="date" name="NgayBatDau" class="form-control"
+                    <input type="date" name="NgayBatDau" id="NgayBatDau" class="form-control"
                            value="@Model.NgayBatDau.ToString("yyyy-MM-dd")"
-                           min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                           min="@DateTime.Now.ToString("yyyy-MM-dd")" required onchange="document.getElementById('NgayKetThuc').min = this.value;" />
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Ngày trả máy <span class="text-danger">*</span></label>
-                    <input type="date" name="NgayKetThuc" class="form-control"
+                    <input type="date" name="NgayKetThuc" id="NgayKetThuc" class="form-control"
                            value="@Model.NgayKetThuc.ToString("yyyy-MM-dd")"
-                           min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" required />
+                           min="@Model.NgayBatDau.ToString("yyyy-MM-dd")" required />
+                    <small class="text-muted">Hỗ trợ thuê trong ngày (trả cùng ngày nhận máy, tính 1 ngày thuê).</small>
                 </div>
 
                 <div class="mb-3">
@@ -41,7 +42,7 @@
 
                 <div class="alert alert-light border small">
                     <strong>Lưu ý:</strong> Chỉ có thể chỉnh sửa ngày nhận, ngày trả và địa chỉ giao hàng.
-                    Tổng tiền sẽ được tính lại dựa trên số ngày mới.
+                    Tổng tiền sẽ được tính lại dựa trên số ngày mới. Cho phép thuê cùng ngày (tính 1 ngày).
                 </div>
 
                 <div class="d-flex gap-2">

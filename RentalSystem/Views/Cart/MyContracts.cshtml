@@ -27,6 +27,8 @@
                             <th>Ngày Nhận</th>
                             <th>Ngày Trả</th>
                             <th>Tổng Tiền</th>
+                            <th>Tiền Cọc</th>
+                            <th>Số Kỳ</th>
                             <th>Trạng Thái</th>
                             <th>Chữ ký</th>
                             <th>Thao tác</th>
@@ -35,7 +37,7 @@
                     <tbody>
                         @if (!Model.Any())
                         {
-                            <tr><td colspan="7" class="text-center py-4">Bạn chưa có đơn thuê nào.</td></tr>
+                            <tr><td colspan="9" class="text-center py-4">Bạn chưa có đơn thuê nào.</td></tr>
                         }
                         @foreach (var item in Model)
                         {
@@ -46,16 +48,48 @@
                                 <td>@item.NgayBatDau.ToString("dd/MM/yyyy")</td>
                                 <td class="text-danger">@item.NgayKetThuc.ToString("dd/MM/yyyy")</td>
                                 <td class="fw-bold text-brand">@item.TongTien.ToString("N0") đ</td>
+                                <td class="fw-bold text-warning">@item.TienDaCoc.ToString("N0") đ</td>
+                                <td><span class="badge bg-dark">@item.SoKyHan kỳ</span></td>
                                 <td>
-                                    @if (item.TrangThai == 0) { <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Chờ duyệt</span> }
-                                    else if (item.TrangThai == 1) { <span class="badge bg-brand"><i class="fas fa-truck"></i> Đang cho thuê</span> }
-                                    else if (item.TrangThai == 2) { <span class="badge bg-success"><i class="fas fa-check"></i> Hoàn tất</span> }
-                                    else if (item.TrangThai == 3) { <span class="badge bg-danger"><i class="fas fa-times"></i> Đã hủy</span> }
+                                    @if (item.TrangThai == 0)
+                                    {
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                                        @if (item.YeuCauHuy)
+                                        {
+                                            <div class="mt-1"><span class="badge bg-danger"><i class="fas fa-ban"></i> Đang chờ hủy</span></div>
+                                        }
+                                    }
+                                    else if (item.TrangThai == 1)
+                                    {
+                                        <span class="badge bg-brand"><i class="fas fa-truck"></i> Đang cho thuê</span>
+                                        @if (item.YeuCauGiaHan)
+                                        {
+                                            <div class="mt-1"><span class="badge bg-warning text-dark"><i class="fas fa-calendar-plus"></i> Xin gia hạn</span></div>
+                                        }
+                                    }
+                                    else if (item.TrangThai == 2)
+                                    {
+                                        <span class="badge bg-success"><i class="fas fa-check"></i> Hoàn tất</span>
+                                        @if (item.TrangThaiHoanCoc == 1)
+                                        {
+                                            <div class="mt-1"><span class="badge bg-info text-dark"><i class="fas fa-hand-holding-usd"></i> Đã hoàn cọc</span></div>
+                                        }
+                                    }
+                                    else if (item.TrangThai == 3)
+                                    {
+                                        <span class="badge bg-danger"><i class="fas fa-times"></i> Đã hủy</span>
+                                    }
                                 </td>
                                 <td>
                                     @if (chuaKy)
                                     {
                                         <span class="badge bg-secondary">Chưa ký</span>
+                                        @if (item.HanChotKy.HasValue && item.TrangThai == 0)
+                                        {
+                                            <div class="small text-danger mt-1" title="Hạn chót ký để giữ chỗ">
+                                                <i class="fas fa-hourglass-half"></i> Hạn: @item.HanChotKy.Value.ToString("dd/MM HH:mm")
+                                            </div>
+                                        }
                                     }
                                     else
                                     {
@@ -85,8 +119,8 @@
                                             <i class="fas fa-exclamation-triangle"></i> Báo Lỗi
                                         </a>
                                     }
-                                    <a href="/Document/InHopDong/@item.MaHopDong" target="_blank" class="btn btn-sm btn-brand fw-bold shadow-sm mb-1 text-white">
-                                        <i class="fas fa-file-pdf"></i> Xem HĐ
+                                    <a asp-action="ContractDetail" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-outline-dark fw-bold mb-1">
+                                        <i class="fas fa-eye"></i> Chi tiết
                                     </a>
                                 </td>
                             </tr>

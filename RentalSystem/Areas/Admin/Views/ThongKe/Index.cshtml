@@ -10,32 +10,37 @@
     <div class="col-md-3 mb-3">
         <div class="card border-left-brand shadow h-100">
             <div class="card-body">
-                <h5 class="card-title">Tổng Doanh Thu</h5>
-                <h3 class="fw-bold">@(((decimal)ViewBag.TongDoanhThu).ToString("N0")) đ</h3>
+                <h5 class="card-title text-success fw-bold">Tổng Doanh Thu (Dòng tiền)</h5>
+                <h3 class="fw-bold text-success">@(((decimal)ViewBag.TongDoanhThu).ToString("N0")) đ</h3>
+                <small class="text-muted d-block">Thực thu: @(((decimal)ViewBag.TongThu).ToString("N0")) đ</small>
+                <small class="text-muted d-block">Chi hoàn: @(((decimal)ViewBag.TongChi).ToString("N0")) đ</small>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
         <div class="card border-left-brand shadow h-100">
             <div class="card-body">
-                <h5 class="card-title">Thiết bị đang cho thuê</h5>
-                <h3 class="fw-bold">@ViewBag.DangChoThue Máy</h3>
+                <h5 class="card-title">Tiền cọc giữ chỗ</h5>
+                <h3 class="fw-bold text-primary">@(((decimal)ViewBag.TongCoc).ToString("N0")) đ</h3>
+                <small class="text-muted">Các đơn chờ duyệt / đang thuê</small>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
         <div class="card border-left-brand shadow h-100">
             <div class="card-body">
-                <h5 class="card-title">Thiết bị sẵn sàng</h5>
-                <h3 class="fw-bold">@ViewBag.SanSang Máy</h3>
+                <h5 class="card-title">Thiết bị đang thuê / Sẵn sàng</h5>
+                <h3 class="fw-bold">@ViewBag.DangChoThue / @ViewBag.SanSang Máy</h3>
+                <small class="text-muted">Kho: @ViewBag.DangSuaChua đang sửa</small>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
         <div class="card border-left-brand shadow h-100">
             <div class="card-body">
-                <h5 class="card-title">Sự cố chưa xử lý</h5>
-                <h3 class="fw-bold">@ViewBag.SuCoChuaXuLy Phiếu</h3>
+                <h5 class="card-title">Sự cố kỹ thuật</h5>
+                <h3 class="fw-bold text-danger">@ViewBag.SuCoChuaXuLy / @ViewBag.TongSuCo Phiếu</h3>
+                <small class="text-muted">Phiếu bảo trì chưa xử lý</small>
             </div>
         </div>
     </div>

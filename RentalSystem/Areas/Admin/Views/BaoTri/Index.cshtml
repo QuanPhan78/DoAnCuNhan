@@ -2,54 +2,119 @@
 @{ ViewData["Title"] = "Quản lý Bảo Trì - Sự Cố"; }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="fw-bold"><i class="fas fa-tools text-brand"></i> Quản lý Bảo Trì - Sự Cố</h2>
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fas fa-tools text-brand"></i> Quản lý Bảo Trì - Sự Cố</h2>
+        <div class="text-muted small">Điều phối sửa chữa, xử lý sự cố thiết bị và bảo dưỡng định kỳ kho</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Create" class="btn btn-primary fw-bold">
+            <i class="fas fa-plus-circle me-1"></i> + Lập Phiếu Bảo Dưỡng Kho
+        </a>
+    </div>
 </div>
 
 @if (TempData["Success"] != null) {
-    <div class="alert alert-success">@TempData["Success"]</div>
+    <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null) {
+    <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
 }
 
+<!-- Bộ lọc danh sách -->
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a asp-action="Index" class="btn btn-sm @(ViewBag.CurrentTrangThai == null && ViewBag.CurrentFilter == null ? "btn-dark" : "btn-outline-dark")">Tất cả</a>
+    <a asp-action="Index" asp-route-trangThai="1" class="btn btn-sm @(ViewBag.CurrentTrangThai == 1 ? "btn-warning" : "btn-outline-warning text-dark")">Mới tiếp nhận</a>
+    <a asp-action="Index" asp-route-trangThai="2" class="btn btn-sm @(ViewBag.CurrentTrangThai == 2 ? "btn-info" : "btn-outline-info text-dark")">Đang xử lý</a>
+    <a asp-action="Index" asp-route-trangThai="3" class="btn btn-sm @(ViewBag.CurrentTrangThai == 3 ? "btn-primary" : "btn-outline-primary")">Đã sửa xong</a>
+    <a asp-action="Index" asp-route-trangThai="4" class="btn btn-sm @(ViewBag.CurrentTrangThai == 4 ? "btn-danger" : "btn-outline-danger")">Hỏng thanh lý</a>
+    <a asp-action="Index" asp-route-trangThai="5" class="btn btn-sm @(ViewBag.CurrentTrangThai == 5 ? "btn-success" : "btn-outline-success")">Đã nghiệm thu</a>
+    <a asp-action="Index" asp-route-filter="overdue_sla" class="btn btn-sm @(ViewBag.CurrentFilter == "overdue_sla" ? "btn-danger" : "btn-outline-danger")">
+        <i class="fas fa-exclamation-triangle"></i> Trễ hạn SLA
+    </a>
+</div>
+
 <div class="card shadow border-0">
-    <div class="card-body">
-        <table class="table table-hover align-middle text-center">
-            <thead class="">
-                <tr>
-                    <th>Mã Phiếu</th>
-                    <th>Hợp Đồng</th>
-                    <th>Ngày Báo Lỗi</th>
-                    <th>Mô Tả Lỗi</th>
-                    <th>Kỹ Thuật Viên</th>
-                    <th>Trạng Thái</th>
-                    <th>Đánh Giá</th>
-                    <th>Thao Tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model) {
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle text-center mb-0">
+                <thead class="table-light">
                     <tr>
-                        <td class="fw-bold">#@item.MaPhieu</td>
-                        <td><a href="/Admin/HopDong/Details/@item.MaHopDong">#@item.MaHopDong</a></td>
-                        <td>@item.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td class="text-start">@item.MoTaLoi</td>
-                        <td>@(item.KyThuatVien?.HoTen ?? "Chưa phân công")</td>
-                        <td>
-                            @if (item.TrangThai == 1) { <span class="badge bg-warning text-dark">Mới báo</span> }
-                            else if (item.TrangThai == 2) { <span class="badge bg-brand">Đang xử lý</span> }
-                            else if (item.TrangThai == 3) { <span class="badge bg-success">Hoàn thành</span> }
-                        </td>
-                        <td>
-                            @if (item.DanhGiaSao.HasValue) {
-                                <span class="text-warning">
-                                    @for(int i=0; i<item.DanhGiaSao.Value; i++) { <i class="fas fa-star"></i> }
-                                </span>
-                            } else { <span>Chưa ĐG</span> }
-                        </td>
-                        <td>
-                            <a asp-action="Details" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-brand"><i class="fas fa-eye"></i> Xử lý</a>
-                        </td>
+                        <th>Mã Phiếu</th>
+                        <th>Hợp Đồng</th>
+                        <th>Thiết Bị</th>
+                        <th>Ngày Báo Lỗi</th>
+                        <th>Cam Kết SLA</th>
+                        <th>Kỹ Thuật Viên</th>
+                        <th>Trạng Thái</th>
+                        <th>Chi Phí / Bồi Thường</th>
+                        <th>Thao Tác</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @if (!Model.Any()) {
+                        <tr><td colspan="9" class="py-4 text-muted">Không tìm thấy phiếu bảo trì nào.</td></tr>
+                    }
+                    @foreach (var item in Model) {
+                        bool isOverdue = item.TrangThai < 3 && item.HanHoanThanh.HasValue && item.HanHoanThanh.Value < DateTime.Now;
+                        <tr class="@(isOverdue ? "table-danger" : "")">
+                            <td class="fw-bold">#@item.MaPhieu</td>
+                            <td>
+                                @if (item.MaHopDong.HasValue) {
+                                    <a href="/Admin/HopDong/Details/@item.MaHopDong" class="fw-bold text-decoration-none">#@item.MaHopDong</a>
+                                } else {
+                                    <span class="badge bg-secondary">Bảo dưỡng kho</span>
+                                }
+                            </td>
+                            <td class="text-start">
+                                <div class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</div>
+                                <small class="text-muted">Serial: @item.ThietBi?.SoSerial</small>
+                            </td>
+                            <td>@item.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (item.HanHoanThanh.HasValue) {
+                                    <div>@item.HanHoanThanh.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                    @if (isOverdue) {
+                                        <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Quá hạn SLA</span>
+                                    } else {
+                                        <span class="badge bg-light text-dark border">Còn hạn</span>
+                                    }
+                                } else {
+                                    <span class="text-muted small">--</span>
+                                }
+                            </td>
+                            <td>@(item.KyThuatVien?.HoTen ?? "Chưa phân công")</td>
+                            <td>
+                                @if (item.TrangThai == 1) { 
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Mới tiếp nhận</span> 
+                                }
+                                else if (item.TrangThai == 2) { 
+                                    <span class="badge bg-info text-dark"><i class="fas fa-wrench"></i> Đang sửa</span> 
+                                }
+                                else if (item.TrangThai == 3) { 
+                                    <span class="badge bg-primary"><i class="fas fa-check"></i> Đã sửa xong</span> 
+                                }
+                                else if (item.TrangThai == 4) { 
+                                    <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Hỏng thanh lý</span> 
+                                }
+                                else if (item.TrangThai == 5) { 
+                                    <span class="badge bg-success"><i class="fas fa-check-double"></i> Đã nghiệm thu</span> 
+                                }
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="small">Sửa: <strong>@((item.ChiPhiSuaChua ?? 0).ToString("N0")) đ</strong></div>
+                                @if (item.PhiDenBu > 0) {
+                                    <div class="small text-danger">Đền bù: <strong>@item.PhiDenBu.ToString("N0") đ</strong></div>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Xử lý
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>

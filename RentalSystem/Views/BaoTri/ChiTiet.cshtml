@@ -1,0 +1,315 @@
+@model RentalSystem.Models.PhieuBaoTri
+@{
+    ViewData["Title"] = $"Chi Tiết Phiếu Sự Cố #{Model.MaPhieu}";
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice text-primary me-2"></i> Chi Tiết Phiếu Bảo Trì #@Model.MaPhieu</h2>
+            <div class="text-muted">Ngày ghi nhận: @Model.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</div>
+        </div>
+        <a asp-action="MyTickets" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Về danh sách phiếu</a>
+    </div>
+
+    @if (TempData["Success"] != null) {
+        <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null) {
+        <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
+    }
+
+    <div class="row g-4">
+        <!-- Thông tin sự cố -->
+        <div class="col-lg-7">
+            <!-- Thông tin thiết bị & mô tả sự cố -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="fas fa-laptop text-brand me-2"></i> Thiết Bị & Mô Tả Sự Cố
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Thiết bị:</div>
+                        <div class="col-sm-8 fw-bold">@Model.ThietBi.SanPham.TenSanPham</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Số Serial:</div>
+                        <div class="col-sm-8"><span class="badge bg-secondary">@Model.ThietBi.SoSerial</span></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Hợp đồng liên kết:</div>
+                        <div class="col-sm-8">
+                            @if (Model.MaHopDong.HasValue) {
+                                <a href="/Cart/ContractDetail/@Model.MaHopDong" class="fw-bold text-decoration-none">Hợp đồng #@Model.MaHopDong</a>
+                            } else {
+                                <span class="text-muted">Bảo dưỡng kho nội bộ</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Mức độ khẩn cấp:</div>
+                        <div class="col-sm-8">
+                            @if (Model.MucDoKhanCap == 2) {
+                                <span class="badge bg-danger">Khẩn cấp (SLA 12h)</span>
+                            } else if (Model.MucDoKhanCap == 3) {
+                                <span class="badge bg-warning text-dark">Ưu tiên cao (SLA 24h)</span>
+                            } else {
+                                <span class="badge bg-info text-dark">Tiêu chuẩn (SLA 48h)</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Hạn cam kết (SLA):</div>
+                        <div class="col-sm-8 fw-bold text-primary">
+                            @(Model.HanHoanThanh.HasValue ? Model.HanHoanThanh.Value.ToString("dd/MM/yyyy HH:mm") : "Đang cập nhật")
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-danger"><i class="fas fa-exclamation-circle"></i> Mô tả lỗi lúc báo hỏng:</label>
+                        <div class="p-3 bg-light rounded border text-secondary">
+                            @Model.MoTaLoi
+                        </div>
+                    </div>
+
+                    <!-- Bằng chứng hình ảnh / video sự cố -->
+                    <div class="mt-4">
+                        <h6 class="fw-bold"><i class="fas fa-images text-primary me-2"></i> Hình ảnh / Video bằng chứng sự cố:</h6>
+                        @{
+                            var allMedia = new List<string>();
+                            if (!string.IsNullOrEmpty(Model.HinhAnhLoi)) {
+                                allMedia.AddRange(Model.HinhAnhLoi.Split(';', StringSplitOptions.RemoveEmptyEntries));
+                            }
+                            if (!string.IsNullOrEmpty(Model.VideoLoi)) {
+                                allMedia.AddRange(Model.VideoLoi.Split(';', StringSplitOptions.RemoveEmptyEntries));
+                            }
+                        }
+
+                        @if (allMedia.Any()) {
+                            <div class="d-flex flex-wrap gap-3 mt-2">
+                                @foreach (var media in allMedia) {
+                                    string ext = System.IO.Path.GetExtension(media).ToLowerInvariant();
+                                    if (ext == ".mp4" || ext == ".mov" || ext == ".webm" || ext == ".avi") {
+                                        <div class="border rounded p-1" style="max-width: 240px;">
+                                            <video controls class="rounded w-100" style="max-height: 160px;">
+                                                <source src="@media" type="video/mp4">
+                                                Trình duyệt không hỗ trợ thẻ video.
+                                            </video>
+                                            <div class="small text-muted text-center mt-1">Video sự cố</div>
+                                        </div>
+                                    } else {
+                                        <div class="border rounded p-1 text-center" style="max-width: 140px;">
+                                            <a href="@media" target="_blank" title="Xem ảnh gốc">
+                                                <img src="@media" alt="Bằng chứng sự cố" class="img-thumbnail" style="max-height: 120px; object-fit: cover;" />
+                                            </a>
+                                            <div class="small text-muted mt-1">Ảnh phóng to</div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        } else {
+                            <div class="text-muted small fst-italic">Không có tệp hình ảnh/video nào được tải lên khi tạo phiếu.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiến độ kỹ thuật & chi phí -->
+        <div class="col-lg-5">
+            <!-- Tiến độ xử lý & kỹ thuật viên phụ trách -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="fas fa-tasks text-success me-2"></i> Tiến Độ Xử Lý Kỹ Thuật
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted">Trạng thái:</span>
+                        <span>
+                            @if (Model.TrangThai == 1) { 
+                                <span class="badge bg-warning text-dark fs-6"><i class="fas fa-clock"></i> Mới tiếp nhận</span> 
+                            }
+                            else if (Model.TrangThai == 2) { 
+                                <span class="badge bg-info text-dark fs-6"><i class="fas fa-wrench"></i> Đang sửa chữa</span> 
+                            }
+                            else if (Model.TrangThai == 3) { 
+                                <span class="badge bg-primary fs-6"><i class="fas fa-check"></i> Đã sửa xong (Chờ nghiệm thu)</span> 
+                            }
+                            else if (Model.TrangThai == 4) { 
+                                <span class="badge bg-danger fs-6"><i class="fas fa-times-circle"></i> Hỏng không thể khắc phục</span> 
+                            }
+                            else if (Model.TrangThai == 5) { 
+                                <span class="badge bg-success fs-6"><i class="fas fa-check-double"></i> Đã nghiệm thu & Đóng</span> 
+                            }
+                        </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Kỹ thuật viên phụ trách:</div>
+                        <div class="fw-bold fs-6">@(Model.KyThuatVien?.HoTen ?? "Đang phân công kỹ thuật viên")</div>
+                        @if (Model.KyThuatVien != null && !string.IsNullOrEmpty(Model.KyThuatVien.SoDienThoai)) {
+                            <div class="small text-muted"><i class="fas fa-phone-alt text-success"></i> SĐT liên hệ: @Model.KyThuatVien.SoDienThoai</div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Ghi chú từ kỹ thuật viên:</div>
+                        <div class="p-2 bg-light rounded border small">
+                            @(string.IsNullOrEmpty(Model.GhiChuSuaChua) ? "Kỹ thuật viên chưa để lại ghi chú." : Model.GhiChuSuaChua)
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.NguyenNhan)) {
+                        <div class="mb-2">
+                            <span class="text-muted small">Nguyên nhân hư hỏng:</span>
+                            <div class="fw-semibold">@Model.NguyenNhan</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.LinhKienThayThe)) {
+                        <div class="mb-2">
+                            <span class="text-muted small">Linh kiện thay thế:</span>
+                            <div class="fw-semibold">@Model.LinhKienThayThe</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Chi phí và giảm trừ tiền thuê -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="fas fa-calculator text-warning me-2"></i> Chi Phí & Miễn Giảm Bảo Trì
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Phân định trách nhiệm:</span>
+                        <span class="fw-bold">
+                            @if (Model.LoaiTrachNhiem == 1) {
+                                <span class="text-danger">Khách hàng bồi thường</span>
+                            } else if (Model.LoaiTrachNhiem == 2) {
+                                <span class="text-success">Cửa hàng / Bảo hành</span>
+                            } else {
+                                <span>Chưa phân định</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Phí đền bù hư hỏng:</span>
+                        <span class="fw-bold text-danger">@Model.PhiDenBu.ToString("N0") đ</span>
+                    </div>
+
+                    @if (Model.PhiDenBu > 0) {
+                        <div class="d-flex justify-content-between mb-2 small text-muted">
+                            <span>Đã thanh toán:</span>
+                            <span class="fw-bold text-success">@ViewBag.DaThanhToanPhiDenBu.ToString("N0") đ</span>
+                        </div>
+                    }
+
+                    <!-- Tạm dừng tính tiền thuê trong thời gian bảo dưỡng -->
+                    @if (Model.TamDungTinhTien || (Model.TienGiamTru.HasValue && Model.TienGiamTru.Value > 0)) {
+                        <div class="p-2 bg-light rounded border border-success mt-3">
+                            <div class="fw-bold text-success small"><i class="fas fa-gift"></i> Chính sách miễn giảm tiền thuê:</div>
+                            <div class="d-flex justify-content-between small mt-1">
+                                <span>Số ngày máy nằm xưởng:</span>
+                                <span class="fw-bold">@(Model.SoNgayTamDung ?? 0) ngày</span>
+                            </div>
+                            <div class="d-flex justify-content-between small mt-1">
+                                <span>Số tiền được khấu trừ:</span>
+                                <span class="fw-bold text-success">-@((Model.TienGiamTru ?? 0).ToString("N0")) đ</span>
+                            </div>
+                            <div class="small text-muted mt-1 fst-italic">Khoản tiền đã được cấn trừ trực tiếp vào kỳ hạn thanh toán của Hợp đồng.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Nghiệm thu và đánh giá dịch vụ -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-bold py-3">
+                    <i class="fas fa-clipboard-check text-primary me-2"></i> Nghiệm Thu & Đánh Giá Dịch Vụ
+                </div>
+                <div class="card-body">
+                    @if (Model.TrangThai == 3) {
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="fas fa-info-circle"></i> Thiết bị đã sửa xong. Vui lòng nhận lại máy, kiểm tra hoạt động và xác nhận nghiệm thu.
+                        </div>
+
+                        <!-- Form Nghiệm thu -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Bước 1: Xác nhận tình trạng máy sau khi sửa</label>
+                            <form asp-action="NghiemThu" method="post" class="mb-2">
+                                <input type="hidden" name="maPhieu" value="@Model.MaPhieu" />
+                                <input type="hidden" name="dongY" value="true" />
+                                <div class="mb-2">
+                                    <input type="text" name="yKien" class="form-control form-control-sm" placeholder="Nhận xét khi nhận máy (tùy chọn)..." />
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">
+                                    <i class="fas fa-check-circle"></i> ✅ Đồng Ý Nhận Máy & Nghiệm Thu
+                                </button>
+                            </form>
+
+                            <form asp-action="NghiemThu" method="post">
+                                <input type="hidden" name="maPhieu" value="@Model.MaPhieu" />
+                                <input type="hidden" name="dongY" value="false" />
+                                <div class="mb-2">
+                                    <input type="text" name="yKien" required class="form-control form-control-sm" placeholder="Nhập lý do chưa hài lòng / lỗi còn tồn tại..." />
+                                </div>
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                    <i class="fas fa-redo-alt"></i> ⚠️ Chưa Đạt - Yêu Cầu KTV Sửa Lại
+                                </button>
+                            </form>
+                        </div>
+                        <hr />
+                    }
+
+                    @if (Model.TrangThai == 3 || Model.TrangThai == 5) {
+                        <div>
+                            <label class="form-label fw-bold">Bước 2: Đánh giá chất lượng dịch vụ</label>
+                            @if (Model.DanhGiaSao.HasValue) {
+                                <div class="p-3 bg-light rounded text-center">
+                                    <div class="text-warning fs-4 mb-1">
+                                        @for (int i = 0; i < Model.DanhGiaSao.Value; i++) {
+                                            <i class="fas fa-star"></i>
+                                        }
+                                        @for (int i = Model.DanhGiaSao.Value; i < 5; i++) {
+                                            <i class="far fa-star"></i>
+                                        }
+                                    </div>
+                                    <div class="fw-bold">Bạn đã đánh giá @Model.DanhGiaSao / 5 sao</div>
+                                    @if (!string.IsNullOrEmpty(Model.YKienPhanHoi)) {
+                                        <div class="text-muted small mt-2 fst-italic">"@Model.YKienPhanHoi"</div>
+                                    }
+                                </div>
+                            } else {
+                                <form asp-action="DanhGia" method="post">
+                                    <input type="hidden" name="maPhieu" value="@Model.MaPhieu" />
+                                    <div class="mb-2">
+                                        <select name="rating" class="form-select form-select-sm" required>
+                                            <option value="">-- Chọn số sao đánh giá --</option>
+                                            <option value="5">⭐⭐⭐⭐⭐ 5 Sao - Rất hài lòng</option>
+                                            <option value="4">⭐⭐⭐⭐ 4 Sao - Hài lòng</option>
+                                            <option value="3">⭐⭐⭐ 3 Sao - Bình thường</option>
+                                            <option value="2">⭐⭐ 2 Sao - Chưa hài lòng</option>
+                                            <option value="1">⭐ 1 Sao - Rất kém</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <textarea name="yKienPhanHoi" class="form-control form-control-sm" rows="3" placeholder="Nhập nhận xét chi tiết về thái độ KTV, chất lượng máy..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-warning btn-sm w-100 fw-bold">
+                                        <i class="fas fa-star"></i> Gửi Đánh Giá Dịch Vụ
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    } else {
+                        <div class="text-muted small py-2 text-center">
+                            Chức năng nghiệm thu và đánh giá sẽ mở khi kỹ thuật viên hoàn thành sửa chữa thiết bị.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

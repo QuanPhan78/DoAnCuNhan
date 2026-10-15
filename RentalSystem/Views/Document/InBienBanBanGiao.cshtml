@@ -1,0 +1,169 @@
+@model RentalSystem.Models.BienBanBanGiao
+@{
+    Layout = null;
+    var chiTiets = ViewBag.ChiTiets as IEnumerable<RentalSystem.Models.ChiTietHopDong>;
+    string loaiText = Model.LoaiBienBan == 0 ? "BÀN GIAO THIẾT BỊ (XUẤT KHO CHO THUÊ)" : "THU HỒI THIẾT BỊ (NHẬP KHO KẾT THÚC THUÊ)";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>Biên Bản @(Model.LoaiBienBan == 0 ? "Bàn Giao" : "Thu Hồi") #@Model.MaBienBan - HĐ #@Model.MaHopDong</title>
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.5; padding: 40px; margin: 0 auto; max-width: 900px; color: #111; }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; text-align: center; }
+        .header { margin-bottom: 25px; }
+        .title { text-transform: uppercase; font-size: 16pt; margin-top: 15px; margin-bottom: 10px; }
+        .subtitle { font-size: 12pt; margin-bottom: 20px; }
+        .info-box { background: #fdfdfd; border: 1px solid #ddd; padding: 12px; margin-bottom: 15px; }
+        .gallery { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .gallery img { max-width: 180px; max-height: 140px; border: 1px solid #ccc; object-fit: cover; }
+        @@media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: right; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 15px; cursor: pointer; background: #0d6efd; color: white; border: none; border-radius: 4px;">
+            🖨️ In Biên Bản / Lưu PDF
+        </button>
+    </div>
+
+    <div class="header text-center">
+        <div class="fw-bold" style="font-size: 14pt;">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+        <div class="fw-bold" style="text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
+        <br />
+        <div style="text-align: right; font-style: italic;">
+            TP.HCM, ngày @Model.NgayLap.ToString("dd") tháng @Model.NgayLap.ToString("MM") năm @Model.NgayLap.ToString("yyyy")
+        </div>
+    </div>
+
+    <div class="text-center title fw-bold">BIÊN BẢN @loaiText</div>
+    <div class="text-center subtitle fw-bold">Căn cứ Hợp đồng số: @Model.MaHopDong/HĐTTB-ABCRENTAL (Mã biên bản: BB-@Model.MaBienBan)</div>
+
+    <p>Hôm nay, ngày @Model.NgayLap.ToString("dd/MM/yyyy HH:mm"), tại địa chỉ văn phòng ABC Rental hoặc địa điểm bàn giao theo hợp đồng, hai bên gồm có:</p>
+
+    <div class="info-box">
+        <div class="fw-bold">1. ĐẠI DIỆN BÊN CHO THUÊ (CÔNG TY TNHH ABC RENTAL):</div>
+        <p style="margin: 5px 0 0 15px;">
+            - <strong>Người thực hiện:</strong> @(Model.NhanVienLap?.HoTen ?? Model.HopDong?.NhanVien?.HoTen ?? "Đại diện ABC Rental")<br />
+            - <strong>Chức vụ / Bộ phận:</strong> Quản lý Thiết bị &amp; Thủ kho<br />
+            - <strong>Điện thoại:</strong> @(Model.NhanVienLap?.SoDienThoai ?? "0987654321")
+        </p>
+    </div>
+
+    <div class="info-box">
+        <div class="fw-bold">2. ĐẠI DIỆN BÊN THUÊ (KHÁCH HÀNG):</div>
+        <p style="margin: 5px 0 0 15px;">
+            - <strong>Khách hàng:</strong> @Model.HopDong?.KhachHang?.HoTen<br />
+            - <strong>Số CCCD:</strong> @(Model.HopDong?.KhachHang?.CCCD ?? "—")<br />
+            - <strong>Số điện thoại:</strong> @Model.HopDong?.KhachHang?.SoDienThoai<br />
+            - <strong>Địa chỉ:</strong> @(Model.HopDong?.GhiChu ?? Model.HopDong?.KhachHang?.DiaChi)
+        </p>
+    </div>
+
+    <div class="fw-bold" style="margin-top: 15px;">3. DANH SÁCH THIẾT BỊ BÀN GIAO / THU HỒI:</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">STT</th>
+                <th>Tên Thiết Bị / Sản Phẩm</th>
+                <th style="width: 160px;">Mã Serial</th>
+                <th>Cấu Hình / Mô Tả</th>
+                <th style="width: 140px;">Tình Trạng</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (chiTiets != null && chiTiets.Any())
+            {
+                int index = 1;
+                foreach (var ct in chiTiets)
+                {
+                    <tr>
+                        <td class="text-center">@(index++)</td>
+                        <td><strong>@ct.ThietBi?.SanPham?.TenSanPham</strong></td>
+                        <td class="text-center" style="font-family: monospace; font-weight: bold;">@ct.ThietBi?.SoSerial</td>
+                        <td>@ct.ThietBi?.SanPham?.CauHinh</td>
+                        <td>@(ct.ThietBi?.TinhTrangMay ?? "Hoạt động tốt")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="5" class="text-center">Chưa có thông tin chi tiết thiết bị</td></tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="fw-bold" style="margin-top: 15px;">4. DANH MỤC PHỤ KIỆN KÈM THEO:</div>
+    <div style="padding-left: 15px; margin-top: 5px;">
+        @(string.IsNullOrEmpty(Model.PhuKienKemTheo) ? "Đầy đủ củ sạc, dây cáp nguồn, túi chống sốc theo tiêu chuẩn nhà sản xuất." : Model.PhuKienKemTheo)
+    </div>
+
+    <div class="fw-bold" style="margin-top: 15px;">5. HIỆN TRẠNG NGOẠI QUAN &amp; HOẠT ĐỘNG:</div>
+    <div style="padding-left: 15px; margin-top: 5px;">
+        @(string.IsNullOrEmpty(Model.TinhTrangNgoaiQuan) ? "Thân máy không trầy xước, màn hình hiển thị sáng đẹp, các cổng kết nối hoạt động bình thường, tem bảo hành nguyên vẹn." : Model.TinhTrangNgoaiQuan)
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.GhiChu))
+    {
+        <div class="fw-bold" style="margin-top: 15px;">Ghi chú bổ sung:</div>
+        <div style="padding-left: 15px; margin-top: 5px; font-style: italic;">
+            @Model.GhiChu
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.HinhAnh1) || !string.IsNullOrEmpty(Model.HinhAnh2) || !string.IsNullOrEmpty(Model.HinhAnh3) || !string.IsNullOrEmpty(Model.HinhAnh4))
+    {
+        <div class="fw-bold" style="margin-top: 15px;">6. HÌNH ẢNH NGOẠI QUAN ĐỐI CHỨNG:</div>
+        <div class="gallery">
+            @if (!string.IsNullOrEmpty(Model.HinhAnh1)) { <img src="@Model.HinhAnh1" alt="Ảnh 1" /> }
+            @if (!string.IsNullOrEmpty(Model.HinhAnh2)) { <img src="@Model.HinhAnh2" alt="Ảnh 2" /> }
+            @if (!string.IsNullOrEmpty(Model.HinhAnh3)) { <img src="@Model.HinhAnh3" alt="Ảnh 3" /> }
+            @if (!string.IsNullOrEmpty(Model.HinhAnh4)) { <img src="@Model.HinhAnh4" alt="Ảnh 4" /> }
+        </div>
+    }
+
+    <br />
+    <table style="border: none; margin-top: 30px;">
+        <tr style="border: none;">
+            <td style="border: none; text-align: center; width: 50%; vertical-align: top;">
+                <strong>ĐẠI DIỆN BÊN GIAO</strong><br />
+                <em>(Ký, ghi rõ họ tên)</em>
+                <br /><br />
+                @if (Model.LoaiBienBan == 0 && !string.IsNullOrEmpty(Model.HopDong?.ChuKyNhanVien))
+                {
+                    <img src="@Model.HopDong.ChuKyNhanVien" style="max-height: 80px;" /><br />
+                }
+                else if (Model.LoaiBienBan == 1 && !string.IsNullOrEmpty(Model.HopDong?.ChuKyKhachHang))
+                {
+                    <img src="@Model.HopDong.ChuKyKhachHang" style="max-height: 80px;" /><br />
+                }
+                <br />
+                <strong>@(Model.LoaiBienBan == 0 ? (Model.NhanVienLap?.HoTen ?? "Đại diện ABC Rental") : Model.HopDong?.KhachHang?.HoTen)</strong>
+            </td>
+            <td style="border: none; text-align: center; width: 50%; vertical-align: top;">
+                <strong>ĐẠI DIỆN BÊN NHẬN</strong><br />
+                <em>(Ký, ghi rõ họ tên)</em>
+                <br /><br />
+                @if (Model.LoaiBienBan == 0 && !string.IsNullOrEmpty(Model.HopDong?.ChuKyKhachHang))
+                {
+                    <img src="@Model.HopDong.ChuKyKhachHang" style="max-height: 80px;" /><br />
+                }
+                else if (Model.LoaiBienBan == 1 && !string.IsNullOrEmpty(Model.HopDong?.ChuKyNhanVien))
+                {
+                    <img src="@Model.HopDong.ChuKyNhanVien" style="max-height: 80px;" /><br />
+                }
+                <br />
+                <strong>@(Model.LoaiBienBan == 0 ? Model.HopDong?.KhachHang?.HoTen : (Model.NhanVienLap?.HoTen ?? "Đại diện ABC Rental"))</strong>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

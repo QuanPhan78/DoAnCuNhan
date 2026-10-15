@@ -15,7 +15,7 @@ namespace RentalSystem.Models
                 return;   
             }
 
-            // 1. Tạo 4 Vai Trò
+            // Tạo các vai trò người dùng
             var vaiTros = new VaiTro[]
             {
                 new VaiTro{TenVaiTro="Admin"},
@@ -26,7 +26,7 @@ namespace RentalSystem.Models
             context.VaiTros.AddRange(vaiTros);
             context.SaveChanges();
 
-            // 2. Tạo tài khoản Admin + 1 Khách hàng mẫu
+            // Tạo tài khoản quản trị và khách hàng mẫu
             var admin = new NguoiDung
             {
                 MaVaiTro = context.VaiTros.Single(v => v.TenVaiTro == "Admin").MaVaiTro,
@@ -54,7 +54,7 @@ namespace RentalSystem.Models
             context.NguoiDungs.Add(khachHang);
             context.SaveChanges();
 
-            // 3. Tạo 3 Danh mục thiết bị: Máy tính bàn, Máy lạnh, Máy in
+            // Tạo danh mục thiết bị
             var loaiThietBis = new LoaiThietBi[]
             {
                 new LoaiThietBi{TenLoai="Máy tính bàn"},
@@ -64,10 +64,10 @@ namespace RentalSystem.Models
             context.LoaiThietBis.AddRange(loaiThietBis);
             context.SaveChanges();
 
-            // 4. Tạo 6 Sản phẩm mẫu
+            // Tạo sản phẩm mẫu
             var sanPhams = new SanPham[]
             {
-                // -- Máy tính bàn --
+                // Máy tính bàn
                 new SanPham{
                     MaLoai = context.LoaiThietBis.Single(l => l.TenLoai == "Máy tính bàn").MaLoai,
                     TenSanPham = "Bộ PC Dell OptiPlex 7010",
@@ -86,7 +86,7 @@ namespace RentalSystem.Models
                     TienCoc = 10000000,
                     HinhAnh = "/images/sanpham/may-tinh.png"
                 },
-                // -- Máy lạnh --
+                // Máy lạnh
                 new SanPham{
                     MaLoai = context.LoaiThietBis.Single(l => l.TenLoai == "Máy lạnh").MaLoai,
                     TenSanPham = "Máy lạnh Daikin FTKZ35VVMV (1.5HP)",
@@ -105,7 +105,7 @@ namespace RentalSystem.Models
                     TienCoc = 15000000,
                     HinhAnh = "/images/sanpham/may-lanh.png"
                 },
-                // -- Máy in --
+                // Máy in
                 new SanPham{
                     MaLoai = context.LoaiThietBis.Single(l => l.TenLoai == "Máy in").MaLoai,
                     TenSanPham = "Máy in HP LaserJet Pro M404dn",
@@ -128,7 +128,7 @@ namespace RentalSystem.Models
             context.SanPhams.AddRange(sanPhams);
             context.SaveChanges();
             
-            // 5. Thêm máy vật lý trong kho (Serial)
+            // Khởi tạo danh sách máy trong kho
             var thietBis = new ThietBi[]
             {
                 // Máy tính bàn Dell

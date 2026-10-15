@@ -1,32 +1,241 @@
 @model IEnumerable<RentalSystem.Models.HopDong>
+@using RentalSystem.Common
 @{
     ViewData["Title"] = "Quản lý Công Nợ";
+    string currentTab = ViewBag.ActiveTab as string ?? "all";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark mb-0">Quản lý Công Nợ</h3>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+<style>
+    .bg-orange {
+        background-color: #fd7e14 !important;
+        color: #ffffff !important;
+    }
+    .kpi-card {
+        transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+    }
+</style>
+
+<!-- Tiêu đề & Nút Xuất Excel -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1"><i class="fas fa-hand-holding-usd text-warning me-2"></i>Quản lý Công Nợ</h3>
+        <p class="text-muted mb-0 small">Theo dõi công nợ toàn hệ thống, phân loại 4 nhóm tuổi nợ và đôn đốc thu hồi</p>
+    </div>
+    <div>
+        <a asp-action="ExportExcel"
+           asp-route-search="@ViewBag.Search"
+           asp-route-agingTier="@ViewBag.AgingTier"
+           asp-route-tuNgay="@ViewBag.TuNgay"
+           asp-route-denNgay="@ViewBag.DenNgay"
+           class="btn btn-success fw-bold shadow-sm">
+            <i class="fas fa-file-excel me-1"></i> Xuất Báo Cáo Excel
+        </a>
+    </div>
 </div>
 
+<!-- Thống kê tổng quan công nợ -->
+<div class="row g-3 mb-4">
+    <!-- Tổng công nợ -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 border-start border-primary border-4 h-100 kpi-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Tổng công nợ</span>
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 text-primary">
+                        <i class="fas fa-wallet fa-lg"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-dark mb-1">@(((decimal)(ViewBag.TongCongNo ?? 0m)).ToString("N0")) đ</h4>
+                <div class="small text-muted">Dư nợ toàn hệ thống</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tổng nợ quá hạn -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 border-start border-danger border-4 h-100 kpi-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Tổng nợ quá hạn</span>
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 text-danger">
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-danger mb-1">@(((decimal)(ViewBag.TongNoQuaHan ?? 0m)).ToString("N0")) đ</h4>
+                <div class="small text-muted">Gốc trễ hạn + phí phạt</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tỷ lệ thu hồi -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 border-start border-success border-4 h-100 kpi-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Tỷ lệ thu hồi</span>
+                    <div class="rounded-circle bg-success bg-opacity-10 p-2 text-success">
+                        <i class="fas fa-chart-line fa-lg"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-success mb-1">@(((decimal)(ViewBag.TyLeThuHoi ?? 0m)).ToString("0.0"))%</h4>
+                <div class="small text-muted">Đã thu / Tổng phải thu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Khoản nợ xấu -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 border-start border-dark border-4 h-100 kpi-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold text-uppercase">Khoản nợ xấu</span>
+                    <div class="rounded-circle bg-dark bg-opacity-10 p-2 text-dark">
+                        <i class="fas fa-user-slash fa-lg"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-dark mb-1">@(ViewBag.SoKhoanNoXau ?? 0)</h4>
+                <div class="small text-muted">Quá hạn >90 ngày (Khóa thuê)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Phân loại nhóm tuổi nợ -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold text-dark mb-0">
+            <i class="fas fa-layer-group text-info me-2"></i>Phân bổ Tuổi nợ (Debt Aging Schedule)
+        </h6>
+        <span class="badge bg-light text-secondary border">Chuẩn 4 Nhóm</span>
+    </div>
+    <div class="card-body py-3">
+        <div class="row g-3">
+            <!-- Nhóm 1: 1-30 ngày -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="p-3 rounded-3 bg-light border-start border-info border-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge bg-info text-dark fw-bold">Nhóm 1 (1–30 ngày)</span>
+                        <span class="fw-bold text-secondary">@(ViewBag.AgingTier1Count ?? 0) khoản</span>
+                    </div>
+                    <div class="small text-muted mb-1">Cần chú ý</div>
+                    <div class="fw-bold fs-6 text-dark">@(((decimal)(ViewBag.AgingTier1Amount ?? 0m)).ToString("N0")) đ</div>
+                </div>
+            </div>
+
+            <!-- Nhóm 2: 31-60 ngày -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="p-3 rounded-3 bg-light border-start border-warning border-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge bg-warning text-dark fw-bold">Nhóm 2 (31–60 ngày)</span>
+                        <span class="fw-bold text-secondary">@(ViewBag.AgingTier2Count ?? 0) khoản</span>
+                    </div>
+                    <div class="small text-muted mb-1">Dưới tiêu chuẩn</div>
+                    <div class="fw-bold fs-6 text-dark">@(((decimal)(ViewBag.AgingTier2Amount ?? 0m)).ToString("N0")) đ</div>
+                </div>
+            </div>
+
+            <!-- Nhóm 3: 61-90 ngày -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="p-3 rounded-3 bg-light border-start border-4" style="border-left-color: #fd7e14 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge bg-orange text-white fw-bold">Nhóm 3 (61–90 ngày)</span>
+                        <span class="fw-bold text-secondary">@(ViewBag.AgingTier3Count ?? 0) khoản</span>
+                    </div>
+                    <div class="small text-muted mb-1">Nghi ngờ</div>
+                    <div class="fw-bold fs-6 text-dark">@(((decimal)(ViewBag.AgingTier3Amount ?? 0m)).ToString("N0")) đ</div>
+                </div>
+            </div>
+
+            <!-- Nhóm 4: >90 ngày -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="p-3 rounded-3 bg-light border-start border-danger border-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge bg-danger fw-bold">Nhóm 4 (>90 ngày)</span>
+                        <span class="fw-bold text-danger">@(ViewBag.AgingTier4Count ?? 0) khoản</span>
+                    </div>
+                    <div class="small text-danger mb-1">Nợ xấu / Khóa thuê</div>
+                    <div class="fw-bold fs-6 text-danger">@(((decimal)(ViewBag.AgingTier4Amount ?? 0m)).ToString("N0")) đ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
+            <input type="hidden" name="activeTab" value="@currentTab" id="filterActiveTab" />
+
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Tìm kiếm</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Mã HĐ, tên KH, SĐT, CCCD..." value="@ViewBag.Search" />
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Nhóm tuổi nợ</label>
+                <select name="agingTier" class="form-select form-select-sm">
+                    <option value="">-- Tất cả nhóm tuổi nợ --</option>
+                    <!option value="0" @(ViewBag.AgingTier == 0 ? "selected" : "")>Nhóm 0: Đúng hạn</!option>
+                    <!option value="1" @(ViewBag.AgingTier == 1 ? "selected" : "")>Nhóm 1: Cần chú ý (1–30 ngày)</!option>
+                    <!option value="2" @(ViewBag.AgingTier == 2 ? "selected" : "")>Nhóm 2: Dưới tiêu chuẩn (31–60 ngày)</!option>
+                    <!option value="3" @(ViewBag.AgingTier == 3 ? "selected" : "")>Nhóm 3: Nghi ngờ (61–90 ngày)</!option>
+                    <!option value="4" @(ViewBag.AgingTier == 4 ? "selected" : "")>Nhóm 4: Nợ xấu / Khóa thuê (>90 ngày)</!option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Từ ngày</label>
+                <input type="date" name="tuNgay" class="form-control form-control-sm" value="@ViewBag.TuNgay" />
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Đến ngày</label>
+                <input type="date" name="denNgay" class="form-control form-control-sm" value="@ViewBag.DenNgay" />
+            </div>
+
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary flex-fill fw-semibold">
+                    <i class="fas fa-filter me-1"></i> Lọc
+                </button>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary" title="Đặt lại bộ lọc">
+                    <i class="fas fa-undo"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabs điều hướng danh sách công nợ -->
 <ul class="nav nav-tabs mb-4" id="congNoTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active fw-bold" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">Tất cả nợ</button>
+        <button class="nav-link @(currentTab == "all" ? "active" : "") fw-bold" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">Tất cả nợ</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link text-dark fw-bold" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab">Đang trễ hạn</button>
+        <button class="nav-link @(currentTab == "overdue" ? "active" : "") text-dark fw-bold" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab">Đang trễ hạn</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link text-dark fw-bold" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">Sắp đến hạn (7 ngày)</button>
+        <button class="nav-link @(currentTab == "upcoming" ? "active" : "") text-dark fw-bold" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">Sắp đến hạn (7 ngày)</button>
     </li>
 </ul>
 
 <div class="tab-content" id="congNoTabsContent">
     <!-- TẤT CẢ NỢ -->
-    <div class="tab-pane fade show active" id="all" role="tabpanel">
-        <div class="card border">
+    <div class="tab-pane fade @(currentTab == "all" ? "show active" : "")" id="all" role="tabpanel">
+        <div class="card border shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="bg-light">
+                        <thead class="table-light">
                             <tr>
                                 <th>Mã HĐ</th>
                                 <th>Khách hàng</th>
@@ -37,23 +246,39 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @if (!Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-muted py-4">Không tìm thấy hợp đồng nào phù hợp với bộ lọc.</td>
+                                </tr>
+                            }
                             @foreach (var hd in Model)
                             {
-                                var daThu = hd.TienDaCoc + hd.KyHanThanhToans.Sum(k => k.SoTienDaTra);
-                                var conNo = hd.TongTien - daThu;
-                                if (conNo > 0)
+                                var phiDenBu = hd.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m;
+                                var tongPhaiThu = hd.TongTien + phiDenBu;
+                                var daThu = hd.TienDaCoc + (hd.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien) ?? hd.KyHanThanhToans?.Sum(k => k.SoTienDaTra) ?? 0m);
+                                var conNo = tongPhaiThu - daThu;
+                                if (conNo > 0 || hd.TrangThaiThanhToan != 3)
                                 {
                                     <tr>
                                         <td class="fw-bold">#@hd.MaHopDong</td>
                                         <td>
-                                            @hd.KhachHang?.HoTen<br />
+                                            <div class="fw-semibold">@(hd.KhachHang?.HoTen ?? "N/A")</div>
                                             <span class="text-muted small">@hd.KhachHang?.SoDienThoai</span>
                                         </td>
-                                        <td>@hd.TongTien.ToString("N0") đ</td>
-                                        <td class="text-success fw-bold">@daThu.ToString("N0") đ</td>
-                                        <td class="text-danger fw-bold fs-6">@conNo.ToString("N0") đ</td>
                                         <td>
-                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-dark">Xem chi tiết / Thu tiền</a>
+                                            @tongPhaiThu.ToString("N0") đ
+                                            @if (phiDenBu > 0)
+                                            {
+                                                <br /><small class="text-danger fw-bold">(+@phiDenBu.ToString("N0")đ đền bù)</small>
+                                            }
+                                        </td>
+                                        <td class="text-success fw-bold">@daThu.ToString("N0") đ</td>
+                                        <td class="text-danger fw-bold fs-6">@Math.Max(0, conNo).ToString("N0") đ</td>
+                                        <td>
+                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-dark">
+                                                <i class="fas fa-eye me-1"></i>Chi tiết / Thu tiền
+                                            </a>
                                         </td>
                                     </tr>
                                 }
@@ -65,43 +290,87 @@
         </div>
     </div>
 
-    <!-- ĐANG TRỄ HẠN -->
-    <div class="tab-pane fade" id="overdue" role="tabpanel">
-        <div class="card border">
+    <!-- Danh sách kỳ hạn đang trễ hạn -->
+    <div class="tab-pane fade @(currentTab == "overdue" ? "show active" : "")" id="overdue" role="tabpanel">
+        <div class="card border shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="bg-light">
+                        <thead class="table-light">
                             <tr>
                                 <th>Mã HĐ</th>
                                 <th>Khách hàng</th>
-                                <th>Kỳ hạn trễ</th>
+                                <th>Kỳ hạn</th>
+                                <th>Nhóm tuổi nợ</th>
                                 <th>Ngày đến hạn</th>
                                 <th>Số tiền trễ</th>
+                                <th>Lịch sử nhắc nợ</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
+                            @{
+                                int totalOverdueCount = 0;
+                            }
                             @foreach (var hd in Model)
                             {
-                                var overdueKyHans = hd.KyHanThanhToans.Where(k => k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date).ToList();
+                                var overdueKyHans = hd.KyHanThanhToans?
+                                    .Where(k => (k.TrangThai == 2 || (k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date)) && k.TrangThai != 1 && k.TrangThai != 3)
+                                    .OrderBy(k => k.NgayDenHan)
+                                    .ToList() ?? new List<RentalSystem.Models.KyHanThanhToan>();
+
                                 foreach (var k in overdueKyHans)
                                 {
-                                    var thieu = k.SoTienPhai - k.SoTienDaTra;
+                                    totalOverdueCount++;
+                                    var thieu = Math.Max(0m, k.SoTienPhai - k.SoTienDaTra);
+                                    var phiPhat = k.TienPhat > 0 ? k.TienPhat : k.PhiPhatTreHan;
+                                    var lanNhacCount = k.LichSuNhacNos?.Count ?? 0;
                                     <tr>
                                         <td class="fw-bold">#@hd.MaHopDong</td>
                                         <td>
-                                            @hd.KhachHang?.HoTen<br />
+                                            <div class="fw-semibold">@(hd.KhachHang?.HoTen ?? "N/A")</div>
                                             <span class="text-muted small">@hd.KhachHang?.SoDienThoai</span>
                                         </td>
                                         <td><span class="badge bg-secondary">Kỳ @k.SoKyHan</span></td>
-                                        <td class="text-dark fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</td>
-                                        <td class="text-dark fw-bold fs-6">@thieu.ToString("N0") đ</td>
                                         <td>
-                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-outline-dark">Xử lý thu hồi</a>
+                                            <span class="@DebtCalculationHelper.GetAgingBadgeClass(k.NhomTuoiNo)">
+                                                @DebtCalculationHelper.GetAgingTierName(k.NhomTuoiNo)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="text-dark fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</div>
+                                            <small class="text-danger fw-bold"><i class="fas fa-clock me-1"></i>Trễ @k.SoNgayTreHan ngày</small>
+                                        </td>
+                                        <td class="text-danger fw-bold fs-6">
+                                            @thieu.ToString("N0") đ
+                                            @if (phiPhat > 0)
+                                            {
+                                                <br /><small class="text-danger">(+@phiPhat.ToString("N0")đ phạt trễ)</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span id="badge-nhacno-@k.MaKyHan" class="badge @(lanNhacCount > 0 ? "bg-info text-dark" : "bg-light text-muted border")">
+                                                <i class="fas fa-bell me-1"></i>Đã nhắc @lanNhacCount lần
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="guiNhacNo(@k.MaKyHan, this)" title="Gửi thông báo nhắc nợ & VietQR">
+                                                    <i class="fas fa-paper-plane me-1"></i>Nhắc nợ
+                                                </button>
+                                                <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-outline-dark btn-sm">
+                                                    <i class="fas fa-eye me-1"></i>Chi tiết
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 }
+                            }
+                            @if (totalOverdueCount == 0)
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-muted py-4">Không có khoản nợ quá hạn nào trong danh sách.</td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -111,42 +380,70 @@
     </div>
 
     <!-- SẮP ĐẾN HẠN (7 ngày tới) -->
-    <div class="tab-pane fade" id="upcoming" role="tabpanel">
-        <div class="card border">
+    <div class="tab-pane fade @(currentTab == "upcoming" ? "show active" : "")" id="upcoming" role="tabpanel">
+        <div class="card border shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="bg-light">
+                        <thead class="table-light">
                             <tr>
                                 <th>Mã HĐ</th>
                                 <th>Khách hàng</th>
                                 <th>Kỳ sắp thu</th>
                                 <th>Ngày đến hạn</th>
                                 <th>Số tiền thu</th>
+                                <th>Lịch sử nhắc nợ</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
+                            @{
+                                int totalUpcomingCount = 0;
+                            }
                             @foreach (var hd in Model)
                             {
-                                var upcomingKyHans = hd.KyHanThanhToans.Where(k => k.TrangThai == 0 && k.NgayDenHan.Date >= DateTime.Now.Date && k.NgayDenHan.Date <= DateTime.Now.Date.AddDays(7)).ToList();
+                                var upcomingKyHans = hd.KyHanThanhToans?
+                                    .Where(k => k.TrangThai == 0 && k.NgayDenHan.Date >= DateTime.Now.Date && k.NgayDenHan.Date <= DateTime.Now.Date.AddDays(7))
+                                    .OrderBy(k => k.NgayDenHan)
+                                    .ToList() ?? new List<RentalSystem.Models.KyHanThanhToan>();
+
                                 foreach (var k in upcomingKyHans)
                                 {
-                                    var thieu = k.SoTienPhai - k.SoTienDaTra;
+                                    totalUpcomingCount++;
+                                    var thieu = Math.Max(0m, k.SoTienPhai - k.SoTienDaTra);
+                                    var lanNhacCount = k.LichSuNhacNos?.Count ?? 0;
                                     <tr>
                                         <td class="fw-bold">#@hd.MaHopDong</td>
                                         <td>
-                                            @hd.KhachHang?.HoTen<br />
+                                            <div class="fw-semibold">@(hd.KhachHang?.HoTen ?? "N/A")</div>
                                             <span class="text-muted small">@hd.KhachHang?.SoDienThoai</span>
                                         </td>
                                         <td><span class="badge bg-secondary">Kỳ @k.SoKyHan</span></td>
                                         <td class="text-dark fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</td>
                                         <td class="text-dark fw-bold fs-6">@thieu.ToString("N0") đ</td>
                                         <td>
-                                            <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-sm btn-outline-dark">Nhắc nợ</a>
+                                            <span id="badge-nhacno-@k.MaKyHan" class="badge @(lanNhacCount > 0 ? "bg-info text-dark" : "bg-light text-muted border")">
+                                                <i class="fas fa-bell me-1"></i>Đã nhắc @lanNhacCount lần
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-warning text-dark btn-sm" onclick="guiNhacNo(@k.MaKyHan, this)" title="Gửi thông báo nhắc nợ & VietQR">
+                                                    <i class="fas fa-paper-plane me-1"></i>Nhắc nợ
+                                                </button>
+                                                <a href="/Admin/HopDong/Details/@hd.MaHopDong?returnUrl=/Admin/CongNo" class="btn btn-outline-dark btn-sm">
+                                                    <i class="fas fa-eye me-1"></i>Chi tiết
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 }
+                            }
+                            @if (totalUpcomingCount == 0)
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-muted py-4">Không có kỳ hạn nào sắp đến hạn trong 7 ngày tới.</td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -155,3 +452,92 @@
         </div>
     </div>
 </div>
+
+<!-- Toast Thông Báo Khi Nhắc Nợ -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="nhacNoToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function showToast(message, type = 'success') {
+        const toastEl = document.getElementById('nhacNoToast');
+        const messageEl = document.getElementById('toastMessage');
+        if (toastEl && messageEl) {
+            toastEl.className = 'toast align-items-center text-white border-0 bg-' + type;
+            messageEl.textContent = message;
+            if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+                toast.show();
+            } else {
+                alert(message);
+            }
+        } else {
+            alert(message);
+        }
+    }
+
+    function guiNhacNo(maKyHan, btn) {
+        if (!confirm('Bạn có chắc chắn muốn gửi thông báo nhắc nợ và mã VietQR cho khách hàng này?')) {
+            return;
+        }
+
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Đang gửi...';
+
+        fetch('/Admin/CongNo/GuiNhacNo?maKyHan=' + maKyHan, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Lỗi phản hồi máy chủ: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+
+            if (data.success) {
+                const badges = document.querySelectorAll('#badge-nhacno-' + maKyHan);
+                badges.forEach(badge => {
+                    badge.className = 'badge bg-info text-dark';
+                    badge.innerHTML = '<i class="fas fa-bell me-1"></i>Đã nhắc ' + data.lanNhac + ' lần';
+                });
+                showToast(data.message || 'Đã gửi thông báo nhắc nợ thành công!', 'success');
+            } else {
+                showToast(data.message || 'Không thể gửi nhắc nợ.', 'danger');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            console.error('Error in guiNhacNo:', err);
+            showToast('Lỗi khi gửi thông báo: ' + err.message, 'danger');
+        });
+    }
+
+    // Đồng bộ tab đang chọn vào form lọc khi chuyển tab
+    document.querySelectorAll('#congNoTabs button[data-bs-toggle="tab"]').forEach(tabBtn => {
+        tabBtn.addEventListener('shown.bs.tab', function (e) {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target) {
+                const tabId = target.replace('#', '');
+                const activeTabInput = document.getElementById('filterActiveTab');
+                if (activeTabInput) {
+                    activeTabInput.value = tabId;
+                }
+            }
+        });
+    });
+</script>
+}

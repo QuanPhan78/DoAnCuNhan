@@ -37,6 +37,17 @@
                         <textarea name="DiaChi" class="form-control" rows="2" required placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
                     </div>
 
+                    <div class="card bg-white border shadow-sm mb-4">
+                        <div class="card-body">
+                            <label class="form-label fw-bold"><i class="fas fa-ticket-alt text-warning me-1"></i> Mã khuyến mãi (Promo Code)</label>
+                            <div class="input-group">
+                                <input type="text" id="promoCodeInput" name="PromoCode" class="form-control text-uppercase font-monospace" placeholder="Nhập mã giảm giá..." />
+                                <button type="button" class="btn btn-outline-primary fw-bold" id="btnApplyPromo">Áp dụng</button>
+                            </div>
+                            <div id="promoFeedback" class="small mt-2"></div>
+                        </div>
+                    </div>
+
                     <div class="card bg-light border-0 mb-4">
                         <div class="card-body">
                             <h5 class="fw-bold mb-3">Hóa đơn Tạm tính</h5>
@@ -44,11 +55,15 @@
                                 <span class="text-muted">Tổng tiền 1 ngày:</span>
                                 <span class="fw-bold">@totalPerDay.ToString("N0") đ</span>
                             </div>
-                            <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Số ngày thuê:</span>
                                 <span class="fw-bold text-brand fs-5" id="rentalDays">2 ngày</span>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between mb-2 d-none" id="discountRow">
+                                <span class="text-success"><i class="fas fa-tag me-1"></i> Giảm giá (<span id="discountPercentLabel">0</span>%):</span>
+                                <span class="fw-bold text-success" id="discountAmountLabel">-0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                                 <h5 class="fw-bold mb-0">TỔNG CỘNG:</h5>
                                 <h3 class="text-danger fw-bolder mb-0" id="finalTotal">@((totalPerDay * 2).ToString("N0")) đ</h3>
                             </div>
@@ -70,21 +85,29 @@
         const endInput = document.getElementById("NgayKetThuc");
         const daysLabel = document.getElementById("rentalDays");
         const finalTotal = document.getElementById("finalTotal");
-        
+        const discountRow = document.getElementById("discountRow");
+        const discountPercentLabel = document.getElementById("discountPercentLabel");
+        const discountAmountLabel = document.getElementById("discountAmountLabel");
+        const btnApply = document.getElementById("btnApplyPromo");
+        const promoInput = document.getElementById("promoCodeInput");
+        const feedback = document.getElementById("promoFeedback");
+
         const pricePerDay = @totalPerDayLong;
+        let currentDiscountPercent = 0;
 
         function updatePrice() {
             if (!startInput.value || !endInput.value) {
                 daysLabel.innerText = "0 ngày";
                 finalTotal.innerText = "0 đ";
+                if (discountRow) discountRow.classList.add("d-none");
                 return;
             }
 
-            // Dùng định dạng ISO Local T00:00:00 để triệt tiêu lệch múi giờ UTC
+            // Chuyển sang Date theo ngày giờ cục bộ
             let start = new Date(startInput.value + "T00:00:00");
             let end = new Date(endInput.value + "T00:00:00");
             
-            // Nếu ngày trả nhỏ hơn ngày nhận -> Tự động ép ngày trả bằng ngày nhận
+            // Nếu ngày trả trước ngày nhận thì đặt lại ngày trả bằng ngày nhận
             if (end < start) {
                 endInput.value = startInput.value;
                 end = start;
@@ -93,15 +116,28 @@
             let diffMs = end.getTime() - start.getTime();
             let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
             
-            // Nếu thuê và trả trong cùng 1 ngày -> Tính tròn 1 ngày
+            // Thuê trong ngày tính tròn 1 ngày
             if (diffDays <= 0) {
                 diffDays = 1;
             }
             
             daysLabel.innerText = diffDays + " ngày";
             
-            let total = pricePerDay * diffDays;
-            finalTotal.innerText = new Intl.NumberFormat('vi-VN').format(total) + " đ";
+            let subtotal = pricePerDay * diffDays;
+            let discountAmount = 0;
+            if (currentDiscountPercent > 0) {
+                discountAmount = Math.round((subtotal * currentDiscountPercent) / 100);
+                if (discountRow) {
+                    discountRow.classList.remove("d-none");
+                    if (discountPercentLabel) discountPercentLabel.innerText = currentDiscountPercent;
+                    if (discountAmountLabel) discountAmountLabel.innerText = "-" + new Intl.NumberFormat('vi-VN').format(discountAmount) + " đ";
+                }
+            } else {
+                if (discountRow) discountRow.classList.add("d-none");
+            }
+
+            let finalAmount = Math.max(0, subtotal - discountAmount);
+            finalTotal.innerText = new Intl.NumberFormat('vi-VN').format(finalAmount) + " đ";
         }
 
         // Bắt cả sự kiện input (khi đang gõ) và change (khi chọn từ lịch popup)
@@ -116,6 +152,59 @@
 
         endInput.addEventListener("input", updatePrice);
         endInput.addEventListener("change", updatePrice);
+
+        // Xử lý nút áp dụng mã khuyến mãi
+        if (btnApply && promoInput) {
+            btnApply.addEventListener("click", async function() {
+                const code = promoInput.value.trim();
+                if (!code) {
+                    currentDiscountPercent = 0;
+                    feedback.className = "small mt-2 text-danger";
+                    feedback.innerText = "Vui lòng nhập mã khuyến mãi!";
+                    updatePrice();
+                    return;
+                }
+
+                try {
+                    btnApply.disabled = true;
+                    btnApply.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang kiểm tra...';
+
+                    const formData = new FormData();
+                    formData.append("code", code);
+
+                    const response = await fetch("/Cart/CheckPromo", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        currentDiscountPercent = data.discountPercent || 0;
+                        feedback.className = "small mt-2 text-success fw-bold";
+                        feedback.innerHTML = '<i class="fas fa-check-circle me-1"></i> ' + data.message;
+                    } else {
+                        currentDiscountPercent = 0;
+                        feedback.className = "small mt-2 text-danger fw-bold";
+                        feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> ' + data.message;
+                    }
+                } catch (err) {
+                    currentDiscountPercent = 0;
+                    feedback.className = "small mt-2 text-danger";
+                    feedback.innerText = "Lỗi khi kiểm tra mã khuyến mãi. Vui lòng thử lại!";
+                } finally {
+                    btnApply.disabled = false;
+                    btnApply.innerHTML = "Áp dụng";
+                    updatePrice();
+                }
+            });
+
+            promoInput.addEventListener("keydown", function(e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    btnApply.click();
+                }
+            });
+        }
         
         // Tính toán ngay khi trang vừa tải xong
         updatePrice();

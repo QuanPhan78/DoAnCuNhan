@@ -14,9 +14,8 @@
     <style>
         :root {
             --brand-color: #1b98e0;
-            --brand-text: #000000; /* Phối với chữ đen theo yêu cầu */
+            --brand-text: #000000;
         }
-        /* Minimalist UI Overrides */
         .bg-brand { background-color: var(--brand-color) !important; color: var(--brand-text) !important; }
         .text-brand { color: var(--brand-color) !important; }
         .btn-brand { background-color: var(--brand-color) !important; color: var(--brand-text) !important; font-weight: 600; border: none; }
@@ -25,7 +24,7 @@
         .card-header { background-color: transparent !important; border-bottom: 2px solid #f1f3f5; font-weight: bold; }
         .card { border: 1px solid #e9ecef; box-shadow: none !important; }
         .table thead th { background-color: transparent !important; border-bottom: 2px solid #dee2e6; color: #333; }
-        .badge { color: #000 !important; font-weight: 600; } /* Text on badges should be readable */
+        .badge { color: #000 !important; font-weight: 600; }
         
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .navbar-brand { font-weight: 800; letter-spacing: 1px; }
@@ -74,12 +73,17 @@
                                     <i class="fas fa-user-circle fs-4 text-brand align-middle me-1"></i> @User.Identity.Name
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh") || User.IsInRole("KyThuat"))
                                     {
-                                        <li><a class="dropdown-item py-2 fw-bold text-brand" href="/Admin/Home"><i class="fas fa-tachometer-alt me-2 text-brand"></i>Trang Quản Trị</a></li>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                                        {
+                                            <li><a class="dropdown-item py-2 fw-bold text-brand" href="/Admin/Home"><i class="fas fa-tachometer-alt me-2 text-brand"></i>Trang Quản Trị</a></li>
+                                        }
+                                        <li><a class="dropdown-item py-2 text-dark fw-bold" href="/Admin/PhanCong/MyTasks"><i class="fas fa-tasks me-2 text-primary"></i>Công việc của tôi</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                     }
                                     <li><a class="dropdown-item py-2 text-dark fw-bold" href="/Cart/MyContracts"><i class="fas fa-file-contract me-2 text-info"></i>Hợp đồng của tôi</a></li>
+                                    <li><a class="dropdown-item py-2 text-dark fw-bold" href="/Account/MyDebt"><i class="fas fa-file-invoice-dollar me-2 text-warning"></i>Sổ công nợ</a></li>
                                     <li><a class="dropdown-item py-2 text-dark fw-bold" href="/BaoTri/MyTickets"><i class="fas fa-tools me-2 text-danger"></i>Lịch sử sự cố</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>

@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
-    // Controller quản lý từng máy vật lý cụ thể (Định danh theo Số Serial).
-    // Áp dụng các ràng buộc nghiệp vụ toàn vẹn dữ liệu: Không cho sửa/xóa máy đang cho thuê.
+    // Quản lý từng thiết bị theo số serial trong hệ thống
     [Area("Admin")]
     [Authorize(Roles = "Admin,KinhDoanh")]
     public class ThietBiController : Controller
@@ -76,8 +75,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(tb);
         }
 
-        // Cập nhật thông tin thiết bị:
-        // Ràng buộc bảo mật: Nghiêm cấm chỉnh sửa khi máy đang được khách thuê (TrangThai = 1).
+        // Cập nhật thông tin thiết bị (không cho sửa máy đang có khách thuê)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ThietBi tb)
@@ -130,8 +128,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(tb);
         }
 
-        // Thực hiện xóa thiết bị:
-        // Ràng buộc toàn vẹn: Không cho phép xóa máy đang cho thuê hoặc máy đã từng gắn liền với hợp đồng lịch sử.
+        // Xóa thiết bị khỏi hệ thống (kiểm tra không cho xóa máy đang thuê hoặc đã có lịch sử hợp đồng)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

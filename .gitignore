@@ -1,6 +1,18 @@
+﻿# Build results
+[Bb]in/
+[Oo]bj/
 
-Th�ng tin/
+# Visual Studio
 .vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
+# Word lock files & temp
+~$*
+
+# Sensitive / Large references
 Thông tin/
-.vs/
+Thng tin/
+ChallengerTests/

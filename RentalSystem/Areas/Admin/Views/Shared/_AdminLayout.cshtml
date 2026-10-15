@@ -10,7 +10,7 @@
 </head>
 <body class="d-flex">
 
-    <!-- Sidebar -->
+    <!-- Menu điều hướng -->
     <div class="sidebar" id="sidebar">
         <div class="p-3 text-center fw-bold fs-4 border-bottom border-secondary">
             <i class="fas fa-tools text-brand me-2"></i> <span class="brand-text">ABC RENTAL</span>
@@ -20,9 +20,14 @@
             <a href="/Admin/SanPham"><i class="fas fa-boxes me-2"></i> <span class="nav-text">Dòng sản phẩm</span></a>
             <a href="/Admin/ThietBi"><i class="fas fa-barcode me-2"></i> <span class="nav-text">Serial Máy</span></a>
             <a href="/Admin/HopDong"><i class="fas fa-file-contract me-2"></i> <span class="nav-text">Đơn thuê máy</span></a>
+            <a href="/Admin/HopDong/YeuCauGiaHan"><i class="fas fa-calendar-plus me-2 text-info"></i> <span class="nav-text">Yêu cầu gia hạn</span></a>
+            <a href="/Admin/KhuyenMai"><i class="fas fa-tags me-2 text-success"></i> <span class="nav-text">Mã khuyến mãi</span></a>
             <a href="/Admin/CongNo"><i class="fas fa-hand-holding-usd me-2 text-warning"></i> <span class="nav-text fw-bold text-warning">Công nợ</span></a>
             <a href="/Admin/BaoTri"><i class="fas fa-tools me-2"></i> <span class="nav-text">Bảo trì & Sự cố</span></a>
+            <a href="/Admin/PhanCong"><i class="fas fa-tasks me-2 text-primary"></i> <span class="nav-text">Phân công việc</span></a>
+            <a href="/Admin/PhanCong/MyTasks"><i class="fas fa-clipboard-check me-2 text-warning"></i> <span class="nav-text">Việc của tôi</span></a>
             <a href="/Admin/NguoiDung"><i class="fas fa-users me-2"></i> <span class="nav-text">Phân quyền user</span></a>
+            <a href="/Admin/Database"><i class="fas fa-database me-2 text-secondary"></i> <span class="nav-text">Sao lưu CSDL</span></a>
             <a href="/Admin/ThongKe"><i class="fas fa-chart-line me-2"></i> <span class="nav-text">Thống kê báo cáo</span></a>
         </div>
         <form asp-controller="Account" asp-action="Logout" asp-area="" method="post" class="mt-auto border-top">
@@ -31,7 +36,7 @@
         </form>
     </div>
 
-    <!-- Main Content -->
+    <!-- Nội dung chính -->
     <div class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <button class="btn btn-light border" id="toggleSidebar">

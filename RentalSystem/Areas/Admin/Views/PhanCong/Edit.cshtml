@@ -1,0 +1,150 @@
+@model RentalSystem.Models.PhanCongCongViec
+@{
+    ViewData["Title"] = "Chỉnh Sửa Phân Công Công Việc";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Index" class="btn btn-light shadow-sm me-3 border"><i class="fas fa-arrow-left"></i></a>
+    <div>
+        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-edit me-2 text-primary"></i> Chỉnh Sửa Phân Công #@Model.MaPhanCong</h3>
+        <span class="text-muted small">Cập nhật nội dung, nhân viên phụ trách hoặc trạng thái xử lý nhiệm vụ.</span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="MaPhanCong" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-4"></div>
+
+                    <!-- Trạng thái công việc -->
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <label class="form-label fw-bold mb-2"><i class="fas fa-traffic-light me-1 text-primary"></i> Trạng thái tiến độ <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="TrangThai" id="status0" value="0">
+                                <label class="form-check-label fw-bold text-primary" for="status0">
+                                    <i class="fas fa-clock me-1"></i> 0 - Mới (Chờ nhận)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="TrangThai" id="status1" value="1">
+                                <label class="form-check-label fw-bold text-warning" for="status1">
+                                    <i class="fas fa-spinner me-1"></i> 1 - Đang thực hiện
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="TrangThai" id="status2" value="2">
+                                <label class="form-check-label fw-bold text-success" for="status2">
+                                    <i class="fas fa-check-circle me-1"></i> 2 - Hoàn thành
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="TrangThai" id="status3" value="3">
+                                <label class="form-check-label fw-bold text-secondary" for="status3">
+                                    <i class="fas fa-ban me-1"></i> 3 - Đã hủy
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="TrangThai" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Nhân viên thực hiện -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nhân viên phụ trách <span class="text-danger">*</span></label>
+                        <select asp-for="MaNhanVien" class="form-select select2" asp-items="ViewBag.NhanVienList" required>
+                            <option value="">-- Chọn nhân viên thực hiện --</option>
+                        </select>
+                        <span asp-validation-for="MaNhanVien" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Tiêu đề công việc -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tiêu đề công việc <span class="text-danger">*</span></label>
+                        <input asp-for="TieuDe" class="form-control" required />
+                        <span asp-validation-for="TieuDe" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Nội dung công việc -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nội dung chi tiết & Hướng dẫn <span class="text-danger">*</span></label>
+                        <textarea asp-for="NoiDung" class="form-control" rows="5" required></textarea>
+                        <span asp-validation-for="NoiDung" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Ghi chú tiến độ -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-comment-alt text-info me-1"></i> Ghi chú tiến độ / Báo cáo phản hồi</label>
+                        <textarea asp-for="GhiChuTienDo" class="form-control" rows="3" placeholder="Nhập ghi chú phản hồi, linh kiện đã thay, tình trạng thực tế..."></textarea>
+                        <span asp-validation-for="GhiChuTienDo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <!-- Liên kết Hợp đồng -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold"><i class="fas fa-file-contract text-info me-1"></i> Liên kết Đơn thuê / Hợp đồng</label>
+                            <select asp-for="MaHopDong" class="form-select" asp-items="ViewBag.HopDongList">
+                                <option value="">-- Không liên kết --</option>
+                            </select>
+                            <span asp-validation-for="MaHopDong" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Liên kết Phiếu bảo trì -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold"><i class="fas fa-tools text-danger me-1"></i> Liên kết Phiếu bảo trì</label>
+                            <select asp-for="MaPhieuBaoTri" class="form-select" asp-items="ViewBag.PhieuBaoTriList">
+                                <option value="">-- Không liên kết --</option>
+                            </select>
+                            <span asp-validation-for="MaPhieuBaoTri" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hạn hoàn thành -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="far fa-calendar-alt text-warning me-1"></i> Thời hạn hoàn thành (Deadline)</label>
+                        <input asp-for="HanHoanThanh" type="datetime-local" class="form-control" value="@(Model.HanHoanThanh.HasValue ? Model.HanHoanThanh.Value.ToString("yyyy-MM-ddTHH:mm") : "")" />
+                        <span asp-validation-for="HanHoanThanh" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-brand fw-bold px-4 py-2 shadow-sm">
+                            <i class="fas fa-save me-1"></i> Lưu thay đổi
+                        </button>
+                        <a asp-action="Index" class="btn btn-light border px-4 py-2">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông tin Meta bên phải -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 bg-light mb-3">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="fas fa-history text-secondary me-2"></i>Lịch sử nhiệm vụ</h5>
+                <div class="mb-2">
+                    <span class="text-muted small">Thời gian giao việc:</span>
+                    <div class="fw-bold text-dark">@Model.NgayGiao.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+                @if (Model.NgayHoanThanh.HasValue)
+                {
+                    <div class="mb-2">
+                        <span class="text-muted small">Thời gian hoàn thành:</span>
+                        <div class="fw-bold text-success"><i class="fas fa-check me-1"></i>@Model.NgayHoanThanh.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <span class="text-muted small">Thời gian hoàn thành:</span>
+                        <div class="text-muted fst-italic">Chưa hoàn tất</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

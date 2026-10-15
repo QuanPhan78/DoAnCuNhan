@@ -2,8 +2,9 @@
 @{
     Layout = null;
     var chiTiets = ViewBag.ChiTiets as IEnumerable<RentalSystem.Models.ChiTietHopDong>;
-    int soNgayThue = (int)(Model.NgayKetThuc - Model.NgayBatDau).TotalDays;
+    int soNgayThue = (int)(Model.NgayKetThuc.Date - Model.NgayBatDau.Date).TotalDays;
     if (soNgayThue <= 0) soNgayThue = 1;
+    var ngayKy = Model.NgayKy ?? DateTime.Now;
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -35,7 +36,7 @@
         <div class="fw-bold" style="text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</div>
         <br />
         <div style="text-align: right; font-style: italic;">
-            TP.HCM, ngày @(Model.NgayKy?.ToString("dd") ?? "...") tháng @(Model.NgayKy?.ToString("MM") ?? "...") năm @(Model.NgayKy?.ToString("yyyy") ?? "...")
+            TP.HCM, ngày @ngayKy.ToString("dd") tháng @ngayKy.ToString("MM") năm @ngayKy.ToString("yyyy")
         </div>
     </div>
 
@@ -48,12 +49,12 @@
         - Căn cứ vào nhu cầu và năng lực của hai bên.
     </div>
 
-    <p>Hôm nay, ngày @(Model.NgayKy?.ToString("dd/MM/yyyy") ?? "...................."), tại TP.HCM, chúng tôi gồm có:</p>
+    <p>Hôm nay, ngày @ngayKy.ToString("dd/MM/yyyy"), tại TP.HCM, chúng tôi gồm có:</p>
 
     <div class="fw-bold" style="margin-top:15px;">BÊN A (BÊN THUÊ):</div>
     <ul>
         <li><strong>Ông/Bà:</strong> @Model.KhachHang?.HoTen</li>
-        <li><strong>CCCD/CMND số:</strong> @(string.IsNullOrEmpty(Model.KhachHang?.CCCD) ? ".............................." : Model.KhachHang.CCCD)</li>
+        <li><strong>CCCD/CMND số:</strong> @Model.KhachHang?.CCCD</li>
         <li><strong>Địa chỉ giao máy:</strong> @Model.GhiChu</li>
         <li><strong>Điện thoại:</strong> @Model.KhachHang?.SoDienThoai</li>
         <li><strong>Email:</strong> @Model.KhachHang?.Email</li>

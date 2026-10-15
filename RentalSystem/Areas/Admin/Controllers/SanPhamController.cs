@@ -9,8 +9,7 @@ using System.Threading.Tasks;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
-    // Controller quản lý Danh mục Sản phẩm (Model/Dòng máy) trong phân hệ Quản trị.
-    // Quản lý giá thuê, cấu hình, hình ảnh đại diện và thống kê tồn kho theo từng dòng máy.
+    // Quản lý danh mục sản phẩm thiết bị
     [Area("Admin")]
     [Authorize(Roles = "Admin,KinhDoanh")]
     public class SanPhamController : Controller
@@ -22,14 +21,13 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
-        // Danh sách sản phẩm kèm theo thống kê số lượng máy vật lý:
-        // Tổng số máy trong kho, số máy sẵn sàng cho thuê và số máy đang có khách thuê.
+        // Danh sách sản phẩm và thống kê số lượng thiết bị trong kho
         public async Task<IActionResult> Index()
         {
             var sanPhams = await _context.SanPhams.Include(s => s.LoaiThietBi).ToListAsync();
             ViewBag.Categories = await _context.LoaiThietBis.ToListAsync();
 
-            // Đồng bộ dữ liệu tồn kho thực tế từ bảng thiết bị con (ThietBi)
+            // Thống kê số lượng máy theo từng trạng thái
             var devices = await _context.ThietBis.ToListAsync();
             ViewBag.TotalMap = devices.GroupBy(t => t.MaSanPham).ToDictionary(g => g.Key, g => g.Count());
             ViewBag.AvailableMap = devices.Where(t => !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now)).GroupBy(t => t.MaSanPham).ToDictionary(g => g.Key, g => g.Count());
@@ -38,14 +36,14 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(sanPhams);
         }
 
-        // Mở form thêm mới dòng sản phẩm.
+        // Form thêm sản phẩm mới
         public IActionResult Create()
         {
             ViewBag.MaLoai = new SelectList(_context.LoaiThietBis, "MaLoai", "TenLoai");
             return View();
         }
 
-        // Tiếp nhận dữ liệu lưu sản phẩm mới vào CSDL.
+        // Lưu sản phẩm mới
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(SanPham sp)
@@ -70,7 +68,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(sp);
         }
 
-        // Mở form chỉnh sửa thông tin sản phẩm (giá thuê, tên máy, cấu hình).
+        // Form chỉnh sửa thông tin sản phẩm
         public async Task<IActionResult> Edit(int id)
         {
             var sp = await _context.SanPhams.FindAsync(id);
@@ -79,7 +77,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(sp);
         }
 
-        // Cập nhật thông tin sản phẩm sau khi sửa đổi.
+        // Cập nhật thông tin sản phẩm
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, SanPham sp)
@@ -106,8 +104,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(sp);
         }
 
-        // Xác nhận xóa dòng sản phẩm.
-        // Kiểm tra an toàn: Nếu đã có thiết bị con thuộc sản phẩm này thì không cho phép xóa.
+        // Xác nhận xóa sản phẩm
         public async Task<IActionResult> Delete(int id)
         {
             var sp = await _context.SanPhams.Include(s => s.LoaiThietBi).FirstOrDefaultAsync(m => m.MaSanPham == id);
@@ -123,7 +120,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(sp);
         }
 
-        // Thực hiện xóa sản phẩm khỏi CSDL.
+        // Xóa sản phẩm khỏi hệ thống
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

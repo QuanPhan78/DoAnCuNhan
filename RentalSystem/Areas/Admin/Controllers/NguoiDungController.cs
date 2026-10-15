@@ -6,7 +6,7 @@ using RentalSystem.Models;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
-    // Controller quản lý Người dùng và Phân quyền nội bộ (Admin, Kinh Doanh, Kế Toán, Kỹ Thuật, Khách Hàng).
+    // Quản lý tài khoản người dùng và phân quyền
     [Area("Admin")]
     [Authorize(Roles = "Admin")]
     public class NguoiDungController : Controller
@@ -18,21 +18,21 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
-        // Danh sách toàn bộ tài khoản người dùng trong hệ thống kèm vai trò tương ứng.
+        // Danh sách tài khoản người dùng
         public async Task<IActionResult> Index()
         {
             var users = await _context.NguoiDungs.Include(n => n.VaiTro).ToListAsync();
             return View(users);
         }
 
-        // Mở form tạo mới tài khoản người dùng / nhân viên.
+        // Form thêm tài khoản mới
         public async Task<IActionResult> Create()
         {
             ViewData["MaVaiTro"] = new SelectList(await _context.VaiTros.ToListAsync(), "MaVaiTro", "TenVaiTro");
             return View();
         }
 
-        // Lưu tài khoản mới vào CSDL. Mặc định kích hoạt TrangThai = true.
+        // Lưu tài khoản mới
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(NguoiDung nguoiDung)
@@ -60,7 +60,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(nguoiDung);
         }
 
-        // Mở form chỉnh sửa thông tin người dùng (Đổi vai trò, khóa/mở tài khoản, cập nhật số điện thoại).
+        // Form chỉnh sửa tài khoản
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -72,7 +72,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(nguoiDung);
         }
 
-        // Cập nhật thông tin người dùng.
+        // Cập nhật thông tin tài khoản
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, NguoiDung nguoiDung)
@@ -84,6 +84,15 @@ namespace RentalSystem.Areas.Admin.Controllers
             ModelState.Remove("MatKhau");
             ModelState.Remove("CCCD");
             ModelState.Remove("DiaChi");
+
+            var existingUser = await _context.NguoiDungs.AsNoTracking().FirstOrDefaultAsync(u => u.MaNguoiDung == id);
+            if (existingUser != null)
+            {
+                if (string.IsNullOrEmpty(nguoiDung.MatKhau)) nguoiDung.MatKhau = existingUser.MatKhau;
+                if (string.IsNullOrEmpty(nguoiDung.Email)) nguoiDung.Email = existingUser.Email;
+                if (string.IsNullOrEmpty(nguoiDung.CCCD)) nguoiDung.CCCD = existingUser.CCCD;
+                if (string.IsNullOrEmpty(nguoiDung.DiaChi)) nguoiDung.DiaChi = existingUser.DiaChi;
+            }
 
             nguoiDung.Email = nguoiDung.Email ?? "";
             nguoiDung.MatKhau = nguoiDung.MatKhau ?? "";
@@ -109,7 +118,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(nguoiDung);
         }
 
-        // Màn hình xác nhận xóa tài khoản người dùng.
+        // Xác nhận xóa tài khoản
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -122,7 +131,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(nguoiDung);
         }
 
-        // Thực hiện xóa tài khoản khỏi hệ thống.
+        // Xóa tài khoản người dùng
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

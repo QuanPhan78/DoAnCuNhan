@@ -1,0 +1,283 @@
+@model RentalSystem.Areas.Admin.Controllers.DatabaseDashboardViewModel
+@{
+    ViewData["Title"] = "Sao Lưu & Khôi Phục Cơ Sở Dữ Liệu";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">
+            <i class="fas fa-database me-2 text-primary"></i> Quản Lý Sao Lưu & Khôi Phục CSDL
+        </h2>
+        <span class="text-muted small">Quản trị viên có thể kết xuất toàn bộ dữ liệu hệ thống hoặc khôi phục dữ liệu một cách an toàn</span>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm shadow-sm">
+            <i class="fas fa-sync-alt me-1"></i> Làm mới dữ liệu
+        </a>
+    </div>
+</div>
+
+<!-- THÔNG BÁO TRẠNG THÁI (TempData) -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <i class="fas fa-check-circle me-2 fs-5"></i> <strong>Thành công!</strong> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <i class="fas fa-exclamation-triangle me-2 fs-5"></i> <strong>Lưu ý:</strong> @TempData["Warning"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <i class="fas fa-times-circle me-2 fs-5"></i> <strong>Lỗi:</strong> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- THẺ TRẠNG THÁI HỆ THỐNG & KẾT NỐI (Status Cards) -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-muted fw-bold mb-1">Máy chủ SQL</div>
+                        <div class="h6 mb-0 fw-bold text-dark text-truncate" style="max-width: 170px;" title="@Model.ServerName">@Model.ServerName</div>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 rounded p-3 text-primary">
+                        <i class="fas fa-server fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-muted fw-bold mb-1">Cơ sở dữ liệu</div>
+                        <div class="h6 mb-0 fw-bold text-dark">@Model.DatabaseName</div>
+                    </div>
+                    <div class="bg-info bg-opacity-10 rounded p-3 text-info">
+                        <i class="fas fa-database fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card shadow-sm border-0 h-100 border-start @(Model.IsConnected ? "border-success" : "border-danger") border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-muted fw-bold mb-1">Trạng thái kết nối</div>
+                        <div class="h6 mb-0 fw-bold">
+                            @if (Model.IsConnected)
+                            {
+                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Hoạt động tốt</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i> Mất kết nối</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="@(Model.IsConnected ? "bg-success text-success" : "bg-danger text-danger") bg-opacity-10 rounded p-3">
+                        <i class="fas fa-plug fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase text-muted fw-bold mb-1">Tổng số bản ghi</div>
+                        <div class="h5 mb-0 fw-bold text-dark">@Model.TotalRows.ToString("N0")</div>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 rounded p-3 text-warning">
+                        <i class="fas fa-layer-group fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KHU VỰC THAO TÁC: SAO LƯU & KHÔI PHỤC (Backup & Restore Cards) -->
+<div class="row mb-4">
+    <!-- THẺ SAO LƯU (BACKUP) -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title mb-0 fw-bold text-success">
+                    <i class="fas fa-download me-2"></i> Sao Lưu Dữ Liệu (Backup)
+                </h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted">
+                    Hệ thống sẽ kết xuất toàn bộ dữ liệu từ <strong>18 bảng nghiệp vụ</strong> (Hợp đồng, Sản phẩm, Thiết bị, Công nợ, Khách hàng, Bảo trì, Khuyến mãi, Phân công việc...) thành tệp sao lưu có cấu trúc chuẩn.
+                </p>
+                
+                <div class="alert alert-info py-2 small mb-4">
+                    <i class="fas fa-info-circle me-1"></i> <strong>Độ tin cậy cao:</strong> Sao lưu định dạng JSON được bảo vệ bằng cơ chế xử lý ngoại lệ vòng kín, đảm bảo không phụ thuộc vào quyền ghi tập tin hệ điều hành của SQL Server.
+                </div>
+
+                <div class="mt-auto">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Backup" asp-route-format="json" class="btn btn-success btn-lg shadow-sm">
+                            <i class="fas fa-file-download me-2"></i> Tạo & Tải Bản Sao Lưu JSON (Khuyến nghị)
+                        </a>
+                        <a asp-action="Backup" asp-route-format="bak" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-database me-1"></i> Tải bản sao lưu Native SQL Server (.bak)
+                        </a>
+                    </div>
+                    <small class="text-muted d-block text-center mt-2">
+                        Thời gian sao lưu ước tính: < 3 giây cho toàn bộ CSDL
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- THẺ KHÔI PHỤC (RESTORE) -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title mb-0 fw-bold text-danger">
+                    <i class="fas fa-upload me-2"></i> Khôi Phục Dữ Liệu (Restore)
+                </h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div class="alert alert-danger py-2 small mb-3">
+                    <i class="fas fa-exclamation-triangle me-1"></i> <strong>CẢNH BÁO NGUY HIỂM:</strong> Quá trình khôi phục sẽ ghi đè toàn bộ dữ liệu hiện tại bằng dữ liệu trong tệp tải lên. Hãy chắc chắn bạn đã tải về bản sao lưu dự phòng trước khi thực hiện!
+                </div>
+
+                <form asp-action="Restore" method="post" enctype="multipart/form-data" id="restoreForm">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label for="backupFile" class="form-label fw-bold small text-secondary">Chọn tệp sao lưu (.json hoặc .bak):</label>
+                        <input class="form-control" type="file" id="backupFile" name="backupFile" accept=".json,.bak" required />
+                        <div class="form-text small">Hỗ trợ tệp <code>.json</code> được xuất từ hệ thống hoặc tệp native <code>.bak</code>.</div>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmCheck" required />
+                        <label class="form-check-label small text-danger fw-bold" for="confirmCheck">
+                            Tôi hiểu rõ và xác nhận muốn khôi phục dữ liệu ghi đè.
+                        </label>
+                    </div>
+
+                    <div class="d-grid mt-auto">
+                        <button type="submit" class="btn btn-danger btn-lg shadow-sm" id="btnRestoreSubmit">
+                            <i class="fas fa-history me-2"></i> Tiến Hành Khôi Phục CSDL
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê chi tiết số lượng bản ghi theo bảng -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="fas fa-table me-2 text-secondary"></i> Thống Kê Chi Tiết Bản Ghi Theo Bảng
+        </h5>
+        <span class="badge bg-light text-dark border">
+            Kiểm tra lúc: @Model.CheckedAt.ToString("HH:mm:ss dd/MM/yyyy")
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center" style="width: 60px;">#</th>
+                        <th>Tên Bảng (Entity)</th>
+                        <th>Mô Tả Nghiệp Vụ</th>
+                        <th class="text-center">Số Lượng Bản Ghi</th>
+                        <th class="text-center" style="width: 150px;">Trạng Thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Tables != null && Model.Tables.Any())
+                    {
+                        int index = 1;
+                        foreach (var table in Model.Tables)
+                        {
+                            <tr>
+                                <td class="text-center text-muted fw-bold">@(index++)</td>
+                                <td>
+                                    <i class="fas @table.Icon me-2 text-primary opacity-75"></i>
+                                    <code>@table.TableName</code>
+                                </td>
+                                <td class="fw-bold text-secondary">@table.DisplayName</td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary fs-6 px-3">@table.RowCount.ToString("N0")</span>
+                                </td>
+                                <td class="text-center">
+                                    @if (table.RowCount > 0)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success px-2 py-1">
+                                            <i class="fas fa-check me-1"></i> Có dữ liệu
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">
+                                            <i class="fas fa-minus me-1"></i> Bảng trống
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">Chưa có thông tin bảng</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('restoreForm').addEventListener('submit', function (e) {
+            var fileInput = document.getElementById('backupFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Vui lòng chọn tệp sao lưu trước khi thực hiện!');
+                e.preventDefault();
+                return false;
+            }
+
+            var confirmMsg = 'CẢNH BÁO: Dữ liệu hiện tại sẽ bị xóa và ghi đè bằng tệp sao lưu "' + fileInput.files[0].name + '". Bạn có chắc chắn muốn tiếp tục không?';
+            if (!confirm(confirmMsg)) {
+                e.preventDefault();
+                return false;
+            }
+
+            var btn = document.getElementById('btnRestoreSubmit');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Đang khôi phục dữ liệu...';
+        });
+    </script>
+}

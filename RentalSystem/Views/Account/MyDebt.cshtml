@@ -1,0 +1,585 @@
+@model IEnumerable<RentalSystem.Models.HopDong>
+@using RentalSystem.Common
+@{
+    ViewData["Title"] = "Sổ công nợ khách hàng";
+    var user = ViewBag.User as RentalSystem.Models.NguoiDung;
+    decimal totalDebt = (decimal)(ViewBag.TotalDebt ?? 0m);
+    decimal upcomingRentAmount = (decimal)(ViewBag.UpcomingRentAmount ?? 0m);
+    decimal unpaidDamageFees = (decimal)(ViewBag.UnpaidDamageFees ?? 0m);
+    decimal totalDamageFees = (decimal)(ViewBag.TotalDamageFees ?? 0m);
+    decimal totalLateFee = (decimal)(ViewBag.TotalLateFee ?? 0m);
+    decimal totalOverdueDebt = (decimal)(ViewBag.TotalOverdueDebt ?? 0m);
+    bool isBlacklisted = (bool)(ViewBag.IsBlacklisted ?? false);
+    string blacklistReason = ViewBag.BlacklistReason as string ?? "";
+
+    var unpaidKyHans = ViewBag.UnpaidKyHans as List<RentalSystem.Models.KyHanThanhToan> ?? new List<RentalSystem.Models.KyHanThanhToan>();
+    var upcomingInstallments = ViewBag.UpcomingInstallments as List<RentalSystem.Models.KyHanThanhToan> ?? new List<RentalSystem.Models.KyHanThanhToan>();
+    var overdueInstallments = ViewBag.OverdueInstallments as List<RentalSystem.Models.KyHanThanhToan> ?? new List<RentalSystem.Models.KyHanThanhToan>();
+    var damageTickets = ViewBag.DamageTickets as List<RentalSystem.Models.PhieuBaoTri> ?? new List<RentalSystem.Models.PhieuBaoTri>();
+}
+
+<div class="container my-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="/Account/Profile" class="text-decoration-none">Tài khoản</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Sổ công nợ khách hàng</li>
+        </ol>
+    </nav>
+
+    <!-- Header Title -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">
+                <i class="fas fa-file-invoice-dollar text-warning me-2"></i>Sổ Công Nợ Khách Hàng
+            </h2>
+            <p class="text-muted mb-0">Theo dõi toàn bộ dư nợ tiền thuê, kỳ hạn đến hạn, tiền phạt trễ hạn và chi phí bồi thường hư hại.</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <a href="/Cart/MyContracts" class="btn btn-outline-primary me-2">
+                <i class="fas fa-file-contract me-1"></i> Danh sách hợp đồng
+            </a>
+            <button type="button" class="btn btn-success fw-bold" onclick="openVietQrModal(0, 0, @((long)totalDebt), 'HD TONG NO', 'Thanh toán toàn bộ dư nợ')">
+                <i class="fas fa-qrcode me-1"></i> Quét VietQR thanh toán
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert thông báo -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success shadow-sm alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Cảnh báo khóa tài khoản do nợ xấu -->
+    @if (isBlacklisted)
+    {
+        <div class="alert alert-danger shadow border-danger border-2 p-3 mb-4 rounded-3">
+            <div class="d-flex align-items-start">
+                <div class="fs-1 text-danger me-3">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-danger mb-1">
+                        <i class="fas fa-ban me-1"></i> TÀI KHOẢN ĐANG BỊ KHÓA ĐẶT THUÊ DO NỢ XẤU
+                    </h5>
+                    <p class="mb-2 fs-6">@blacklistReason</p>
+                    <div class="badge bg-danger p-2 fs-6 mb-2">Quy định: Kỳ hạn quá hạn > 15 ngày HOẶC Tổng nợ quá hạn > 3.000.000đ sẽ bị chặn Checkout / Ký Hợp Đồng.</div>
+                    <p class="text-dark mb-0 fw-semibold">
+                        <i class="fas fa-info-circle text-primary me-1"></i> Quý khách vui lòng quét mã VietQR bên dưới để thanh toán tất toán các kỳ quá hạn. Hệ thống sẽ tự động gạch nợ và mở khóa tài khoản!
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Thống kê tổng quan -->
+    <div class="row g-3 mb-4">
+        <!-- Tổng dư nợ -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-danger h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted fw-bold small text-uppercase">Tổng Dư Nợ Thực Tế</span>
+                            <h3 class="fw-bold text-danger mb-0 mt-1">@totalDebt.ToString("N0") <small class="fs-6">đ</small></h3>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle p-3">
+                            <i class="fas fa-coins fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        @if (totalDebt > 0)
+                        {
+                            <span class="text-danger fw-semibold"><i class="fas fa-exclamation-circle me-1"></i>Chưa tất toán đủ</span>
+                        }
+                        else
+                        {
+                            <span class="text-success fw-semibold"><i class="fas fa-check-circle me-1"></i>Không có dư nợ</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiền thuê sắp đến hạn -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted fw-bold small text-uppercase">Tiền Thuê Đến Hạn (7 ngày)</span>
+                            <h3 class="fw-bold text-primary mb-0 mt-1">@upcomingRentAmount.ToString("N0") <small class="fs-6">đ</small></h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3">
+                            <i class="fas fa-calendar-alt fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        <span class="fw-semibold text-primary">@upcomingInstallments.Count kỳ</span> sắp đến hạn thanh toán
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phí bảo trì đền bù -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted fw-bold small text-uppercase">Phí Đền Bù Hư Hại</span>
+                            <h3 class="fw-bold text-warning mb-0 mt-1">@unpaidDamageFees.ToString("N0") <small class="fs-6">đ</small></h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
+                            <i class="fas fa-tools fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Tổng phát sinh: <span class="fw-bold">@totalDamageFees.ToString("N0") đ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiền phạt trễ hạn -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card shadow-sm border-0 border-start border-4 border-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted fw-bold small text-uppercase">Tiền Phạt Trễ Hạn</span>
+                            <h3 class="fw-bold text-dark mb-0 mt-1">@totalLateFee.ToString("N0") <small class="fs-6">đ</small></h3>
+                        </div>
+                        <div class="bg-dark bg-opacity-10 text-dark rounded-circle p-3">
+                            <i class="fas fa-percentage fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Lãi quá hạn: <span class="text-danger fw-semibold">0.1%/ngày (sau 3 ngày)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanh toán nhanh qua VietQR -->
+    <div class="card shadow-sm border-primary mb-4 bg-light">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center mb-3 mb-md-0">
+                    @{
+                        long quickAmount = (long)(totalDebt > 0 ? totalDebt : (upcomingRentAmount > 0 ? upcomingRentAmount : 100000m));
+                        string quickAddInfo = "HD CONG NO";
+                        var firstOverdue = overdueInstallments.FirstOrDefault() ?? unpaidKyHans.FirstOrDefault();
+                        if (firstOverdue != null)
+                        {
+                            quickAmount = (long)Math.Max(10000m, (firstOverdue.SoTienPhai - firstOverdue.SoTienDaTra) + firstOverdue.TienPhat);
+                            quickAddInfo = $"HD{firstOverdue.MaHopDong} KY{firstOverdue.SoKyHan}";
+                        }
+                    }
+                    <img id="quickQrImg" src="https://img.vietqr.io/image/MB-0783406516-compact.png?amount=@quickAmount&addInfo=@quickAddInfo&accountName=PHAN%20MINH%20QUAN" 
+                         alt="VietQR MBBank" class="img-fluid border rounded p-2 bg-white shadow-sm" style="max-height: 180px;" />
+                    <div class="small text-muted mt-1 fw-bold"><i class="fas fa-qrcode me-1"></i>Quét QR thanh toán ngay</div>
+                </div>
+                <div class="col-md-9">
+                    <h5 class="fw-bold text-primary mb-2">
+                        <i class="fas fa-university me-2"></i>Thanh Toán Qua Chuyển Khoản Ngân Hàng VietQR (MBBank)
+                    </h5>
+                    <p class="text-muted small mb-3">Hệ thống hỗ trợ thanh toán linh hoạt từng kỳ hạn hoặc tất toán công nợ nhanh chóng qua chuẩn VietQR liên ngân hàng:</p>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-white rounded border">
+                                <span class="text-muted small d-block">Ngân hàng thụ hưởng:</span>
+                                <strong class="text-dark">MBBank (Ngân hàng Quân Đội)</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-white rounded border">
+                                <span class="text-muted small d-block">Số tài khoản:</span>
+                                <strong class="text-danger fs-5 font-monospace">0783406516</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-white rounded border">
+                                <span class="text-muted small d-block">Chủ tài khoản:</span>
+                                <strong class="text-dark">PHAN MINH QUAN</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-white rounded border">
+                                <span class="text-muted small d-block">Cú pháp chuyển khoản chuẩn:</span>
+                                <strong class="text-primary font-monospace">HD[Mã HĐ] KY[Số Kỳ]</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách kỳ hạn thanh toán (Sắp đến hạn & Quá hạn) -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="fas fa-clock text-warning me-2"></i>Danh Sách Kỳ Hạn Cần Thanh Toán (@unpaidKyHans.Count kỳ)
+            </h5>
+            <span class="badge bg-secondary">Bao gồm kỳ sắp đến hạn &amp; quá hạn</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th>Hợp đồng</th>
+                            <th>Kỳ hạn</th>
+                            <th>Ngày đến hạn</th>
+                            <th>Nợ gốc (VNĐ)</th>
+                            <th>Tiền phạt</th>
+                            <th>Tổng phải trả</th>
+                            <th>Tuổi nợ</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!unpaidKyHans.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="py-4 text-muted">
+                                    <i class="fas fa-check-circle text-success fs-3 d-block mb-2"></i>
+                                    Tuyệt vời! Quý khách không có kỳ hạn thanh toán nào đang còn nợ.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var k in unpaidKyHans)
+                        {
+                            decimal gocConLai = Math.Max(0m, k.SoTienPhai - k.SoTienDaTra);
+                            decimal tongPhaiTra = gocConLai + k.TienPhat;
+                            bool isOverdue = k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date);
+                            int overdueDays = Math.Max(k.SoNgayTreHan, (int)(DateTime.Now.Date - k.NgayDenHan.Date).TotalDays);
+                            int agingTier = isOverdue ? DebtCalculationHelper.CalculateAgingTier(overdueDays) : 0;
+                            string badgeClass = DebtCalculationHelper.GetAgingBadgeClass(agingTier);
+                            string tierName = DebtCalculationHelper.GetAgingTierName(agingTier);
+                            string addInfoParam = $"HD{k.MaHopDong} KY{k.SoKyHan}";
+                            long tongPhaiTraLong = (long)tongPhaiTra;
+
+                            <tr class="@(isOverdue ? "table-danger table-opacity-10" : "")">
+                                <td>
+                                    <a href="/Cart/ContractDetail/@k.MaHopDong" class="fw-bold text-decoration-none text-primary">
+                                        #HD@(k.MaHopDong)
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark">Kỳ @k.SoKyHan</span>
+                                </td>
+                                <td>
+                                    <span class="@(isOverdue ? "text-danger fw-bold" : "text-dark")">
+                                        @k.NgayDenHan.ToString("dd/MM/yyyy")
+                                    </span>
+                                    @if (isOverdue)
+                                    {
+                                        <div class="small text-danger fw-bold">Trễ @overdueDays ngày</div>
+                                    }
+                                </td>
+                                <td class="fw-bold text-dark">
+                                    @gocConLai.ToString("N0") đ
+                                </td>
+                                <td>
+                                    @if (k.TienPhat > 0)
+                                    {
+                                        <span class="text-danger fw-bold">+@k.TienPhat.ToString("N0") đ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">0 đ</span>
+                                    }
+                                </td>
+                                <td class="fw-bold text-danger fs-6">
+                                    @tongPhaiTra.ToString("N0") đ
+                                </td>
+                                <td>
+                                    @if (isOverdue)
+                                    {
+                                        <span class="@badgeClass">@tierName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Đúng hạn</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (isOverdue)
+                                    {
+                                        <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Quá hạn</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half"></i> Chưa trả</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-success fw-bold"
+                                            onclick="openVietQrModal(@k.MaHopDong, @k.SoKyHan, @tongPhaiTraLong, '@addInfoParam', 'Thanh toán Kỳ @k.SoKyHan Hợp đồng #HD@k.MaHopDong')">
+                                        <i class="fas fa-qrcode me-1"></i> Thanh toán VietQR
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng phiếu đền bù hư hại bảo trì -->
+    @if (damageTickets.Any())
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="fas fa-tools text-danger me-2"></i>Phiếu Đền Bù Hư Hại &amp; Sửa Chữa Thiết Bị (@damageTickets.Count phiếu)
+                </h5>
+                <span class="badge bg-warning text-dark">Phát sinh từ biên bản kiểm tra kỹ thuật</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="table-light text-muted small text-uppercase">
+                            <tr>
+                                <th>Mã phiếu</th>
+                                <th>Hợp đồng</th>
+                                <th>Thiết bị</th>
+                                <th>Mô tả hư hại</th>
+                                <th>Ngày báo</th>
+                                <th>Phí đền bù (VNĐ)</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var bt in damageTickets)
+                            {
+                                string btAddInfo = $"HD{bt.MaHopDong} BT{bt.MaPhieu}";
+                                long btAmountLong = (long)bt.PhiDenBu;
+                                <tr>
+                                    <td class="fw-bold">#BT@(bt.MaPhieu)</td>
+                                    <td>
+                                        <a href="/Cart/ContractDetail/@bt.MaHopDong" class="fw-bold text-decoration-none">
+                                            #HD@(bt.MaHopDong)
+                                        </a>
+                                    </td>
+                                    <td class="text-start">
+                                        <span class="fw-semibold">@(bt.ThietBi?.SanPham?.TenSanPham ?? "Thiết bị")</span>
+                                        <small class="d-block text-muted">Mã: @(bt.ThietBi?.MaThietBi)</small>
+                                    </td>
+                                    <td class="text-start text-danger small">
+                                        @bt.MoTaLoi
+                                    </td>
+                                    <td>@bt.NgayBaoLoi.ToString("dd/MM/yyyy")</td>
+                                    <td class="fw-bold text-danger fs-6">
+                                        @bt.PhiDenBu.ToString("N0") đ
+                                    </td>
+                                    <td>
+                                        @if (bt.TrangThai == 3)
+                                        {
+                                            <span class="badge bg-success">Đã hoàn thành</span>
+                                        }
+                                        else if (bt.TrangThai == 4)
+                                        {
+                                            <span class="badge bg-danger">Hỏng không thể sửa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Đang xử lý</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold"
+                                                onclick="openVietQrModal(@(bt.MaHopDong ?? 0), 0, @btAmountLong, '@btAddInfo', 'Bồi thường hư hại phiếu #BT@bt.MaPhieu')">
+                                            <i class="fas fa-qrcode me-1"></i> Bồi thường VietQR
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Tóm tắt công nợ theo hợp đồng -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="fas fa-list-alt text-primary me-2"></i>Tổng Hợp Công Nợ Theo Từng Hợp Đồng
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th>Mã HĐ</th>
+                            <th>Thời gian thuê</th>
+                            <th>Tổng giá trị</th>
+                            <th>Tiền cọc máy</th>
+                            <th>Phí đền bù</th>
+                            <th>Đã thanh toán</th>
+                            <th>Thực tế còn nợ</th>
+                            <th>Trạng thái HĐ</th>
+                            <th>Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="9" class="py-4 text-muted">Không có hợp đồng nào.</td></tr>
+                        }
+                        @foreach (var hd in Model)
+                        {
+                            var (receivable, collected, remaining) = DebtCalculationHelper.CalculateContractDebt(hd);
+                            decimal hdDamages = hd.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m;
+                            decimal tienCocMay = hd.TienCocBaoDamMay > 0 ? hd.TienCocBaoDamMay : hd.TienDaCoc;
+
+                            <tr>
+                                <td class="fw-bold">#HD@(hd.MaHopDong)</td>
+                                <td class="small">
+                                    @hd.NgayBatDau.ToString("dd/MM/yyyy") - @hd.NgayKetThuc.ToString("dd/MM/yyyy")
+                                </td>
+                                <td class="fw-bold">@hd.TongTien.ToString("N0") đ</td>
+                                <td class="text-warning fw-semibold">@tienCocMay.ToString("N0") đ</td>
+                                <td>
+                                    @(hdDamages > 0 ? $"{hdDamages:N0} đ" : "0 đ")
+                                </td>
+                                <td class="text-success fw-bold">@collected.ToString("N0") đ</td>
+                                <td class="fw-bold @(remaining > 0 ? "text-danger" : "text-success") fs-6">
+                                    @(remaining > 0 ? $"{remaining:N0} đ" : "0 đ")
+                                </td>
+                                <td>
+                                    @if (hd.TrangThai == 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                    }
+                                    else if (hd.TrangThai == 1)
+                                    {
+                                        <span class="badge bg-primary">Đang hiệu lực</span>
+                                    }
+                                    else if (hd.TrangThai == 2)
+                                    {
+                                        <span class="badge bg-success">Hoàn tất</span>
+                                    }
+                                    else if (hd.TrangThai == 4)
+                                    {
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-undo"></i> Đã trả máy (Chờ nợ)</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/Cart/ContractDetail/@hd.MaHopDong" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> Xem
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal quét mã VietQR -->
+<div class="modal fade" id="vietQrModal" tabindex="-1" aria-labelledby="vietQrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="vietQrModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>Thanh Toán VietQR - MBBank
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <h6 class="text-muted fw-bold mb-1" id="modalItemDesc">Thanh toán khoản nợ</h6>
+                    <h3 class="text-danger fw-bold mb-3" id="modalAmountDisplay">0 VNĐ</h3>
+                </div>
+
+                <div class="border rounded p-3 bg-light d-inline-block shadow-sm mb-3">
+                    <img id="modalQrImage" src="" alt="Mã VietQR" class="img-fluid" style="max-height: 250px;" />
+                </div>
+
+                <div class="text-start bg-light p-3 rounded border mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Ngân hàng:</span>
+                        <strong class="text-dark">MBBank (Ngân hàng Quân Đội)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Số tài khoản:</span>
+                        <strong class="text-brand font-monospace fs-5">0783406516</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Chủ tài khoản:</span>
+                        <strong class="text-dark">PHAN MINH QUAN</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Nội dung chuyển khoản:</span>
+                        <span class="badge bg-warning text-dark font-monospace fs-6 px-2 py-1" id="modalAddInfo">HD0</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 small mb-0">
+                    <i class="fas fa-info-circle me-1"></i> Vui lòng giữ nguyên <strong>Nội dung chuyển khoản</strong> để hệ thống tự động nhận diện và gạch nợ trong vòng vài giây!
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="copyTransferContent()">
+                    <i class="fas fa-copy me-1"></i> Sao chép nội dung CK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentTransferContent = "";
+
+        function openVietQrModal(contractId, installmentNumber, amount, addInfo, description) {
+            currentTransferContent = addInfo;
+            var formattedAmount = Number(amount).toLocaleString('vi-VN') + ' VNĐ';
+
+            document.getElementById('modalItemDesc').innerText = description;
+            document.getElementById('modalAmountDisplay').innerText = formattedAmount;
+            document.getElementById('modalAddInfo').innerText = addInfo;
+
+            var qrUrl = "https://img.vietqr.io/image/MB-0783406516-compact.png?amount=" + amount + "&addInfo=" + encodeURIComponent(addInfo) + "&accountName=PHAN%20MINH%20QUAN";
+            document.getElementById('modalQrImage').src = qrUrl;
+
+            var modal = new bootstrap.Modal(document.getElementById('vietQrModal'));
+            modal.show();
+        }
+
+        function copyTransferContent() {
+            if (navigator.clipboard && currentTransferContent) {
+                navigator.clipboard.writeText(currentTransferContent).then(function() {
+                    alert('Đã sao chép nội dung chuyển khoản: ' + currentTransferContent);
+                });
+            } else if (currentTransferContent) {
+                alert('Nội dung chuyển khoản: ' + currentTransferContent);
+            }
+        }
+    </script>
+}
