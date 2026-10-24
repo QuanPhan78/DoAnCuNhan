@@ -1,0 +1,449 @@
+/**
+ * ==============================================================================
+ * CLASSIC NAVY & PURE WHITE DESIGN SYSTEM
+ * Hệ thống giao diện Cổ Điển Doanh Nghiệp (Executive Deep Navy & Pure White)
+ * Chuẩn hóa ngữ nghĩa, tối ưu tốc độ và đơn giản hóa mã HTML cho RentalSystem
+ * ==============================================================================
+ */
+
+:root {
+    /* Design Tokens - Bảng màu chủ đạo */
+    --navy-primary: #0f2b5c;       /* Xanh Navy cổ điển doanh nghiệp */
+    --navy-royal: #1e3a8a;         /* Xanh Navy đậm / hoàng gia */
+    --navy-light: #eff6ff;         /* Xanh sương mai nhẹ (nền icon, highlight) */
+    --navy-accent: #2563eb;        /* Xanh điểm nhấn tương tác */
+    --navy-hover: #172554;         /* Xanh hover đậm */
+    
+    --bg-canvas: #f8fafc;          /* Nền trang nhã (Slate 50) */
+    --surface: #ffffff;            /* Nền thẻ trắng tinh khiết */
+    --border-subtle: #e2e8f0;      /* Viền mảnh thanh lịch (Slate 200) */
+    --border-strong: #cbd5e1;      /* Viền phân cách rõ (Slate 300) */
+    
+    --text-primary: #0f172a;       /* Chữ đen slate đậm sắc nét (Slate 900) */
+    --text-secondary: #334155;     /* Chữ nội dung chuẩn (Slate 700) */
+    --text-muted: #64748b;         /* Ghi chú mờ thanh lịch (Slate 500) */
+    
+    --slate-btn: #334155;          /* Nút thao tác đơn sắc Monochrome Slate */
+    --slate-btn-hover: #0f172a;
+    
+    /* Semantic Soft Colors (Pastel nhã nhặn, không gây chói mắt) */
+    --soft-success-bg: #ecfdf5;
+    --soft-success-text: #065f46;
+    --soft-success-border: #a7f3d0;
+    
+    --soft-warning-bg: #fffbeb;
+    --soft-warning-text: #92400e;
+    --soft-warning-border: #fde68a;
+    
+    --soft-danger-bg: #fef2f2;
+    --soft-danger-text: #991b1b;
+    --soft-danger-border: #fecaca;
+    
+    --soft-info-bg: #eff6ff;
+    --soft-info-text: #1e40af;
+    --soft-info-border: #bfdbfe;
+    
+    /* Executive Status Dot Tokens */
+    --dot-success: #059669;
+    --dot-navy: #0f2b5c;
+    --dot-warning: #b45309;
+    --dot-danger: #b91c1c;
+    --dot-neutral: #64748b;
+}
+
+/* Base Canvas */
+body {
+    background-color: var(--bg-canvas) !important;
+    color: var(--text-secondary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 1. Tiêu đề trang (Page Header & Page Title) */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    letter-spacing: -0.01em;
+}
+.page-title i {
+    color: var(--navy-royal);
+    margin-right: 0.6rem;
+    font-size: 1.25rem;
+}
+
+/* 2. Thẻ chỉ số tổng quan (Stat Cards) */
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    height: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--navy-light);
+    color: var(--navy-royal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+    border: 1px solid var(--soft-info-border);
+}
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+}
+.stat-value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+/* 3. Khung chứa thẻ và Bảng dữ liệu (Admin Card & Table) */
+.admin-card {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+.admin-card-header {
+    padding: 0.875rem 1.25rem;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-subtle);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.admin-card-body {
+    padding: 1.25rem;
+}
+
+.admin-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+.admin-table thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    padding: 0.75rem 1rem !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    vertical-align: middle;
+}
+.admin-table tbody td {
+    padding: 0.85rem 1rem !important;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9 !important;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+.admin-table tbody tr:hover {
+    background-color: #fbfcfe;
+}
+
+/* 4. Bộ nút hành động đơn sắc (Monochrome Slate Action Buttons) */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface);
+    color: var(--slate-btn) !important;
+    transition: all 0.15s ease-in-out;
+    padding: 0;
+    font-size: 0.85rem;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+.action-btn:hover {
+    background: #f1f5f9;
+    color: var(--navy-primary) !important;
+    border-color: var(--border-strong);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.action-btn-danger:hover {
+    background: #fef2f2;
+    color: #b91c1c !important;
+    border-color: #fca5a5;
+}
+
+/* 5. Nút chính & phụ phong cách Navy */
+.btn-navy {
+    background-color: var(--navy-primary) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--navy-primary) !important;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    text-decoration: none !important;
+}
+.btn-navy:hover {
+    background-color: var(--navy-royal) !important;
+    border-color: var(--navy-royal) !important;
+    color: #ffffff !important;
+}
+.btn-outline-navy {
+    background-color: transparent !important;
+    color: var(--navy-primary) !important;
+    border: 1px solid var(--navy-primary) !important;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+    text-decoration: none !important;
+}
+.btn-outline-navy:hover {
+    background-color: var(--navy-primary) !important;
+    color: #ffffff !important;
+}
+
+/* 6. Huy hiệu trạng thái Pastel (Soft Badges) */
+.badge-soft-success {
+    background-color: var(--soft-success-bg) !important;
+    color: var(--soft-success-text) !important;
+    border: 1px solid var(--soft-success-border);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.7em;
+    border-radius: 4px;
+}
+.badge-soft-warning {
+    background-color: var(--soft-warning-bg) !important;
+    color: var(--soft-warning-text) !important;
+    border: 1px solid var(--soft-warning-border);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.7em;
+    border-radius: 4px;
+}
+.badge-soft-danger {
+    background-color: var(--soft-danger-bg) !important;
+    color: var(--soft-danger-text) !important;
+    border: 1px solid var(--soft-danger-border);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.7em;
+    border-radius: 4px;
+}
+.badge-soft-navy {
+    background-color: var(--navy-light) !important;
+    color: var(--navy-royal) !important;
+    border: 1px solid var(--soft-info-border);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.7em;
+    border-radius: 4px;
+}
+.badge-soft-neutral {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.7em;
+    border-radius: 4px;
+}
+
+/* 6.1. Huy hiệu trạng thái Executive Dot Pill (Executive Status Badges) */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.22rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text-secondary);
+    background-color: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    white-space: nowrap;
+    vertical-align: middle;
+    text-decoration: none !important;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Bảng màu chấm chỉ thị trầm cổ điển */
+.dot-success, .status-pill.dot-success .status-dot {
+    background-color: var(--dot-success); /* Xanh ngọc rêu trầm: Sẵn sàng / Hoàn tất */
+}
+.dot-navy, .status-pill.dot-navy .status-dot {
+    background-color: var(--dot-navy); /* Xanh Navy hoàng gia: Đang cho thuê / Đang thực hiện */
+}
+.dot-warning, .status-pill.dot-warning .status-dot {
+    background-color: var(--dot-warning); /* Nâu hổ phách trầm: Chờ duyệt / Đang giữ chỗ */
+}
+.dot-danger, .status-pill.dot-danger .status-dot {
+    background-color: var(--dot-danger); /* Đỏ rượu gạch trầm: Báo hỏng / Cần bảo trì */
+}
+.dot-neutral, .status-pill.dot-neutral .status-dot {
+    background-color: var(--dot-neutral); /* Xám chì: Hỏng thanh lý / Đã hủy */
+}
+
+/* Robustness: Prevent .status-pill from becoming fully colored if dot-* is applied on the container */
+.status-pill.dot-success,
+.status-pill.dot-navy,
+.status-pill.dot-warning,
+.status-pill.dot-danger,
+.status-pill.dot-neutral {
+    background-color: #ffffff !important;
+    color: var(--text-secondary) !important;
+}
+
+/* 7. Legacy Compatibility Mappings -> Deep Navy */
+.bg-brand, .bg-navy {
+    background-color: var(--navy-primary) !important;
+    color: #ffffff !important;
+}
+.text-brand, .text-navy {
+    color: var(--navy-primary) !important;
+}
+.btn-brand {
+    background-color: var(--navy-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--navy-primary) !important;
+    font-weight: 600;
+}
+.btn-brand:hover {
+    background-color: var(--navy-royal) !important;
+    border-color: var(--navy-royal) !important;
+    color: #ffffff !important;
+}
+.border-left-brand {
+    border-left: 4px solid var(--navy-primary) !important;
+}
+
+/* Executive Navy Nav Tabs & Pills */
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+    background-color: var(--navy-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--navy-primary) !important;
+}
+
+/* 8. Neutralize Legacy Bootstrap Badges to prevent neon/glaring colors */
+.badge.bg-success {
+    background-color: var(--soft-success-bg) !important;
+    color: var(--soft-success-text) !important;
+    border: 1px solid var(--soft-success-border) !important;
+    font-weight: 500;
+}
+.badge.bg-warning {
+    background-color: var(--soft-warning-bg) !important;
+    color: var(--soft-warning-text) !important;
+    border: 1px solid var(--soft-warning-border) !important;
+    font-weight: 500;
+}
+.badge.bg-danger {
+    background-color: var(--soft-danger-bg) !important;
+    color: var(--soft-danger-text) !important;
+    border: 1px solid var(--soft-danger-border) !important;
+    font-weight: 500;
+}
+.badge.bg-info {
+    background-color: var(--soft-info-bg) !important;
+    color: var(--soft-info-text) !important;
+    border: 1px solid var(--soft-info-border) !important;
+    font-weight: 500;
+}
+.badge.bg-primary {
+    background-color: var(--navy-light) !important;
+    color: var(--navy-royal) !important;
+    border: 1px solid var(--soft-info-border) !important;
+    font-weight: 500;
+}
+.badge.bg-secondary {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 500;
+}
+.badge.bg-dark {
+    background-color: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 500;
+}
+.badge.bg-light {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 500;
+}
+.badge.bg-orange, span.badge.bg-orange {
+    background-color: #fff7ed !important;
+    color: #c2410c !important;
+    border: 1px solid #ffedd5 !important;
+    font-weight: 500;
+}
+
+/* 9. Print View Preservation */
+@media print {
+    .status-pill {
+        border: 1px solid #94a3b8 !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .status-dot {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+

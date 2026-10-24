@@ -3,61 +3,45 @@
     var recentOrders = ViewBag.RecentOrders as IEnumerable<RentalSystem.Models.HopDong>;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-brand"></i> Tổng Quan Kinh Doanh</h2>
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-chart-pie"></i> Tổng Quan Kinh Doanh</h3>
 </div>
 
-<!-- 4 Thẻ Thống Kê (Cards) -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-brand shadow h-100 py-2 border-0" >
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-brand text-uppercase mb-1">Doanh thu (Đã thu)</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@((ViewBag.TotalRevenue ?? 0).ToString("N0")) đ</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-calendar fa-2x text-gray-300" style="color:#dddfeb;"></i></div>
-                </div>
+<!-- 4 Thẻ Thống Kê (Stat Cards) -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+            <div>
+                <div class="stat-label">Doanh thu (Đã thu)</div>
+                <div class="stat-value">@((ViewBag.TotalRevenue ?? 0).ToString("N0")) đ</div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-brand shadow h-100 py-2 border-0" >
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-brand text-uppercase mb-1">Thiết bị đang cho thuê</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.RentedDevices máy</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-laptop fa-2x text-gray-300" style="color:#dddfeb;"></i></div>
-                </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-laptop"></i></div>
+            <div>
+                <div class="stat-label">Thiết bị đang cho thuê</div>
+                <div class="stat-value">@ViewBag.RentedDevices máy</div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-brand shadow h-100 py-2 border-0" >
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-brand text-uppercase mb-1">Tổng Số Hợp Đồng</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalContracts hợp đồng</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-file-contract fa-2x text-gray-300" style="color:#dddfeb;"></i></div>
-                </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-file-contract"></i></div>
+            <div>
+                <div class="stat-label">Tổng số hợp đồng</div>
+                <div class="stat-value">@ViewBag.TotalContracts đơn</div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-brand shadow h-100 py-2 border-0" >
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-brand text-uppercase mb-1">Khách Hàng</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalCustomers người</div>
-                    </div>
-                    <div class="col-auto"><i class="fas fa-users fa-2x text-gray-300" style="color:#dddfeb;"></i></div>
-                </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div>
+                <div class="stat-label">Khách hàng</div>
+                <div class="stat-value">@ViewBag.TotalCustomers người</div>
             </div>
         </div>
     </div>
@@ -68,11 +52,11 @@
 {
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow border-left-brand border-0" >
+            <div class="admin-card" >
                 <div class="card-header bg-white py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 fw-bold text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Cảnh Báo: Các Khoản Nợ Quá Hạn Cần Thu Hồi</h6>
                 </div>
-                <div class="card-body p-0">
+                <div class="admin-card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0 text-center">
                             <thead class=" text-danger">
@@ -94,7 +78,7 @@
                                         <td class="fw-bold">#@k.MaHopDong</td>
                                         <td>@k.HopDong?.KhachHang?.HoTen</td>
                                         <td class="fw-bold">@k.HopDong?.KhachHang?.SoDienThoai</td>
-                                        <td><span class="badge bg-secondary">Kỳ @k.SoKyHan</span></td>
+                                        <td><span class="badge-soft-neutral font-monospace">Kỳ @k.SoKyHan</span></td>
                                         <td class="text-danger fw-bold">@k.NgayDenHan.ToString("dd/MM/yyyy")</td>
                                         <td>
                                             <span class="text-brand fw-bold">@soTienTre.ToString("N0") đ</span>
@@ -120,8 +104,8 @@
 <div class="row">
     <!-- Biểu đồ Doanh Thu -->
     <div class="col-xl-8 col-lg-7 mb-4">
-        <div class="card shadow border-0 h-100">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white border-bottom">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
                 <h6 class="m-0 fw-bold text-brand">Biểu Đồ Doanh Thu (6 Tháng)</h6>
             </div>
             <div class="card-body">
@@ -134,11 +118,11 @@
 
     <!-- Đơn hàng gần đây -->
     <div class="col-xl-4 col-lg-5 mb-4">
-        <div class="card shadow border-0 h-100">
-            <div class="card-header py-3 bg-white border-bottom">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
                 <h6 class="m-0 fw-bold text-brand">Đơn Hàng Mới Nhất</h6>
             </div>
-            <div class="card-body p-0">
+            <div class="admin-card-body p-0">
                 <ul class="list-group list-group-flush">
                     @if(recentOrders == null || !recentOrders.Any()) {
                         <li class="list-group-item text-center text-muted py-4">Chưa có đơn hàng nào</li>
@@ -150,10 +134,11 @@
                                     <h6 class="mb-0 fw-bold">#@order.MaHopDong - @(order.KhachHang?.HoTen ?? "Khách")</h6>
                                     <small class="text-muted">@order.NgayBatDau.ToString("dd/MM/yyyy")</small>
                                 </div>
-                                @if (order.TrangThai == 0) { <span class="badge bg-warning text-dark">Chờ duyệt</span> }
-                                else if (order.TrangThai == 1) { <span class="badge bg-brand">Đang thuê</span> }
-                                else if (order.TrangThai == 2) { <span class="badge bg-success">Hoàn tất</span> }
-                                else if (order.TrangThai == 3) { <span class="badge bg-danger">Hủy</span> }
+                                @if (order.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
+                                else if (order.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang thuê</span> }
+                                else if (order.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ quyết toán</span> }
+                                else if (order.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span> }
+                                else if (order.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
                             </li>
                         }
                     }

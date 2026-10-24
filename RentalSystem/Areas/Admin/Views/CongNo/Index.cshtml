@@ -22,21 +22,16 @@
 </style>
 
 <!-- Tiêu đề & Nút Xuất Excel -->
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <div>
-        <h3 class="fw-bold text-dark mb-1"><i class="fas fa-hand-holding-usd text-warning me-2"></i>Quản lý Công Nợ</h3>
-        <p class="text-muted mb-0 small">Theo dõi công nợ toàn hệ thống, phân loại 4 nhóm tuổi nợ và đôn đốc thu hồi</p>
-    </div>
-    <div>
-        <a asp-action="ExportExcel"
-           asp-route-search="@ViewBag.Search"
-           asp-route-agingTier="@ViewBag.AgingTier"
-           asp-route-tuNgay="@ViewBag.TuNgay"
-           asp-route-denNgay="@ViewBag.DenNgay"
-           class="btn btn-success fw-bold shadow-sm">
-            <i class="fas fa-file-excel me-1"></i> Xuất Báo Cáo Excel
-        </a>
-    </div>
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-hand-holding-usd"></i> Quản lý Công Nợ</h3>
+    <a asp-action="ExportExcel"
+       asp-route-search="@ViewBag.Search"
+       asp-route-agingTier="@ViewBag.AgingTier"
+       asp-route-tuNgay="@ViewBag.TuNgay"
+       asp-route-denNgay="@ViewBag.DenNgay"
+       class="btn btn-navy">
+        <i class="fas fa-file-excel me-1"></i> Xuất Báo Cáo Excel
+    </a>
 </div>
 
 <!-- Thống kê tổng quan công nợ -->

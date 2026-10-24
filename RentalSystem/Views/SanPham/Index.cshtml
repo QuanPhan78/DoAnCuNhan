@@ -24,7 +24,7 @@
                 <div class="list-group list-group-flush rounded-bottom-4">
                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center fw-bold py-3 filter-category active" data-id="all">
                         Tất cả thiết bị
-                        <span class="badge bg-secondary rounded-pill">@Model.Count()</span>
+                        <span class="badge badge-soft-neutral rounded-pill">@Model.Count()</span>
                     </a>
                     @if(categories != null)
                     {
@@ -32,7 +32,7 @@
                         {
                             <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 filter-category" data-id="@loai.MaLoai">
                                 @loai.TenLoai
-                                <span class="badge bg-light text-dark border rounded-pill">@Model.Count(x => x.MaLoai == loai.MaLoai)</span>
+                                <span class="badge badge-soft-neutral rounded-pill">@Model.Count(x => x.MaLoai == loai.MaLoai)</span>
                             </a>
                         }
                     }
@@ -61,19 +61,19 @@
                 <div class="col-md-6 col-xl-4 product-item" data-loai="@item.MaLoai">
                     <div class="card h-100 shadow-sm border-0 product-card rounded-4 overflow-hidden">
                         <div class="position-relative bg-light border-bottom text-center">
-                            <span class="badge bg-brand position-absolute top-0 start-0 m-3 px-3 py-2 rounded-pill shadow-sm">
+                            <span class="badge-soft-navy position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill shadow-sm">
                                 @item.LoaiThietBi?.TenLoai
                             </span>
                             @if (inStock > 0)
                             {
-                                <span class="badge bg-success position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill shadow-sm">
-                                    <i class="fas fa-check-circle me-1"></i> Còn @inStock máy
+                                <span class="status-pill position-absolute top-0 end-0 m-3 shadow-sm">
+                                    <span class="status-dot dot-success"></span> Còn @inStock máy
                                 </span>
                             }
                             else
                             {
-                                <span class="badge bg-danger position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill shadow-sm">
-                                    <i class="fas fa-times-circle me-1"></i> Tạm hết
+                                <span class="status-pill position-absolute top-0 end-0 m-3 shadow-sm">
+                                    <span class="status-dot dot-danger"></span> Tạm hết
                                 </span>
                             }
                             <a href="/SanPham/Details/@item.MaSanPham">

@@ -2,9 +2,9 @@
 @{ ViewData["Title"] = "Lịch sử báo cáo sự cố"; }
 
 <div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><i class="fas fa-tools text-danger me-2"></i> Lịch sử báo cáo sự cố</h2>
-        <a href="/Cart/MyContracts" class="btn btn-outline-primary"><i class="fas fa-file-contract"></i> Về danh sách hợp đồng</a>
+    <div class="page-header">
+        <h3 class="page-title"><i class="fas fa-tools"></i> Lịch sử báo cáo sự cố</h3>
+        <a href="/Cart/MyContracts" class="btn btn-outline-navy"><i class="fas fa-file-contract me-1"></i> Về danh sách hợp đồng</a>
     </div>
 
     @if (TempData["Success"] != null) {
@@ -14,10 +14,10 @@
         <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
     }
 
-    <div class="card shadow border-0">
-        <div class="card-body p-0">
+    <div class="admin-card">
+        <div class="admin-card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-center">
+                <table class="admin-table text-center">
                     <thead class="table-light">
                         <tr>
                             <th>Mã Phiếu</th>
@@ -50,19 +50,19 @@
                                 <td>@item.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>
                                     @if (item.TrangThai == 1) { 
-                                        <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Mới tiếp nhận</span> 
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Mới tiếp nhận</span> 
                                     }
                                     else if (item.TrangThai == 2) { 
-                                        <span class="badge bg-info text-dark"><i class="fas fa-wrench"></i> Đang sửa</span> 
+                                        <span class="status-pill"><span class="status-dot dot-navy"></span> Đang sửa</span> 
                                     }
                                     else if (item.TrangThai == 3) { 
-                                        <span class="badge bg-primary"><i class="fas fa-check"></i> Đã sửa xong</span> 
+                                        <span class="status-pill"><span class="status-dot dot-navy"></span> Đã sửa xong</span> 
                                     }
                                     else if (item.TrangThai == 4) { 
-                                        <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Không thể sửa / Hỏng</span> 
+                                        <span class="status-pill"><span class="status-dot dot-danger"></span> Không thể sửa / Hỏng</span> 
                                     }
                                     else if (item.TrangThai == 5) { 
-                                        <span class="badge bg-success"><i class="fas fa-check-double"></i> Đã nghiệm thu & Đóng</span> 
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Đã nghiệm thu & Đóng</span> 
                                     }
                                 </td>
                                 <td>
@@ -93,7 +93,7 @@
                                     }
                                 </td>
                                 <td>
-                                    <a asp-action="ChiTiet" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-primary">
+                                    <a asp-action="ChiTiet" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-navy">
                                         <i class="fas fa-eye"></i> Chi tiết
                                     </a>
                                 </td>

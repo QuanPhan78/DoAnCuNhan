@@ -10,7 +10,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 {
     // Quản lý từng thiết bị theo số serial trong hệ thống
     [Area("Admin")]
-    [Authorize(Roles = "Admin,KinhDoanh")]
+    [Authorize(Roles = "Admin,KinhDoanh,KyThuat")]
     public class ThietBiController : Controller
     {
         private readonly ApplicationDbContext _context;

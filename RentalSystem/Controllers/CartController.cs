@@ -999,6 +999,13 @@ namespace RentalSystem.Controllers
                 return RedirectToAction("ContractDetail", new { id = id });
             }
 
+            // Chặn gửi yêu cầu gia hạn trùng lặp khi đang có yêu cầu chờ xử lý
+            if ((hd.YeuCauGiaHan && hd.TrangThaiGiaHan == 0) || await _context.YeuCauGiaHans.AnyAsync(y => y.MaHopDong == id && y.TrangThai == 0))
+            {
+                TempData["Error"] = "Hợp đồng này đang có một yêu cầu gia hạn chờ xử lý. Vui lòng chờ phản hồi từ quản trị viên!";
+                return RedirectToAction("ContractDetail", new { id = id });
+            }
+
             if (soNgayGiaHan <= 0 || soNgayGiaHan > 365)
             {
                 TempData["Error"] = "Số ngày gia hạn không hợp lệ (từ 1 đến 365 ngày)!";

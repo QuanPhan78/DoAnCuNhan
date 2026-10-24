@@ -1,7 +1,14 @@
 @model RentalSystem.Models.NguoiDung
 @{ ViewData["Title"] = "Thêm Người Dùng"; }
-<h2>Thêm Người Dùng</h2>
-<hr />
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-user-plus"></i> Thêm Người Dùng</h3>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-body p-4">
 <form asp-action="Create" method="post">
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -33,6 +40,8 @@
             <input asp-for="DiaChi" class="form-control" />
         </div>
     </div>
-    <button type="submit" class="btn btn-brand">Lưu</button>
-    <a asp-action="Index" class="btn btn-light">Quay lại</a>
+    <button type="submit" class="btn btn-navy"><i class="fas fa-save me-1"></i> Lưu</button>
+    <a asp-action="Index" class="btn btn-outline-navy ms-2">Quay lại</a>
 </form>
+    </div>
+</div>

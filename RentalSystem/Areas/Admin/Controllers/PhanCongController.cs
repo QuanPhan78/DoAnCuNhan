@@ -12,7 +12,7 @@ using RentalSystem.Models;
 namespace RentalSystem.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize]
+    [Authorize(Roles = "Admin,KinhDoanh,KyThuat")]
     public class PhanCongController : Controller
     {
         private readonly ApplicationDbContext _context;

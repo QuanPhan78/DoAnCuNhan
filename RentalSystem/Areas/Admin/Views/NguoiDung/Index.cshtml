@@ -1,18 +1,19 @@
 @model IEnumerable<RentalSystem.Models.NguoiDung>
 @{ ViewData["Title"] = "Quản lý Người Dùng"; }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="fw-bold"><i class="fas fa-users text-brand"></i> Quản lý Người Dùng / Phân Quyền</h2>
-    <a asp-action="Create" class="btn btn-brand fw-bold"><i class="fas fa-plus"></i> Thêm Người Dùng</a>
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-users"></i> Quản lý Người Dùng / Phân Quyền</h3>
+    <a asp-action="Create" class="btn btn-navy"><i class="fas fa-plus me-1"></i> Thêm Người Dùng</a>
 </div>
 
 @if (TempData["Success"] != null) {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-<div class="card shadow border-0">
-    <div class="card-body">
-        <table class="table table-hover align-middle text-center">
+<div class="admin-card">
+    <div class="admin-card-body p-0">
+        <div class="table-responsive">
+            <table class="admin-table text-center">
             <thead class="">
                 <tr>
                     <th>Họ Tên</th>
@@ -29,16 +30,17 @@
                         <td>@item.HoTen</td>
                         <td>@item.Email</td>
                         <td>@item.SoDienThoai</td>
-                        <td><span class="badge bg-info text-dark">@item.VaiTro?.TenVaiTro</span></td>
+                        <td><span class="badge-soft-navy">@item.VaiTro?.TenVaiTro</span></td>
                         <td>
-                            @(item.TrangThai ? Html.Raw("<span class='badge bg-success'>Hoạt động</span>") : Html.Raw("<span class='badge bg-danger'>Khóa</span>"))
+                            @(item.TrangThai ? Html.Raw("<span class='status-pill'><span class='status-dot dot-success'></span> Hoạt động</span>") : Html.Raw("<span class='status-pill'><span class='status-dot dot-neutral'></span> Đã khóa</span>"))
                         </td>
                         <td>
-                            <a asp-action="Edit" asp-route-id="@item.MaNguoiDung" class="btn btn-sm btn-brand"><i class="fas fa-edit"></i></a>
+                            <a asp-action="Edit" asp-route-id="@item.MaNguoiDung" class="action-btn" title="Sửa"><i class="fas fa-edit"></i></a>
                         </td>
                     </tr>
                 }
             </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 </div>

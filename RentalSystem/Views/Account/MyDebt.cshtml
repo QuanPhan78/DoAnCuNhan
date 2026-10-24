@@ -28,14 +28,11 @@
         </ol>
     </nav>
 
-    <!-- Header Title -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1 text-dark">
-                <i class="fas fa-file-invoice-dollar text-warning me-2"></i>Sổ Công Nợ Khách Hàng
-            </h2>
-            <p class="text-muted mb-0">Theo dõi toàn bộ dư nợ tiền thuê, kỳ hạn đến hạn, tiền phạt trễ hạn và chi phí bồi thường hư hại.</p>
-        </div>
+        <!-- Header Title -->
+    <div class="page-header">
+        <h3 class="page-title">
+            <i class="fas fa-file-invoice-dollar"></i> Sổ Công Nợ Khách Hàng
+        </h3>
         <div class="mt-2 mt-md-0">
             <a href="/Cart/MyContracts" class="btn btn-outline-primary me-2">
                 <i class="fas fa-file-contract me-1"></i> Danh sách hợp đồng
@@ -75,7 +72,7 @@
                         <i class="fas fa-ban me-1"></i> TÀI KHOẢN ĐANG BỊ KHÓA ĐẶT THUÊ DO NỢ XẤU
                     </h5>
                     <p class="mb-2 fs-6">@blacklistReason</p>
-                    <div class="badge bg-danger p-2 fs-6 mb-2">Quy định: Kỳ hạn quá hạn > 15 ngày HOẶC Tổng nợ quá hạn > 3.000.000đ sẽ bị chặn Checkout / Ký Hợp Đồng.</div>
+                    <div class="badge badge-soft-danger p-2 fs-6 mb-2 text-wrap text-start">Quy định: Kỳ hạn quá hạn > 15 ngày HOẶC Tổng nợ quá hạn > 3.000.000đ sẽ bị chặn Checkout / Ký Hợp Đồng.</div>
                     <p class="text-dark mb-0 fw-semibold">
                         <i class="fas fa-info-circle text-primary me-1"></i> Quý khách vui lòng quét mã VietQR bên dưới để thanh toán tất toán các kỳ quá hạn. Hệ thống sẽ tự động gạch nợ và mở khóa tài khoản!
                     </p>
@@ -235,7 +232,7 @@
             <h5 class="mb-0 fw-bold text-dark">
                 <i class="fas fa-clock text-warning me-2"></i>Danh Sách Kỳ Hạn Cần Thanh Toán (@unpaidKyHans.Count kỳ)
             </h5>
-            <span class="badge bg-secondary">Bao gồm kỳ sắp đến hạn &amp; quá hạn</span>
+            <span class="badge badge-soft-neutral">Bao gồm kỳ sắp đến hạn &amp; quá hạn</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -282,7 +279,7 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-dark">Kỳ @k.SoKyHan</span>
+                                    <span class="badge-soft-neutral font-monospace">Kỳ @k.SoKyHan</span>
                                 </td>
                                 <td>
                                     <span class="@(isOverdue ? "text-danger fw-bold" : "text-dark")">
@@ -316,17 +313,17 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-success">Đúng hạn</span>
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Đúng hạn</span>
                                     }
                                 </td>
                                 <td>
                                     @if (isOverdue)
                                     {
-                                        <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Quá hạn</span>
+                                        <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half"></i> Chưa trả</span>
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Chưa trả</span>
                                     }
                                 </td>
                                 <td>
@@ -351,7 +348,7 @@
                 <h5 class="mb-0 fw-bold text-dark">
                     <i class="fas fa-tools text-danger me-2"></i>Phiếu Đền Bù Hư Hại &amp; Sửa Chữa Thiết Bị (@damageTickets.Count phiếu)
                 </h5>
-                <span class="badge bg-warning text-dark">Phát sinh từ biên bản kiểm tra kỹ thuật</span>
+                <span class="badge badge-soft-warning">Phát sinh từ biên bản kiểm tra kỹ thuật</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -394,15 +391,15 @@
                                     <td>
                                         @if (bt.TrangThai == 3)
                                         {
-                                            <span class="badge bg-success">Đã hoàn thành</span>
+                                            <span class="status-pill"><span class="status-dot dot-success"></span> Đã hoàn thành</span>
                                         }
                                         else if (bt.TrangThai == 4)
                                         {
-                                            <span class="badge bg-danger">Hỏng không thể sửa</span>
+                                            <span class="status-pill"><span class="status-dot dot-danger"></span> Hỏng không thể sửa</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-warning text-dark">Đang xử lý</span>
+                                            <span class="status-pill"><span class="status-dot dot-warning"></span> Đang xử lý</span>
                                         }
                                     </td>
                                     <td>
@@ -471,19 +468,23 @@
                                 <td>
                                     @if (hd.TrangThai == 0)
                                     {
-                                        <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
                                     }
                                     else if (hd.TrangThai == 1)
                                     {
-                                        <span class="badge bg-primary">Đang hiệu lực</span>
+                                        <span class="status-pill"><span class="status-dot dot-navy"></span> Đang thuê</span>
                                     }
                                     else if (hd.TrangThai == 2)
                                     {
-                                        <span class="badge bg-success">Hoàn tất</span>
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span>
                                     }
                                     else if (hd.TrangThai == 4)
                                     {
-                                        <span class="badge bg-warning text-dark"><i class="fas fa-undo"></i> Đã trả máy (Chờ nợ)</span>
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ nợ)</span>
+                                    }
+                                    else if (hd.TrangThai == 3)
+                                    {
+                                        <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span>
                                     }
                                 </td>
                                 <td>
@@ -535,7 +536,7 @@
                     </div>
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">Nội dung chuyển khoản:</span>
-                        <span class="badge bg-warning text-dark font-monospace fs-6 px-2 py-1" id="modalAddInfo">HD0</span>
+                        <span class="badge-soft-navy font-monospace fs-6 px-2 py-1" id="modalAddInfo">HD0</span>
                     </div>
                 </div>
 

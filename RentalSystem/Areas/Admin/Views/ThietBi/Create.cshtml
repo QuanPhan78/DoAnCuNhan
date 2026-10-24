@@ -2,9 +2,11 @@
 @{
     ViewData["Title"] = "Nhập Kho Thiết Bị";
 }
-<div class="d-flex align-items-center mb-4">
-    <a asp-action="Index" class="btn btn-light shadow-sm me-3"><i class="fas fa-arrow-left"></i></a>
-    <h3 class="fw-bold text-dark mb-0"><i class="fas fa-plus-circle me-2 text-info"></i> Khai báo Serial Mới</h3>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-plus-circle"></i> Khai báo Serial Mới</h3>
+    </div>
 </div>
 <div class="row">
     <div class="col-lg-6">
@@ -12,7 +14,7 @@
         {
             <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
         }
-        <div class="card shadow border-0">
+        <div class="admin-card">
             <div class="card-body p-4">
                 <form asp-action="Create" method="post">
                     @Html.AntiForgeryToken()
@@ -33,7 +35,7 @@
                         <input type="text" class="form-control" value="Sẵn sàng cho thuê (Mặc định)" disabled />
                         <input type="hidden" asp-for="TrangThai" value="0" />
                     </div>
-                    <button type="submit" class="btn btn-brand fw-bold text-white px-4 py-2 w-100 shadow-sm"><i class="fas fa-save me-1"></i> Lưu Vào Kho</button>
+                    <button type="submit" class="btn btn-navy px-4 py-2 w-100"><i class="fas fa-save me-1"></i> Lưu Vào Kho</button>
                 </form>
             </div>
         </div>

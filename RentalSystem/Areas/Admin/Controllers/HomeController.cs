@@ -43,7 +43,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
             // Cảnh báo công nợ: Số kỳ hạn trả góp đã quá hạn mà khách chưa đóng tiền
             ViewBag.OverduePayments = _context.KyHanThanhToans
-                .Count(k => k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date && (k.HopDong.TrangThai == 0 || k.HopDong.TrangThai == 1));
+                .Count(k => (k.TrangThai == 0 || k.TrangThai == 2) && k.NgayDenHan.Date < DateTime.Now.Date && (k.HopDong.TrangThai == 0 || k.HopDong.TrangThai == 1));
 
             // Dữ liệu biểu đồ doanh thu 6 tháng gần nhất
             var allCompletedOrders = _context.HopDongs
@@ -85,7 +85,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             ViewBag.OverdueInstallments = _context.KyHanThanhToans
                 .Include(k => k.HopDong)
                 .ThenInclude(h => h.KhachHang)
-                .Where(k => k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date && (k.HopDong.TrangThai == 1 || k.HopDong.TrangThai == 0))
+                .Where(k => (k.TrangThai == 0 || k.TrangThai == 2) && k.NgayDenHan.Date < DateTime.Now.Date && (k.HopDong.TrangThai == 1 || k.HopDong.TrangThai == 0))
                 .OrderBy(k => k.NgayDenHan)
                 .Take(10)
                 .ToList();

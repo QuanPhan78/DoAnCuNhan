@@ -3,16 +3,15 @@
     ViewData["Title"] = "Thêm mới Mã Khuyến Mãi";
 }
 
-<div class="d-flex align-items-center mb-4">
-    <a asp-action="Index" class="btn btn-light shadow-sm me-3"><i class="fas fa-arrow-left"></i></a>
-    <div>
-        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-plus-circle me-2 text-success"></i> Thêm mới Mã Khuyến Mãi</h3>
-        <span class="text-muted small">Khởi tạo mã giảm giá với số lượng và hạn sử dụng tùy chỉnh.</span>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-plus-circle"></i> Thêm mới Mã Khuyến Mãi</h3>
     </div>
 </div>
 
-<div class="card shadow border-0">
-    <div class="card-body p-4">
+<div class="admin-card">
+    <div class="admin-card-body">
         <form asp-action="Create" method="post">
             @Html.AntiForgeryToken()
 
@@ -26,7 +25,6 @@
                         <input asp-for="Code" class="form-control text-uppercase font-monospace fw-bold" required placeholder="VD: GIAM10, TET2026, VIPRENTAL" />
                     </div>
                     <span asp-validation-for="Code" class="text-danger small"></span>
-                    <div class="form-text">Mã viết liền không dấu, hệ thống tự động chuẩn hóa chữ hoa.</div>
                 </div>
 
                 <div class="col-md-6 mb-3">
@@ -36,7 +34,6 @@
                         <span class="input-group-text bg-light fw-bold">%</span>
                     </div>
                     <span asp-validation-for="PhanTramGiam" class="text-danger small"></span>
-                    <div class="form-text">Tỷ lệ giảm giá từ 1% đến 100% tính trên tổng tiền thuê hợp đồng.</div>
                 </div>
 
                 <div class="col-md-4 mb-3">
@@ -58,7 +55,6 @@
                         <span class="input-group-text bg-light">lượt</span>
                     </div>
                     <span asp-validation-for="SoLuong" class="text-danger small"></span>
-                    <div class="form-text">Số lượt có thể áp dụng thành công khi thanh toán.</div>
                 </div>
 
                 <div class="col-md-12 mb-3">
@@ -79,7 +75,7 @@
 
             <div class="text-end border-top pt-3">
                 <a asp-action="Index" class="btn btn-outline-secondary me-2">Hủy bỏ</a>
-                <button type="submit" class="btn btn-brand fw-bold px-4 py-2 shadow-sm">
+                <button type="submit" class="btn btn-navy">
                     <i class="fas fa-save me-1"></i> Lưu Mã Khuyến Mãi
                 </button>
             </div>

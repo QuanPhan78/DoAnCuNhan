@@ -65,29 +65,30 @@
         <div class="card-body py-3 px-4 d-flex flex-wrap gap-4 align-items-center">
             <div>
                 <small class="text-muted d-block">Trạng thái đơn</small>
-                @if (Model.TrangThai == 0) { <span class="badge bg-warning text-dark fs-6"><i class="fas fa-clock me-1"></i>Chờ duyệt</span> }
-                else if (Model.TrangThai == 1) { <span class="badge bg-brand fs-6"><i class="fas fa-truck me-1"></i>Đang cho thuê</span> }
-                else if (Model.TrangThai == 2) { <span class="badge bg-success fs-6"><i class="fas fa-check me-1"></i>Hoàn tất</span> }
-                else if (Model.TrangThai == 3) { <span class="badge bg-danger fs-6"><i class="fas fa-times me-1"></i>Đã hủy</span> }
+                @if (Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
+                else if (Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
+                else if (Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span> }
+                else if (Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span> }
+                else if (Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
             </div>
             <div>
                 <small class="text-muted d-block">Chữ ký</small>
                 @if (string.IsNullOrEmpty(Model.ChuKyKhachHang)) {
-                    <span class="badge bg-secondary fs-6">Chưa ký</span>
+                    <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa ký</span>
                 } else {
-                    <span class="badge bg-success fs-6"><i class="fas fa-signature me-1"></i>Đã ký @(Model.NgayKy?.ToString("dd/MM/yyyy") ?? "")</span>
+                    <span class="status-pill"><span class="status-dot dot-success"></span> Đã ký @(Model.NgayKy?.ToString("dd/MM/yyyy") ?? "")</span>
                 }
             </div>
             <div>
                 <small class="text-muted d-block">Thanh toán</small>
-                @if (Model.TrangThaiThanhToan == 0) { <span class="badge bg-secondary fs-6"><i class="fas fa-hourglass-start me-1"></i>Chưa thanh toán</span> }
-                else if (Model.TrangThaiThanhToan == 1) { <span class="badge bg-info text-dark fs-6"><i class="fas fa-check-square me-1"></i>Đã đặt cọc</span> }
-                else if (Model.TrangThaiThanhToan == 2) { <span class="badge bg-warning text-dark fs-6"><i class="fas fa-exclamation-triangle me-1"></i>Còn nợ</span> }
-                else if (Model.TrangThaiThanhToan == 3) { <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>Đã tất toán đủ</span> }
-                else { <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>Đã thanh toán</span> }
+                @if (Model.TrangThaiThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa thanh toán</span> }
+                else if (Model.TrangThaiThanhToan == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đã đặt cọc</span> }
+                else if (Model.TrangThaiThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Còn nợ</span> }
+                else if (Model.TrangThaiThanhToan == 3) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã tất toán đủ</span> }
+                else { <span class="status-pill"><span class="status-dot dot-success"></span> Đã thanh toán</span> }
                 @if (Model.TienTraThua > 0)
                 {
-                    <span class="badge bg-light text-success border border-success ms-1"><i class="fas fa-coins me-1"></i>Dư: @Model.TienTraThua.ToString("N0") đ</span>
+                    <span class="status-pill ms-1"><span class="status-dot dot-success"></span> Dư: @Model.TienTraThua.ToString("N0") đ</span>
                 }
             </div>
             <div class="ms-auto text-end">
@@ -131,7 +132,7 @@
                         <tr><td class="text-muted">Thời gian thuê</td><td>@soNgay ngày</td></tr>
                         <tr class="border-top"><td class="text-muted">Tổng tiền thuê</td><td class="fw-bold text-danger">@Model.TongTien.ToString("N0") đ</td></tr>
                         <tr><td class="text-muted">Tiền đã đặt cọc</td><td class="fw-bold text-success">@Model.TienDaCoc.ToString("N0") đ</td></tr>
-                        <tr class="border-top"><td class="text-muted">Số kỳ trả góp</td><td><span class="badge bg-dark">@Model.SoKyHan kỳ</span></td></tr>
+                        <tr class="border-top"><td class="text-muted">Số kỳ trả góp</td><td><span class="badge-soft-neutral font-monospace">@Model.SoKyHan kỳ</span></td></tr>
                         <tr><td class="text-muted">Ghi chú</td><td class="text-muted small">@(string.IsNullOrEmpty(Model.GhiChu) ? "Không có" : Model.GhiChu)</td></tr>
                     </table>
                 </div>
@@ -166,7 +167,7 @@
                                 tongCoc += coc;
                                 <tr>
                                     <td class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</td>
-                                    <td><span class="badge bg-secondary">@item.ThietBi?.SoSerial</span></td>
+                                    <td><span class="badge-soft-neutral font-monospace">@item.ThietBi?.SoSerial</span></td>
                                     <td class="text-end">@((item.ThietBi?.SanPham?.GiaThueNgay ?? 0).ToString("N0")) đ</td>
                                     <td class="text-end text-warning fw-bold">@coc.ToString("N0") đ</td>
                                     <td class="text-end fw-bold text-brand">@item.GiaChotThu.ToString("N0") đ</td>
@@ -218,7 +219,7 @@
                                     <td class="fw-bold">@k.SoKyHan</td>
                                     <td>
                                         @k.NgayDenHan.ToString("dd/MM/yyyy")
-                                        @if (isOverdue) { <span class="badge bg-danger ms-1">Trễ</span> }
+                                        @if (isOverdue) { <span class="status-pill ms-1"><span class="status-dot dot-danger"></span> Trễ</span> }
                                     </td>
                                     <td class="fw-bold">@k.SoTienPhai.ToString("N0") đ</td>
                                     <td class="text-success fw-bold">@k.SoTienDaTra.ToString("N0") đ</td>
@@ -226,15 +227,15 @@
                                         @(conLai > 0 ? conLai.ToString("N0") + " đ" : "—")
                                     </td>
                                     <td>
-                                        @if (k.TrangThai == 1 || k.SoTienDaTra >= k.SoTienPhai) { <span class="badge bg-success">Đã trả</span> }
+                                        @if (k.TrangThai == 1 || k.SoTienDaTra >= k.SoTienPhai) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã trả</span> }
                                         else if (k.TrangThai == 0 && k.SoTienDaTra > 0) {
-                                            <span class="badge bg-warning text-dark" style="background-color: #fd7e14 !important; color: white !important;">
-                                                Trả thiếu (@k.SoTienDaTra.ToString("N0") / @k.SoTienPhai.ToString("N0") đ)
+                                            <span class="status-pill">
+                                                <span class="status-dot dot-warning"></span> Trả thiếu (@k.SoTienDaTra.ToString("N0") / @k.SoTienPhai.ToString("N0") đ)
                                             </span>
                                             @if (k.NgayHenTraTiepTheo.HasValue)
                                             {
                                                 <div class="mt-1">
-                                                    <span class="badge bg-info text-dark"><i class="fas fa-calendar-check me-1"></i>Hẹn trả: @k.NgayHenTraTiepTheo.Value.ToString("dd/MM/yyyy")</span>
+                                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Hẹn trả: @k.NgayHenTraTiepTheo.Value.ToString("dd/MM/yyyy")</span>
                                                     @if (!string.IsNullOrEmpty(k.GhiChuTraThieu))
                                                     {
                                                         <small class="text-muted d-block font-italic">@k.GhiChuTraThieu</small>
@@ -243,13 +244,13 @@
                                             }
                                         }
                                         else if (isOverdue) {
-                                            <span class="badge bg-danger">Quá hạn</span>
+                                            <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn</span>
                                             @if (k.PhiPhatTreHan > 0)
                                             {
                                                 <small class="text-danger d-block fw-bold">(Phạt trễ hạn: +@k.PhiPhatTreHan.ToString("N0") đ)</small>
                                             }
                                         }
-                                        else { <span class="badge bg-warning text-dark">Chưa trả</span> }
+                                        else { <span class="status-pill"><span class="status-dot dot-warning"></span> Chưa trả</span> }
                                     </td>
                                     <td>
                                         @if (k.TrangThai != 1)
@@ -257,7 +258,7 @@
                                             @if (k.TrangThaiXacNhan == 1)
                                             {
                                                 <div>
-                                                    <span class="badge bg-info text-dark"><i class="fas fa-clock me-1"></i>Chờ đối soát</span>
+                                                    <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ đối soát</span>
                                                     <div class="small text-muted font-monospace mt-1">@k.MaGiaoDichChuyenKhoan</div>
                                                     @if (!string.IsNullOrEmpty(k.HinhAnhBienLai))
                                                     {
@@ -267,7 +268,7 @@
                                             }
                                             else if (k.TrangThaiXacNhan == 2)
                                             {
-                                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã duyệt</span>
+                                                <span class="status-pill"><span class="status-dot dot-success"></span> Đã duyệt</span>
                                             }
                                             else
                                             {
@@ -380,7 +381,7 @@
                             <tr>
                                 <td class="text-muted">Nội dung / Transfer Content:</td>
                                 <td>
-                                    <span class="badge bg-warning text-dark fs-6 px-3 py-1 font-monospace">HD@(Model.MaHopDong)</span>
+                                    <span class="badge-soft-navy fs-6 px-3 py-1 font-monospace fw-bold">HD@(Model.MaHopDong)</span>
                                     <small class="text-muted ms-2">(Cú pháp chuẩn: HD[MaHopDong])</small>
                                 </td>
                             </tr>
@@ -427,7 +428,7 @@
                                         @if (p.DaHuy)
                                         {
                                             <span class="text-decoration-line-through text-muted">@p.SoTien.ToString("N0") đ</span>
-                                            <span class="badge bg-danger ms-1">Đã hủy</span>
+                                            <span class="status-pill ms-1"><span class="status-dot dot-neutral"></span> Đã hủy</span>
                                         }
                                         else
                                         {
@@ -435,21 +436,21 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (p.LoaiPhieu == 1) { <span class="badge bg-dark">Thu cọc</span> }
-                                        else if (p.LoaiPhieu == 0) { <span class="badge bg-secondary">Thu kỳ hạn</span> }
-                                        else if (p.LoaiPhieu == 2) { <span class="badge bg-warning text-dark">Thu phí BT</span> }
-                                        else { <span class="badge bg-light text-dark border">Khác</span> }
+                                        @if (p.LoaiPhieu == 1) { <span class="badge-soft-navy">Thu cọc</span> }
+                                        else if (p.LoaiPhieu == 0) { <span class="badge-soft-neutral">Thu kỳ hạn</span> }
+                                        else if (p.LoaiPhieu == 2) { <span class="badge-soft-warning">Thu phí BT</span> }
+                                        else { <span class="badge-soft-neutral">Khác</span> }
                                     </td>
                                     <td>
-                                        @if (p.HinhThucThanhToan == 0) { <span class="badge bg-dark">Tiền mặt</span> }
+                                        @if (p.HinhThucThanhToan == 0) { <span class="badge-soft-neutral">Tiền mặt</span> }
                                         else if (p.HinhThucThanhToan == 1) {
-                                            <span class="badge bg-secondary">Chuyển khoản</span>
+                                            <span class="badge-soft-navy">Chuyển khoản</span>
                                             @if (!string.IsNullOrEmpty(p.MaGiaoDichNganHang)) {
                                                 <small class="text-muted d-block font-monospace">GD: @p.MaGiaoDichNganHang</small>
                                             }
                                         }
-                                        else if (p.HinhThucThanhToan == 2) { <span class="badge bg-primary">VNPay Online</span> }
-                                        else { <span class="badge bg-light text-dark border">Khác</span> }
+                                        else if (p.HinhThucThanhToan == 2) { <span class="badge-soft-navy">VNPay Online</span> }
+                                        else { <span class="badge-soft-neutral">Khác</span> }
                                     </td>
                                     <td>
                                         <span class="small">@(p.NhanVienThu?.HoTen ?? (p.MaNhanVienThu != null ? $"NV #{p.MaNhanVienThu}" : "Hệ thống"))</span>
@@ -520,7 +521,7 @@
                              style="max-height:120px; object-fit:contain;" />
                         <div class="small text-muted mt-1">Đã ký: @Model.NgayKy?.ToString("dd/MM/yyyy HH:mm")</div>
                     }
-                    else { <span class="badge bg-secondary">Chưa ký tên</span> }
+                    else { <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa ký tên</span> }
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted small fw-bold mb-2"><i class="fas fa-stamp me-1"></i>Đại diện Công ty (Bên cho thuê)</p>
@@ -530,12 +531,12 @@
                              class="img-fluid border rounded bg-white"
                              style="max-height:120px; object-fit:contain;" />
                         <div class="small fw-bold text-dark mt-1">@(Model.NhanVien?.HoTen ?? "Đại diện công ty")</div>
-                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã phê duyệt</span>
+                        <span class="status-pill"><span class="status-dot dot-success"></span> Đã phê duyệt</span>
                     }
                     else
                     {
                         <div class="py-3">
-                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Đang chờ công ty ký duyệt</span>
+                            <span class="status-pill"><span class="status-dot dot-warning"></span> Đang chờ công ty ký duyệt</span>
                             <small class="text-muted d-block mt-1">Chữ ký đại diện sẽ xuất hiện sau khi nhân viên thẩm định</small>
                         </div>
                     }
@@ -573,11 +574,11 @@
                                     <td>
                                         @if (bb.LoaiBienBan == 0)
                                         {
-                                            <span class="badge bg-primary">Giao máy (Bắt đầu thuê)</span>
+                                            <span class="status-pill"><span class="status-dot dot-navy"></span> Giao máy (Bắt đầu)</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-success">Thu hồi máy (Kết thúc)</span>
+                                            <span class="status-pill"><span class="status-dot dot-success"></span> Thu hồi máy (Kết thúc)</span>
                                         }
                                     </td>
                                     <td class="small">@(string.IsNullOrEmpty(bb.PhuKienKemTheo) ? "Đầy đủ" : bb.PhuKienKemTheo)</td>
@@ -644,7 +645,7 @@
                 <h6 class="mb-0 fw-bold"><i class="fas fa-calendar-plus me-2 text-info"></i>Lịch sử &amp; Trạng thái Yêu cầu Gia hạn Hợp đồng</h6>
                 @if (dsGiaHan != null && dsGiaHan.Any())
                 {
-                    <span class="badge bg-secondary">@dsGiaHan.Count() yêu cầu</span>
+                    <span class="badge-soft-neutral">@dsGiaHan.Count() yêu cầu</span>
                 }
             </div>
             <div class="card-body p-0">
@@ -669,7 +670,7 @@
                                     <tr>
                                         <td class="fw-bold">#@yc.MaYeuCau</td>
                                         <td>@yc.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")</td>
-                                        <td><span class="badge bg-primary fs-6">+@yc.SoNgayGiaHan ngày</span></td>
+                                        <td><span class="badge-soft-navy font-monospace">+@yc.SoNgayGiaHan ngày</span></td>
                                         <td class="text-start small">@(string.IsNullOrEmpty(yc.LyDo) ? "Không có" : yc.LyDo)</td>
                                         <td>
                                             @if (yc.ChiPhiPhatSinh > 0)
@@ -684,19 +685,19 @@
                                         <td>
                                             @if (yc.TrangThai == 0)
                                             {
-                                                <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ duyệt</span>
+                                                <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
                                             }
                                             else if (yc.TrangThai == 1)
                                             {
-                                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã chấp nhận</span>
+                                                <span class="status-pill"><span class="status-dot dot-success"></span> Đã chấp nhận</span>
                                             }
                                             else if (yc.TrangThai == 2)
                                             {
-                                                <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Từ chối</span>
+                                                <span class="status-pill"><span class="status-dot dot-danger"></span> Từ chối</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-secondary">Khác</span>
+                                                <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span>
                                             }
                                         </td>
                                         <td class="small text-muted text-start">
@@ -725,21 +726,21 @@
                                 <tr>
                                     <td class="fw-bold">#HĐ-@Model.MaHopDong</td>
                                     <td>@Model.NgayBatDau.ToString("dd/MM/yyyy")</td>
-                                    <td><span class="badge bg-primary fs-6">+@(Model.SoNgayGiaHan ?? 0) ngày</span></td>
+                                    <td><span class="badge-soft-navy font-monospace">+@(Model.SoNgayGiaHan ?? 0) ngày</span></td>
                                     <td class="text-start small">@(string.IsNullOrEmpty(Model.LyDoGiaHan) ? "Không có" : Model.LyDoGiaHan)</td>
                                     <td><span class="text-muted small">—</span></td>
                                     <td>
                                         @if (Model.TrangThaiGiaHan == 0 || Model.YeuCauGiaHan)
                                         {
-                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ duyệt</span>
+                                            <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
                                         }
                                         else if (Model.TrangThaiGiaHan == 1)
                                         {
-                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã chấp nhận</span>
+                                            <span class="status-pill"><span class="status-dot dot-success"></span> Đã chấp nhận</span>
                                         }
                                         else if (Model.TrangThaiGiaHan == 2)
                                         {
-                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Từ chối</span>
+                                            <span class="status-pill"><span class="status-dot dot-danger"></span> Từ chối</span>
                                         }
                                     </td>
                                     <td class="small text-muted text-start">

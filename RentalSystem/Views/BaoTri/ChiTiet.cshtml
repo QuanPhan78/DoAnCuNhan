@@ -4,12 +4,12 @@
 }
 
 <div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="page-header">
         <div>
-            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice text-primary me-2"></i> Chi Tiết Phiếu Bảo Trì #@Model.MaPhieu</h2>
-            <div class="text-muted">Ngày ghi nhận: @Model.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</div>
+            <h3 class="page-title mb-0"><i class="fas fa-file-invoice"></i> Chi Tiết Phiếu Bảo Trì #@Model.MaPhieu</h3>
+            <div class="text-muted small">Ngày ghi nhận: @Model.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</div>
         </div>
-        <a asp-action="MyTickets" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Về danh sách phiếu</a>
+        <a asp-action="MyTickets" class="btn btn-outline-navy"><i class="fas fa-arrow-left me-1"></i> Về danh sách phiếu</a>
     </div>
 
     @if (TempData["Success"] != null) {
@@ -34,7 +34,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-4 text-muted">Số Serial:</div>
-                        <div class="col-sm-8"><span class="badge bg-secondary">@Model.ThietBi.SoSerial</span></div>
+                        <div class="col-sm-8"><span class="badge-soft-neutral font-monospace">@Model.ThietBi.SoSerial</span></div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-4 text-muted">Hợp đồng liên kết:</div>
@@ -50,11 +50,11 @@
                         <div class="col-sm-4 text-muted">Mức độ khẩn cấp:</div>
                         <div class="col-sm-8">
                             @if (Model.MucDoKhanCap == 2) {
-                                <span class="badge bg-danger">Khẩn cấp (SLA 12h)</span>
+                                <span class="status-pill"><span class="status-dot dot-danger"></span> Khẩn cấp (SLA 12h)</span>
                             } else if (Model.MucDoKhanCap == 3) {
-                                <span class="badge bg-warning text-dark">Ưu tiên cao (SLA 24h)</span>
+                                <span class="status-pill"><span class="status-dot dot-warning"></span> Ưu tiên cao (SLA 24h)</span>
                             } else {
-                                <span class="badge bg-info text-dark">Tiêu chuẩn (SLA 48h)</span>
+                                <span class="status-pill"><span class="status-dot dot-navy"></span> Tiêu chuẩn (SLA 48h)</span>
                             }
                         </div>
                     </div>
@@ -127,19 +127,19 @@
                         <span class="text-muted">Trạng thái:</span>
                         <span>
                             @if (Model.TrangThai == 1) { 
-                                <span class="badge bg-warning text-dark fs-6"><i class="fas fa-clock"></i> Mới tiếp nhận</span> 
+                                <span class="status-pill fs-6"><span class="status-dot dot-warning"></span> Mới tiếp nhận</span> 
                             }
                             else if (Model.TrangThai == 2) { 
-                                <span class="badge bg-info text-dark fs-6"><i class="fas fa-wrench"></i> Đang sửa chữa</span> 
+                                <span class="status-pill fs-6"><span class="status-dot dot-navy"></span> Đang sửa chữa</span> 
                             }
                             else if (Model.TrangThai == 3) { 
-                                <span class="badge bg-primary fs-6"><i class="fas fa-check"></i> Đã sửa xong (Chờ nghiệm thu)</span> 
+                                <span class="status-pill fs-6"><span class="status-dot dot-navy"></span> Đã sửa xong (Chờ nghiệm thu)</span> 
                             }
                             else if (Model.TrangThai == 4) { 
-                                <span class="badge bg-danger fs-6"><i class="fas fa-times-circle"></i> Hỏng không thể khắc phục</span> 
+                                <span class="status-pill fs-6"><span class="status-dot dot-danger"></span> Hỏng không thể khắc phục</span> 
                             }
                             else if (Model.TrangThai == 5) { 
-                                <span class="badge bg-success fs-6"><i class="fas fa-check-double"></i> Đã nghiệm thu & Đóng</span> 
+                                <span class="status-pill fs-6"><span class="status-dot dot-success"></span> Đã nghiệm thu & Đóng</span> 
                             }
                         </span>
                     </div>

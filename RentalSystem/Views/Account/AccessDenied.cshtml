@@ -1,25 +1,53 @@
 @{
     ViewData["Title"] = "Không có quyền truy cập";
+    var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    string roleName = User.IsInRole("Admin") ? "Quản trị viên" :
+                      User.IsInRole("KinhDoanh") ? "Kinh Doanh" :
+                      User.IsInRole("KyThuat") ? "Kỹ Thuật" :
+                      User.IsInRole("KhachHang") ? "Khách Hàng" :
+                      (!string.IsNullOrWhiteSpace(roleClaim) ? roleClaim : "Khách Hàng");
+    bool isStaff = User.IsInRole("Admin") || User.IsInRole("KinhDoanh") || User.IsInRole("KyThuat");
 }
 
 <div class="container text-center py-5 my-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8 col-lg-6">
             <div class="card shadow-lg border-0 rounded-4 p-5">
                 <div class="mb-4">
                     <i class="fas fa-shield-alt text-danger" style="font-size: 5rem;"></i>
                 </div>
                 <h2 class="fw-bold text-danger mb-3">403 - TỪ CHỐI TRUY CẬP</h2>
                 <p class="text-muted fs-5 mb-4">
-                    Tài khoản của bạn không có đặc quyền truy cập vào Phân hệ Quản trị (Admin) hoặc chức năng này.
+                    Tài khoản của bạn (@(!string.IsNullOrWhiteSpace(User.Identity?.Name) ? User.Identity.Name : (User.Identity?.IsAuthenticated == true ? "Người dùng" : "Chưa đăng nhập")) - @roleName) không có quyền truy cập vào chức năng này.
                 </p>
-                <div class="d-flex justify-content-center gap-3">
-                    <a href="/" class="btn btn-brand fw-bold px-4 py-2 rounded-pill shadow-sm">
-                        <i class="fas fa-home me-2"></i> Về Trang chủ
-                    </a>
-                    <a href="/Account/Logout" class="btn btn-outline-danger fw-bold px-4 py-2 rounded-pill">
-                        <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất & Đổi tài khoản
-                    </a>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    @if (isStaff)
+                    {
+                        <a href="/Admin/PhanCong/MyTasks" class="btn btn-brand fw-bold px-4 py-2 rounded-pill shadow-sm">
+                            <i class="fas fa-tasks me-2"></i> Về trang công việc của tôi
+                        </a>
+                        @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                        {
+                            <a href="/Admin/Home" class="btn btn-outline-primary fw-bold px-4 py-2 rounded-pill">
+                                <i class="fas fa-tachometer-alt me-2"></i> Trang quản trị
+                            </a>
+                        }
+                        <a href="/" class="btn btn-outline-secondary fw-bold px-4 py-2 rounded-pill">
+                            <i class="fas fa-home me-2"></i> Quay lại trang chủ
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/" class="btn btn-brand fw-bold px-4 py-2 rounded-pill shadow-sm">
+                            <i class="fas fa-home me-2"></i> Quay lại trang chủ
+                        </a>
+                    }
+                    <form asp-controller="Account" asp-action="Logout" asp-area="" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger fw-bold px-4 py-2 rounded-pill">
+                            <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất & Đổi tài khoản
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

@@ -9,7 +9,7 @@ namespace RentalSystem.Areas.Admin.Controllers
     // Controller quản lý tiếp nhận, điều phối và xử lý sự cố thiết bị (Bảo trì).
     // Hỗ trợ phân công kỹ thuật viên, cập nhật trạng thái sửa chữa, tính phí bồi thường và bảo dưỡng thiết bị kho.
     [Area("Admin")]
-    [Authorize(Roles = "Admin,KyThuat")]
+    [Authorize(Roles = "Admin,KyThuat,KinhDoanh")]
     public class BaoTriController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -46,6 +46,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Lập phiếu bảo dưỡng định kỳ cho thiết bị tồn kho (không gắn hợp đồng)
+        [Authorize(Roles = "Admin,KyThuat")]
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -64,6 +65,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View();
         }
 
+        [Authorize(Roles = "Admin,KyThuat")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int maThietBi, string moTaLoi, int? maKtv, int? mucDoKhanCap, decimal? chiPhiDuKien, DateTime? hanHoanThanh, string ghiChu)
@@ -157,6 +159,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Cập nhật tiến độ sửa chữa: 1=Mới tiếp nhận, 2=Đang sửa chữa, 3=Đã sửa xong, 4=Hỏng không thể khắc phục, 5=Đã nghiệm thu.
+        [Authorize(Roles = "Admin,KyThuat")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(
@@ -378,6 +381,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Áp dụng tạm dừng tính tiền thuê trong thời gian bảo trì
+        [Authorize(Roles = "Admin,KyThuat")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApDungTamDungTienThue(int id, int soNgayTamDung)
@@ -465,6 +469,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Thu phí đền bù / sửa chữa thiết bị tạo Phiếu Thu (LoaiPhieu = 2)
+        [Authorize(Roles = "Admin,KinhDoanh")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ThuPhiDenBu(int id, decimal soTien, int hinhThuc = 0, string ghiChu = null)
@@ -523,6 +528,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
+        [Authorize(Roles = "Admin,KinhDoanh")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ThuPhiBaoTri(int id, decimal soTien, int hinhThuc = 0, string ghiChu = null)

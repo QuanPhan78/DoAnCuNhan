@@ -30,16 +30,12 @@ namespace RentalSystem.Controllers
             if (hopDong == null) return NotFound();
 
             // Kiểm tra phân quyền truy cập hợp đồng
-            var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (claim != null && int.TryParse(claim.Value, out int userId))
+            if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh") && !User.IsInRole("KyThuat"))
             {
-                // Khách hàng chỉ xem được hợp đồng của chính mình
-                if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh"))
+                var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (claim == null || !int.TryParse(claim.Value, out int userId) || hopDong.MaKhachHang != userId)
                 {
-                    if (hopDong.MaKhachHang != userId)
-                    {
-                        return Unauthorized("BẢO MẬT: Bạn không có quyền xem bản in hợp đồng của khách hàng khác.");
-                    }
+                    return Unauthorized("BẢO MẬT: Bạn không có quyền xem bản in hợp đồng của khách hàng khác.");
                 }
             }
 
@@ -67,15 +63,12 @@ namespace RentalSystem.Controllers
 
             if (bienBan == null) return NotFound();
 
-            var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (claim != null && int.TryParse(claim.Value, out int userId))
+            if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh") && !User.IsInRole("KyThuat"))
             {
-                if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh"))
+                var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (claim == null || !int.TryParse(claim.Value, out int userId) || bienBan.HopDong == null || bienBan.HopDong.MaKhachHang != userId)
                 {
-                    if (bienBan.HopDong.MaKhachHang != userId)
-                    {
-                        return Unauthorized("BẢO MẬT: Bạn không có quyền xem biên bản bàn giao của khách hàng khác.");
-                    }
+                    return Unauthorized("BẢO MẬT: Bạn không có quyền xem biên bản bàn giao của khách hàng khác.");
                 }
             }
 
@@ -103,15 +96,12 @@ namespace RentalSystem.Controllers
 
             if (phieuThu == null) return NotFound("Không tìm thấy phiếu thu yêu cầu.");
 
-            var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (claim != null && int.TryParse(claim.Value, out int userId))
+            if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh") && !User.IsInRole("KeToan"))
             {
-                if (!User.IsInRole("Admin") && !User.IsInRole("KinhDoanh") && !User.IsInRole("KeToan"))
+                var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (claim == null || !int.TryParse(claim.Value, out int userId) || phieuThu.HopDong == null || phieuThu.HopDong.MaKhachHang != userId)
                 {
-                    if (phieuThu.HopDong != null && phieuThu.HopDong.MaKhachHang != userId)
-                    {
-                        return Unauthorized("BẢO MẬT: Bạn không có quyền xem phiếu thu của khách hàng khác.");
-                    }
+                    return Unauthorized("BẢO MẬT: Bạn không có quyền xem phiếu thu của khách hàng khác.");
                 }
             }
 

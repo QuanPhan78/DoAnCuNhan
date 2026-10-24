@@ -3,16 +3,15 @@
     ViewData["Title"] = "Chỉnh sửa Mã Khuyến Mãi";
 }
 
-<div class="d-flex align-items-center mb-4">
-    <a asp-action="Index" class="btn btn-light shadow-sm me-3"><i class="fas fa-arrow-left"></i></a>
-    <div>
-        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-edit me-2 text-primary"></i> Chỉnh sửa Mã Khuyến Mãi #@Model.MaKM</h3>
-        <span class="text-muted small">Cập nhật thông tin voucher, gia hạn thời gian hoặc thay đổi số lượng phát hành.</span>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-edit"></i> Chỉnh sửa Mã Khuyến Mãi #@Model.MaKM</h3>
     </div>
 </div>
 
-<div class="card shadow border-0">
-    <div class="card-body p-4">
+<div class="admin-card">
+    <div class="admin-card-body">
         <form asp-action="Edit" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="MaKM" />
@@ -51,7 +50,7 @@
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label fw-bold">Số lượng lượt sử dụng còn lại <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Số lượng lượt sử dụng <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <input asp-for="SoLuong" type="number" min="0" class="form-control fw-bold" required />
                         <span class="input-group-text bg-light">lượt</span>
@@ -61,7 +60,7 @@
 
                 <div class="col-md-12 mb-3">
                     <label class="form-label fw-bold">Mô tả chương trình khuyến mãi</label>
-                    <textarea asp-for="MoTa" class="form-control" rows="3"></textarea>
+                    <textarea asp-for="MoTa" class="form-control" rows="3" placeholder="Nhập ghi chú hoặc điều kiện áp dụng cho khách hàng..."></textarea>
                     <span asp-validation-for="MoTa" class="text-danger small"></span>
                 </div>
 
@@ -69,7 +68,7 @@
                     <div class="form-check form-switch fs-5">
                         <input asp-for="KichHoat" class="form-check-input" type="checkbox" id="kichHoatCheck" />
                         <label class="form-check-label fs-6 fw-bold" for="kichHoatCheck">
-                            Trạng thái kích hoạt (Cho phép áp dụng khi khách thanh toán)
+                            Trạng thái kích hoạt mã khuyến mãi
                         </label>
                     </div>
                 </div>
@@ -77,8 +76,8 @@
 
             <div class="text-end border-top pt-3">
                 <a asp-action="Index" class="btn btn-outline-secondary me-2">Hủy bỏ</a>
-                <button type="submit" class="btn btn-brand fw-bold px-4 py-2 shadow-sm">
-                    <i class="fas fa-save me-1"></i> Cập nhật Thay đổi
+                <button type="submit" class="btn btn-navy">
+                    <i class="fas fa-save me-1"></i> Cập Nhật Mã Khuyến Mãi
                 </button>
             </div>
         </form>
