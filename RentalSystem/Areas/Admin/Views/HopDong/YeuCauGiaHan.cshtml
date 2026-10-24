@@ -9,18 +9,18 @@
 }
 
 <div class="container-fluid px-0">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="page-header">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item"><a href="/Admin/HopDong">Hợp đồng</a></li>
+                    <li class="breadcrumb-item"><a href="/Admin/HopDong" class="text-decoration-none">Hợp đồng</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Yêu cầu gia hạn</li>
                 </ol>
             </nav>
-            <h3 class="fw-bold mb-0"><i class="fas fa-calendar-plus text-info me-2"></i>Danh sách Yêu cầu Gia hạn Hợp đồng</h3>
+            <h3 class="page-title mb-0"><i class="fas fa-calendar-plus"></i> Danh sách Yêu cầu Gia hạn Hợp đồng</h3>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/Admin/HopDong" class="btn btn-outline-secondary">
+        <div>
+            <a href="/Admin/HopDong" class="btn btn-outline-navy">
                 <i class="fas fa-file-contract me-1"></i> Danh sách Đơn thuê
             </a>
         </div>
@@ -50,28 +50,28 @@
         <div class="card-body py-2">
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 <span class="fw-bold text-muted me-2"><i class="fas fa-filter me-1"></i> Lọc trạng thái:</span>
-                <a href="/Admin/HopDong/YeuCauGiaHan" class="btn btn-sm @(currentStatus == null ? "btn-dark" : "btn-outline-secondary")">
-                    Tất cả <span class="badge @(currentStatus == null ? "bg-light text-dark" : "bg-secondary") ms-1">@allCount</span>
+                <a href="/Admin/HopDong/YeuCauGiaHan" class="btn btn-sm @(currentStatus == null ? "btn-navy" : "btn-outline-navy")">
+                    Tất cả <span class="badge-soft-neutral ms-1">@allCount</span>
                 </a>
-                <a href="/Admin/HopDong/YeuCauGiaHan?status=0" class="btn btn-sm @(currentStatus == 0 ? "btn-warning text-dark fw-bold" : "btn-outline-warning text-dark")">
-                    <i class="fas fa-clock me-1"></i>Chờ duyệt <span class="badge @(currentStatus == 0 ? "bg-dark text-white" : "bg-warning text-dark") ms-1">@pendingCount</span>
+                <a href="/Admin/HopDong/YeuCauGiaHan?status=0" class="btn btn-sm @(currentStatus == 0 ? "btn-navy" : "btn-outline-navy")">
+                    <i class="fas fa-clock me-1"></i>Chờ duyệt <span class="badge-soft-warning ms-1">@pendingCount</span>
                 </a>
-                <a href="/Admin/HopDong/YeuCauGiaHan?status=1" class="btn btn-sm @(currentStatus == 1 ? "btn-success fw-bold" : "btn-outline-success")">
-                    <i class="fas fa-check-circle me-1"></i>Đã chấp nhận <span class="badge @(currentStatus == 1 ? "bg-light text-success" : "bg-success") ms-1">@approvedCount</span>
+                <a href="/Admin/HopDong/YeuCauGiaHan?status=1" class="btn btn-sm @(currentStatus == 1 ? "btn-navy" : "btn-outline-navy")">
+                    <i class="fas fa-check-circle me-1"></i>Đã chấp nhận <span class="badge-soft-success ms-1">@approvedCount</span>
                 </a>
-                <a href="/Admin/HopDong/YeuCauGiaHan?status=2" class="btn btn-sm @(currentStatus == 2 ? "btn-danger fw-bold" : "btn-outline-danger")">
-                    <i class="fas fa-times-circle me-1"></i>Từ chối <span class="badge @(currentStatus == 2 ? "bg-light text-danger" : "bg-danger") ms-1">@rejectedCount</span>
+                <a href="/Admin/HopDong/YeuCauGiaHan?status=2" class="btn btn-sm @(currentStatus == 2 ? "btn-navy" : "btn-outline-navy")">
+                    <i class="fas fa-times-circle me-1"></i>Từ chối <span class="badge-soft-danger ms-1">@rejectedCount</span>
                 </a>
             </div>
         </div>
     </div>
 
     <!-- Bảng danh sách yêu cầu -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
+    <div class="admin-card">
+        <div class="admin-card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-center">
-                    <thead class="table-light">
+                <table class="admin-table text-center mb-0">
+                    <thead>
                         <tr>
                             <th style="width: 80px;">Mã YC</th>
                             <th>Hợp đồng / Khách hàng</th>
@@ -115,7 +115,7 @@
                                         </small>
                                     </td>
                                     <td>
-                                        <span class="badge bg-primary fs-6">+@item.SoNgayGiaHan ngày</span>
+                                        <span class="badge-soft-navy font-monospace">+@item.SoNgayGiaHan ngày</span>
                                         <small class="text-muted d-block mt-1">
                                             Hạn cũ: @item.HopDong?.NgayKetThuc.ToString("dd/MM/yyyy")
                                         </small>
@@ -145,19 +145,19 @@
                                     <td>
                                         @if (item.TrangThai == 0)
                                         {
-                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ duyệt</span>
+                                            <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
                                         }
                                         else if (item.TrangThai == 1)
                                         {
-                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã duyệt</span>
+                                            <span class="status-pill"><span class="status-dot dot-success"></span> Đã duyệt</span>
                                         }
                                         else if (item.TrangThai == 2)
                                         {
-                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Từ chối</span>
+                                            <span class="status-pill"><span class="status-dot dot-danger"></span> Từ chối</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary">Khác</span>
+                                            <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span>
                                         }
                                     </td>
                                     <td class="small text-muted">
@@ -200,9 +200,9 @@
                                                             <input type="hidden" name="id" value="@item.MaHopDong" />
                                                             <input type="hidden" name="chapNhan" value="true" />
                                                             <input type="hidden" name="returnUrl" value="/Admin/HopDong/YeuCauGiaHan@(currentStatus.HasValue ? $"?status={currentStatus.Value}" : "")" />
-                                                            <div class="modal-header bg-success text-white">
-                                                                <h5 class="modal-title fw-bold"><i class="fas fa-check-circle me-2"></i>Duyệt Gia Hạn Hợp Đồng #@item.MaHopDong</h5>
-                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title fw-bold text-success"><i class="fas fa-check-circle me-2"></i>Duyệt Gia Hạn Hợp Đồng #@item.MaHopDong</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                             </div>
                                                             <div class="modal-body">
                                                                 <p>Bạn có chắc chắn muốn <strong>phê duyệt</strong> gia hạn thêm <strong>@item.SoNgayGiaHan ngày</strong> cho đơn hàng <strong>#@item.MaHopDong</strong>?</p>
@@ -216,7 +216,7 @@
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
-                                                                <button type="submit" class="btn btn-success fw-bold">Xác Nhận Duyệt</button>
+                                                                <button type="submit" class="btn btn-navy fw-bold">Xác Nhận Duyệt</button>
                                                             </div>
                                                         </form>
                                                     </div>
@@ -232,9 +232,9 @@
                                                             <input type="hidden" name="id" value="@item.MaHopDong" />
                                                             <input type="hidden" name="chapNhan" value="false" />
                                                             <input type="hidden" name="returnUrl" value="/Admin/HopDong/YeuCauGiaHan@(currentStatus.HasValue ? $"?status={currentStatus.Value}" : "")" />
-                                                            <div class="modal-header bg-danger text-white">
-                                                                <h5 class="modal-title fw-bold"><i class="fas fa-times-circle me-2"></i>Từ Chối Gia Hạn Hợp Đồng #@item.MaHopDong</h5>
-                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Từ Chối Gia Hạn Hợp Đồng #@item.MaHopDong</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                             </div>
                                                             <div class="modal-body">
                                                                 <p>Bạn có chắc chắn muốn <strong>từ chối</strong> yêu cầu gia hạn này của khách hàng?</p>

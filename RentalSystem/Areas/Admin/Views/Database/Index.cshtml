@@ -3,18 +3,13 @@
     ViewData["Title"] = "Sao Lưu & Khôi Phục Cơ Sở Dữ Liệu";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold text-dark mb-1">
-            <i class="fas fa-database me-2 text-primary"></i> Quản Lý Sao Lưu & Khôi Phục CSDL
-        </h2>
-        <span class="text-muted small">Quản trị viên có thể kết xuất toàn bộ dữ liệu hệ thống hoặc khôi phục dữ liệu một cách an toàn</span>
-    </div>
-    <div>
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm shadow-sm">
-            <i class="fas fa-sync-alt me-1"></i> Làm mới dữ liệu
-        </a>
-    </div>
+<div class="page-header">
+    <h3 class="page-title">
+        <i class="fas fa-database"></i> Quản Lý Sao Lưu & Khôi Phục CSDL
+    </h3>
+    <a asp-action="Index" class="btn btn-outline-navy">
+        <i class="fas fa-sync-alt me-1"></i> Làm mới dữ liệu
+    </a>
 </div>
 
 <!-- THÔNG BÁO TRẠNG THÁI (TempData) -->
@@ -83,11 +78,11 @@
                         <div class="h6 mb-0 fw-bold">
                             @if (Model.IsConnected)
                             {
-                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Hoạt động tốt</span>
+                                <span class="status-pill"><span class="status-dot dot-success"></span> Hoạt động tốt</span>
                             }
                             else
                             {
-                                <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i> Mất kết nối</span>
+                                <span class="status-pill"><span class="status-dot dot-danger"></span> Mất kết nối</span>
                             }
                         </div>
                     </div>
@@ -198,7 +193,7 @@
         <h5 class="card-title mb-0 fw-bold text-dark">
             <i class="fas fa-table me-2 text-secondary"></i> Thống Kê Chi Tiết Bản Ghi Theo Bảng
         </h5>
-        <span class="badge bg-light text-dark border">
+        <span class="badge-soft-neutral">
             Kiểm tra lúc: @Model.CheckedAt.ToString("HH:mm:ss dd/MM/yyyy")
         </span>
     </div>
@@ -228,19 +223,19 @@
                                 </td>
                                 <td class="fw-bold text-secondary">@table.DisplayName</td>
                                 <td class="text-center">
-                                    <span class="badge bg-secondary fs-6 px-3">@table.RowCount.ToString("N0")</span>
+                                    <span class="badge-soft-neutral font-monospace px-3 py-1">@table.RowCount.ToString("N0")</span>
                                 </td>
                                 <td class="text-center">
                                     @if (table.RowCount > 0)
                                     {
-                                        <span class="badge bg-success-subtle text-success border border-success px-2 py-1">
-                                            <i class="fas fa-check me-1"></i> Có dữ liệu
+                                        <span class="status-pill">
+                                            <span class="status-dot dot-success"></span> Có dữ liệu
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">
-                                            <i class="fas fa-minus me-1"></i> Bảng trống
+                                        <span class="status-pill">
+                                            <span class="status-dot dot-warning"></span> Bảng trống
                                         </span>
                                     }
                                 </td>

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace RentalSystem.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin,KinhDoanh")]
+    [Authorize(Roles = "Admin,KinhDoanh,KyThuat")]
     public class HopDongController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -89,6 +89,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             _env = env;
         }
 
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> Index(string? filter = null)
         {
             var query = _context.HopDongs
@@ -242,6 +243,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(hd);
         }
 
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> Create()
         {
             var khachHangs = await _context.NguoiDungs.Where(u => u.VaiTro.TenVaiTro == "KhachHang").ToListAsync();
@@ -262,6 +264,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         // Giao diện dành cho Admin/Nhân viên tạo đơn trực tiếp tại quầy. 
         // Hỗ trợ tìm hoặc tạo mới khách hàng, thiết lập số kỳ hạn trả góp và thu cọc tức thời.
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> Create(string KhachHang_HoTen, string KhachHang_SoDienThoai, string KhachHang_Email, string KhachHang_DiaChi, DateTime NgayBatDau, DateTime NgayKetThuc, decimal TienDaCoc, int HinhThucCoc, int SoKyHan, int[] SanPhamIds, int[] SoLuongs, string GhiChu)
         {
             // Đọc tiền cọc bảo đảm máy và tiền thuê trả trước từ Request.Form nếu có
@@ -592,6 +595,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         // Cập nhật trạng thái hợp đồng và điều phối vòng đời thiết bị
         // (0: Chờ duyệt, 1: Đang thuê, 2: Hoàn tất, 3: Đã hủy, 4: Đã trả máy/Chờ quyết toán)
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> UpdateStatus(int id, int status, string returnUrl = null)
         {
             if (status < 0 || status > 4)
@@ -1073,6 +1077,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> CapNhatTrangThai(int id, int status, string returnUrl = null)
         {
             return await UpdateStatus(id, status, returnUrl);
@@ -1080,6 +1085,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> HuyHopDong(int id, string returnUrl = null)
         {
             return await UpdateStatus(id, 3, returnUrl);
@@ -1087,6 +1093,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Kiểm tra tính hợp lệ của chữ ký điện tử nhân viên (định dạng ảnh Base64, dung lượng cho phép)
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> AdminSign(int id, string signatureData, string returnUrl = null)
         {
             var hopDong = await _context.HopDongs.FindAsync(id);
@@ -1164,6 +1171,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> LuuChuKy(int id, string signatureData, string returnUrl = null)
         {
             return await AdminSign(id, signatureData, returnUrl);
@@ -1172,6 +1180,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Xác nhận thu tiền kỳ hạn trả góp, xử lý trả thừa/trả thiếu và đồng bộ công nợ
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> ConfirmPayment(
             int maKyHan, 
             decimal soTienThucThu, 
@@ -1362,6 +1371,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Hủy phiếu thu, hoàn tác công nợ kỳ hạn và đồng bộ trạng thái hợp đồng
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> HuyPhieuThu(int maPhieuThu, string lyDoHuy, string returnUrl = null)
         {
             if (string.IsNullOrWhiteSpace(lyDoHuy))
@@ -1427,6 +1437,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Tất toán sớm toàn bộ các kỳ hạn còn lại
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> TatToanSom(int maHopDong, int hinhThuc = 0, string ghiChu = null, string maGiaoDichNganHang = null, string returnUrl = null)
         {
             var hopDong = await _context.HopDongs
@@ -1490,6 +1501,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Điều chỉnh ngày đến hạn của kỳ hạn chưa thanh toán
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> DieuChinhKyHan(int maKyHan, DateTime ngayDenHanMoi, string lyDo, string returnUrl = null)
         {
             var kyHan = await _context.KyHanThanhToans.FindAsync(maKyHan);
@@ -1524,6 +1536,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Lập phiếu thu phí bảo trì / đền bù hư hỏng (LoaiPhieu = 2)
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> ThuPhiBaoTri(int maHopDong, decimal soTien, int hinhThuc = 0, string ghiChu = null, string returnUrl = null)
         {
             var hopDong = await _context.HopDongs.FindAsync(maHopDong);
@@ -1563,6 +1576,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         // Thu thêm tiền cọc bổ sung cho hợp đồng đang hoạt động.
         // Khấu trừ dần vào các kỳ hạn nợ và sinh PhieuThu (LoaiPhieu = 0)
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> ThemTienCoc(int maHopDong, decimal soTienCoc, int hinhThuc, string ghiChu, string returnUrl = null)
         {
             var hopDong = await _context.HopDongs
@@ -1660,6 +1674,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         [HttpGet]
         // Quản lý và duyệt yêu cầu gia hạn hợp đồng
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> YeuCauGiaHan(int? status)
         {
             var query = _context.YeuCauGiaHans
@@ -1685,6 +1700,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Phê duyệt hoặc từ chối yêu cầu gia hạn hợp đồng
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> DuyetGiaHan(int id, bool chapNhan, string ghiChu = null, string returnUrl = null)
         {
             var hopDong = await _context.HopDongs.FindAsync(id);
@@ -1809,6 +1825,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Trả máy trước hạn và thanh lý hợp đồng sớm
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> TraMayTruocHan(int id, DateTime ngayTraThucTe, decimal phiPhatTraSom, int hinhThucHoanCoc = 1, string ghiChu = null)
         {
             var hopDong = await _context.HopDongs.FindAsync(id);
@@ -2015,6 +2032,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Duyệt hoặc từ chối biên lai chuyển khoản ngân hàng của khách
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> DuyetBienLai(int maKyHan, bool chapNhan, string ghiChu = null, string returnUrl = null)
         {
             var kyHan = await _context.KyHanThanhToans
@@ -2069,6 +2087,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Lập phiếu chi hoàn tiền cọc
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> HoanCoc(int id, decimal soTienHoan, int hinhThucChi = 1, string maGiaoDich = null, string ghiChu = null)
         {
             var hopDong = await _context.HopDongs.FindAsync(id);
@@ -2110,6 +2129,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Quét thủ công giải phóng thiết bị các đơn hàng quá hạn giữ chỗ
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> QuetDonQuaHanGiuCho()
         {
             var now = DateTime.Now;

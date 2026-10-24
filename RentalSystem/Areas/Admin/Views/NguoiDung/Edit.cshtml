@@ -1,7 +1,14 @@
 @model RentalSystem.Models.NguoiDung
 @{ ViewData["Title"] = "Cập nhật Người Dùng"; }
-<h2>Cập nhật Người Dùng</h2>
-<hr />
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-edit"></i> Cập nhật Người Dùng #@Model.MaNguoiDung</h3>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-body p-4">
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="MaNguoiDung" />
     <div class="row">
@@ -42,6 +49,8 @@
             </div>
         </div>
     </div>
-    <button type="submit" class="btn btn-brand">Cập nhật</button>
-    <a asp-action="Index" class="btn btn-light">Quay lại</a>
+    <button type="submit" class="btn btn-navy"><i class="fas fa-save me-1"></i> Cập nhật</button>
+    <a asp-action="Index" class="btn btn-outline-navy ms-2">Quay lại</a>
 </form>
+    </div>
+</div>

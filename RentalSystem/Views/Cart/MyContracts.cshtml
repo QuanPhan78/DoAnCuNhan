@@ -4,8 +4,8 @@
 }
 
 <div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><i class="fas fa-file-contract text-brand me-2"></i> Hợp đồng của tôi</h2>
+    <div class="page-header">
+        <h3 class="page-title"><i class="fas fa-file-contract"></i> Hợp đồng của tôi</h3>
     </div>
 
     @if (TempData["Success"] != null)
@@ -17,10 +17,10 @@
         <div class="alert alert-danger shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]</div>
     }
 
-    <div class="card shadow border-0">
-        <div class="card-body p-0">
+    <div class="admin-card">
+        <div class="admin-card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-center">
+                <table class="admin-table text-center">
                     <thead>
                         <tr>
                             <th>Mã HĐ</th>
@@ -49,41 +49,45 @@
                                 <td class="text-danger">@item.NgayKetThuc.ToString("dd/MM/yyyy")</td>
                                 <td class="fw-bold text-brand">@item.TongTien.ToString("N0") đ</td>
                                 <td class="fw-bold text-warning">@item.TienDaCoc.ToString("N0") đ</td>
-                                <td><span class="badge bg-dark">@item.SoKyHan kỳ</span></td>
+                                <td><span class="badge-soft-neutral font-monospace">@item.SoKyHan kỳ</span></td>
                                 <td>
                                     @if (item.TrangThai == 0)
                                     {
-                                        <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
                                         @if (item.YeuCauHuy)
                                         {
-                                            <div class="mt-1"><span class="badge bg-danger"><i class="fas fa-ban"></i> Đang chờ hủy</span></div>
+                                            <div class="mt-1"><span class="status-pill"><span class="status-dot dot-danger"></span> Đang chờ hủy</span></div>
                                         }
                                     }
                                     else if (item.TrangThai == 1)
                                     {
-                                        <span class="badge bg-brand"><i class="fas fa-truck"></i> Đang cho thuê</span>
+                                        <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span>
                                         @if (item.YeuCauGiaHan)
                                         {
-                                            <div class="mt-1"><span class="badge bg-warning text-dark"><i class="fas fa-calendar-plus"></i> Xin gia hạn</span></div>
+                                            <div class="mt-1"><span class="status-pill"><span class="status-dot dot-warning"></span> Xin gia hạn</span></div>
                                         }
+                                    }
+                                    else if (item.TrangThai == 4)
+                                    {
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span>
                                     }
                                     else if (item.TrangThai == 2)
                                     {
-                                        <span class="badge bg-success"><i class="fas fa-check"></i> Hoàn tất</span>
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span>
                                         @if (item.TrangThaiHoanCoc == 1)
                                         {
-                                            <div class="mt-1"><span class="badge bg-info text-dark"><i class="fas fa-hand-holding-usd"></i> Đã hoàn cọc</span></div>
+                                            <div class="mt-1"><span class="status-pill"><span class="status-dot dot-navy"></span> Đã hoàn cọc</span></div>
                                         }
                                     }
                                     else if (item.TrangThai == 3)
                                     {
-                                        <span class="badge bg-danger"><i class="fas fa-times"></i> Đã hủy</span>
+                                        <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span>
                                     }
                                 </td>
                                 <td>
                                     @if (chuaKy)
                                     {
-                                        <span class="badge bg-secondary">Chưa ký</span>
+                                        <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa ký</span>
                                         @if (item.HanChotKy.HasValue && item.TrangThai == 0)
                                         {
                                             <div class="small text-danger mt-1" title="Hạn chót ký để giữ chỗ">
@@ -93,13 +97,13 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-success"><i class="fas fa-signature"></i> Đã ký</span>
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Đã ký</span>
                                     }
                                 </td>
                                 <td>
                                     @if (chuaKy)
                                     {
-                                        <a asp-action="SignContract" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-brand fw-bold shadow-sm mb-1">
+                                        <a asp-action="SignContract" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-navy fw-bold mb-1">
                                             <i class="fas fa-pen-nib"></i> Ký HĐ
                                         </a>
                                     }

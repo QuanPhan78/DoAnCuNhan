@@ -29,14 +29,18 @@
             <div class="col-md-7">
                 <div class="card-body p-5">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-brand px-3 py-2 rounded-pill shadow-sm">@Model.LoaiThietBi?.TenLoai</span>
+                        <span class="badge-soft-navy px-3 py-1">@Model.LoaiThietBi?.TenLoai</span>
                         @if (inStock > 0)
                         {
-                            <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i> Sẵn hàng (@inStock máy)</span>
+                            <span class="status-pill px-3 py-1">
+                                <span class="status-dot dot-success"></span> Sẵn hàng (@inStock máy)
+                            </span>
                         }
                         else
                         {
-                            <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="fas fa-times-circle me-1"></i> Tạm hết hàng</span>
+                            <span class="status-pill px-3 py-1">
+                                <span class="status-dot dot-danger"></span> Tạm hết hàng
+                            </span>
                         }
                     </div>
                     

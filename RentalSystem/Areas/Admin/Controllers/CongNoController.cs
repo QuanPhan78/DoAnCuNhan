@@ -71,7 +71,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             decimal tongNoQuaHan = overdueKyHansAll.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
 
             decimal tyLeThuHoi = tongPhaiThuToanHeThong > 0 
-                ? Math.Round((tongDaThuToanHeThong / tongPhaiThuToanHeThong) * 100m, 1) 
+                ? Math.Min(100m, Math.Max(0m, Math.Round((tongDaThuToanHeThong / tongPhaiThuToanHeThong) * 100m, 1)))
                 : 100m;
 
             int soKhoanNoXau = overdueKyHansAll.Count(k => k.NhomTuoiNo == 4 || k.SoNgayTreHan > 90);

@@ -1,16 +1,11 @@
 @model IEnumerable<RentalSystem.Models.PhieuBaoTri>
 @{ ViewData["Title"] = "Quản lý Bảo Trì - Sự Cố"; }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h2 class="fw-bold mb-1"><i class="fas fa-tools text-brand"></i> Quản lý Bảo Trì - Sự Cố</h2>
-        <div class="text-muted small">Điều phối sửa chữa, xử lý sự cố thiết bị và bảo dưỡng định kỳ kho</div>
-    </div>
-    <div class="d-flex gap-2">
-        <a asp-action="Create" class="btn btn-primary fw-bold">
-            <i class="fas fa-plus-circle me-1"></i> + Lập Phiếu Bảo Dưỡng Kho
-        </a>
-    </div>
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-tools"></i> Quản lý Bảo Trì - Sự Cố</h3>
+    <a asp-action="Create" class="btn btn-navy">
+        <i class="fas fa-plus-circle me-1"></i> Lập Phiếu Bảo Dưỡng Kho
+    </a>
 </div>
 
 @if (TempData["Success"] != null) {
@@ -22,22 +17,22 @@
 
 <!-- Bộ lọc danh sách -->
 <div class="mb-3 d-flex flex-wrap gap-2">
-    <a asp-action="Index" class="btn btn-sm @(ViewBag.CurrentTrangThai == null && ViewBag.CurrentFilter == null ? "btn-dark" : "btn-outline-dark")">Tất cả</a>
-    <a asp-action="Index" asp-route-trangThai="1" class="btn btn-sm @(ViewBag.CurrentTrangThai == 1 ? "btn-warning" : "btn-outline-warning text-dark")">Mới tiếp nhận</a>
-    <a asp-action="Index" asp-route-trangThai="2" class="btn btn-sm @(ViewBag.CurrentTrangThai == 2 ? "btn-info" : "btn-outline-info text-dark")">Đang xử lý</a>
-    <a asp-action="Index" asp-route-trangThai="3" class="btn btn-sm @(ViewBag.CurrentTrangThai == 3 ? "btn-primary" : "btn-outline-primary")">Đã sửa xong</a>
-    <a asp-action="Index" asp-route-trangThai="4" class="btn btn-sm @(ViewBag.CurrentTrangThai == 4 ? "btn-danger" : "btn-outline-danger")">Hỏng thanh lý</a>
-    <a asp-action="Index" asp-route-trangThai="5" class="btn btn-sm @(ViewBag.CurrentTrangThai == 5 ? "btn-success" : "btn-outline-success")">Đã nghiệm thu</a>
-    <a asp-action="Index" asp-route-filter="overdue_sla" class="btn btn-sm @(ViewBag.CurrentFilter == "overdue_sla" ? "btn-danger" : "btn-outline-danger")">
-        <i class="fas fa-exclamation-triangle"></i> Trễ hạn SLA
+    <a asp-action="Index" class="btn btn-sm @(ViewBag.CurrentTrangThai == null && ViewBag.CurrentFilter == null ? "btn-navy" : "btn-outline-navy")">Tất cả</a>
+    <a asp-action="Index" asp-route-trangThai="1" class="btn btn-sm @(ViewBag.CurrentTrangThai == 1 ? "btn-navy" : "btn-outline-navy")">Mới tiếp nhận</a>
+    <a asp-action="Index" asp-route-trangThai="2" class="btn btn-sm @(ViewBag.CurrentTrangThai == 2 ? "btn-navy" : "btn-outline-navy")">Đang xử lý</a>
+    <a asp-action="Index" asp-route-trangThai="3" class="btn btn-sm @(ViewBag.CurrentTrangThai == 3 ? "btn-navy" : "btn-outline-navy")">Đã sửa xong</a>
+    <a asp-action="Index" asp-route-trangThai="4" class="btn btn-sm @(ViewBag.CurrentTrangThai == 4 ? "btn-navy" : "btn-outline-navy")">Hỏng thanh lý</a>
+    <a asp-action="Index" asp-route-trangThai="5" class="btn btn-sm @(ViewBag.CurrentTrangThai == 5 ? "btn-navy" : "btn-outline-navy")">Đã nghiệm thu</a>
+    <a asp-action="Index" asp-route-filter="overdue_sla" class="btn btn-sm @(ViewBag.CurrentFilter == "overdue_sla" ? "btn-navy" : "btn-outline-navy")">
+        <i class="fas fa-exclamation-triangle me-1"></i> Trễ hạn SLA
     </a>
 </div>
 
-<div class="card shadow border-0">
-    <div class="card-body p-0">
+<div class="admin-card">
+    <div class="admin-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle text-center mb-0">
-                <thead class="table-light">
+            <table class="admin-table text-center mb-0">
+                <thead>
                     <tr>
                         <th>Mã Phiếu</th>
                         <th>Hợp Đồng</th>
@@ -62,7 +57,7 @@
                                 @if (item.MaHopDong.HasValue) {
                                     <a href="/Admin/HopDong/Details/@item.MaHopDong" class="fw-bold text-decoration-none">#@item.MaHopDong</a>
                                 } else {
-                                    <span class="badge bg-secondary">Bảo dưỡng kho</span>
+                                    <span class="status-pill"><span class="status-dot dot-neutral"></span> Bảo dưỡng kho</span>
                                 }
                             </td>
                             <td class="text-start">
@@ -74,9 +69,9 @@
                                 @if (item.HanHoanThanh.HasValue) {
                                     <div>@item.HanHoanThanh.Value.ToString("dd/MM/yyyy HH:mm")</div>
                                     @if (isOverdue) {
-                                        <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Quá hạn SLA</span>
+                                        <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn SLA</span>
                                     } else {
-                                        <span class="badge bg-light text-dark border">Còn hạn</span>
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Còn hạn</span>
                                     }
                                 } else {
                                     <span class="text-muted small">--</span>
@@ -85,19 +80,19 @@
                             <td>@(item.KyThuatVien?.HoTen ?? "Chưa phân công")</td>
                             <td>
                                 @if (item.TrangThai == 1) { 
-                                    <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Mới tiếp nhận</span> 
+                                    <span class="status-pill"><span class="status-dot dot-warning"></span> Mới tiếp nhận</span> 
                                 }
                                 else if (item.TrangThai == 2) { 
-                                    <span class="badge bg-info text-dark"><i class="fas fa-wrench"></i> Đang sửa</span> 
+                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đang sửa</span> 
                                 }
                                 else if (item.TrangThai == 3) { 
-                                    <span class="badge bg-primary"><i class="fas fa-check"></i> Đã sửa xong</span> 
+                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đã sửa xong</span> 
                                 }
                                 else if (item.TrangThai == 4) { 
-                                    <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Hỏng thanh lý</span> 
+                                    <span class="status-pill"><span class="status-dot dot-danger"></span> Hỏng thanh lý</span> 
                                 }
                                 else if (item.TrangThai == 5) { 
-                                    <span class="badge bg-success"><i class="fas fa-check-double"></i> Đã nghiệm thu</span> 
+                                    <span class="status-pill"><span class="status-dot dot-success"></span> Đã nghiệm thu</span> 
                                 }
                             </td>
                             <td class="text-end pe-3">
@@ -107,8 +102,8 @@
                                 }
                             </td>
                             <td>
-                                <a asp-action="Details" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i> Xử lý
+                                <a asp-action="Details" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-navy">
+                                    <i class="fas fa-eye me-1"></i> Xử lý
                                 </a>
                             </td>
                         </tr>

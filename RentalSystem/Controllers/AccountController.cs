@@ -78,12 +78,39 @@ namespace RentalSystem.Controllers
                     return View();
                 }
 
+                var rawRole = user.VaiTro?.TenVaiTro?.Trim();
+                string canonicalRole = "KhachHang";
+                if (string.Equals(rawRole, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    canonicalRole = "Admin";
+                }
+                else if (string.Equals(rawRole, "KinhDoanh", StringComparison.OrdinalIgnoreCase))
+                {
+                    canonicalRole = "KinhDoanh";
+                }
+                else if (string.Equals(rawRole, "KyThuat", StringComparison.OrdinalIgnoreCase))
+                {
+                    canonicalRole = "KyThuat";
+                }
+                else if (string.Equals(rawRole, "KhachHang", StringComparison.OrdinalIgnoreCase))
+                {
+                    canonicalRole = "KhachHang";
+                }
+                else if (!string.IsNullOrWhiteSpace(rawRole))
+                {
+                    canonicalRole = rawRole;
+                }
+
+                string displayName = !string.IsNullOrWhiteSpace(user.HoTen)
+                    ? user.HoTen.Trim()
+                    : (!string.IsNullOrWhiteSpace(user.Email) ? user.Email.Trim() : "Người dùng");
+
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.MaNguoiDung.ToString()),
-                    new Claim(ClaimTypes.Name, user.HoTen ?? ""),
+                    new Claim(ClaimTypes.Name, displayName),
                     new Claim(ClaimTypes.Email, user.Email ?? ""),
-                    new Claim(ClaimTypes.Role, user.VaiTro?.TenVaiTro ?? "KhachHang")
+                    new Claim(ClaimTypes.Role, canonicalRole)
                 };
 
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -91,9 +118,13 @@ namespace RentalSystem.Controllers
 
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-                if (user.VaiTro?.TenVaiTro == "Admin" || user.VaiTro?.TenVaiTro == "KinhDoanh")
+                if (canonicalRole == "Admin" || canonicalRole == "KinhDoanh")
                 {
                     return RedirectToAction("Index", "Home", new { area = "Admin" });
+                }
+                if (canonicalRole == "KyThuat")
+                {
+                    return RedirectToAction("MyTasks", "PhanCong", new { area = "Admin" });
                 }
                 return RedirectToAction("Index", "Home");
             }
@@ -386,9 +417,80 @@ namespace RentalSystem.Controllers
             return View(hopDongs);
         }
 
+        // Mở trang từ chối quyền truy cập (Access Denied)
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            if (Response != null)
+            {
+                Response.StatusCode = StatusCodes.Status403Forbidden;
+            }
+            return View();
+        }
+
+        // Trung tâm thông báo của người dùng
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ThongBao()
+        {
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return Challenge();
+            }
+
+            var thongBaos = await _context.ThongBaos
+                .Where(t => t.MaNguoiDung == userId)
+                .OrderByDescending(t => t.NgayTao)
+                .ToListAsync();
+
+            ViewBag.UnreadCount = thongBaos.Count(t => !t.DaDoc);
+            return View(thongBaos);
+        }
+
+        // Đánh dấu thông báo đã đọc
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DanhDauDaDoc(int? id, string returnUrl = null)
+        {
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return Challenge();
+            }
+
+            if (id.HasValue)
+            {
+                var tb = await _context.ThongBaos.FirstOrDefaultAsync(t => t.MaThongBao == id.Value && t.MaNguoiDung == userId);
+                if (tb != null)
+                {
+                    tb.DaDoc = true;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                var unreadList = await _context.ThongBaos.Where(t => t.MaNguoiDung == userId && !t.DaDoc).ToListAsync();
+                foreach (var tb in unreadList)
+                {
+                    tb.DaDoc = true;
+                }
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Đã đánh dấu tất cả thông báo là đã đọc!";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction(nameof(ThongBao));
+        }
+
         // Đăng xuất khỏi hệ thống: Xóa sạch Cookie xác thực và đưa về Trang chủ.
         public async Task<IActionResult> Logout()
         {
+            HttpContext.Session?.Clear();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
         }

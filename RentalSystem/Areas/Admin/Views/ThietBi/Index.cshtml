@@ -3,9 +3,9 @@
     ViewData["Title"] = "Quản lý Kho Máy (Serials)";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark"><i class="fas fa-barcode me-2 text-info"></i> Quản lý Serial Kho Máy</h2>
-    <a asp-action="Create" class="btn btn-brand fw-bold text-white shadow-sm"><i class="fas fa-plus me-1"></i> Nhập máy mới</a>
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-barcode"></i> Quản lý Serial Kho Máy</h3>
+    <a asp-action="Create" class="btn btn-navy"><i class="fas fa-plus me-1"></i> Nhập máy mới</a>
 </div>
 
 @if (TempData["Error"] != null)
@@ -23,10 +23,10 @@
     </div>
 }
 
-<div class="card shadow border-0">
-    <div class="card-body p-0">
+<div class="admin-card">
+    <div class="admin-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-center">
+            <table class="admin-table text-center">
                 <thead class="">
                     <tr>
                         <th style="width: 5%">ID</th>
@@ -47,24 +47,24 @@
                             <td class="text-start fw-bold">
                                 @item.SanPham?.TenSanPham
                             </td>
-                            <td><span class="badge bg-light text-dark border p-2 font-monospace fs-6">@item.SoSerial</span></td>
+                            <td><span class="badge-soft-neutral font-monospace p-2 fs-6">@item.SoSerial</span></td>
                             <td>
-                                @if (item.TrangThai == 0) { <span class="badge bg-success px-3 py-2"><i class="fas fa-check me-1"></i> Sẵn sàng</span> }
-                                else if (item.TrangThai == 1) { <span class="badge bg-brand px-3 py-2"><i class="fas fa-truck me-1"></i> Đang cho thuê</span> }
-                                else if (item.TrangThai == 2) { <span class="badge bg-danger px-3 py-2"><i class="fas fa-wrench me-1"></i> Bảo trì / Hỏng</span> }
-                                else if (item.TrangThai == 3) { <span class="badge bg-warning text-dark px-3 py-2"><i class="fas fa-clock me-1"></i> Đang giữ (chờ duyệt HĐ)</span> }
-                                else if (item.TrangThai == 4) { <span class="badge bg-dark px-3 py-2"><i class="fas fa-ban me-1"></i> Hỏng thanh lý</span> }
+                                @if (item.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-success"></span> Sẵn sàng</span> }
+                                else if (item.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
+                                else if (item.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-danger"></span> Bảo trì / Hỏng</span> }
+                                else if (item.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-warning"></span> Đang giữ (chờ duyệt HĐ)</span> }
+                                else if (item.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Hỏng thanh lý</span> }
                             </td>
                             <td>
                                 @if (item.TrangThai == 1)
                                 {
-                                    <button class="btn btn-sm btn-outline-secondary mb-1" disabled title="Máy đang cho thuê - Đã khóa"><i class="fas fa-lock"></i></button>
+                                    <button class="action-btn" disabled title="Máy đang cho thuê - Đã khóa" style="opacity: 0.5;"><i class="fas fa-lock"></i></button>
                                 }
                                 else
                                 {
-                                    <a asp-action="Edit" asp-route-id="@item.MaThietBi" class="btn btn-sm btn-outline-warning mb-1" title="Sửa"><i class="fas fa-edit"></i></a>
+                                    <a asp-action="Edit" asp-route-id="@item.MaThietBi" class="action-btn me-1" title="Sửa"><i class="fas fa-edit"></i></a>
                                     <form asp-action="Delete" asp-route-id="@item.MaThietBi" method="post" class="d-inline" onsubmit="return confirm('Xác nhận xóa máy này khỏi kho?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger mb-1"><i class="fas fa-trash"></i></button>
+                                        <button type="submit" class="action-btn action-btn-danger" title="Xóa"><i class="fas fa-trash"></i></button>
                                     </form>
                                 }
                             </td>

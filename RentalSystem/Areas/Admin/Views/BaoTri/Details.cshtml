@@ -1,9 +1,12 @@
 @model RentalSystem.Models.PhieuBaoTri
 @{ ViewData["Title"] = $"Chi tiết Bảo Trì #{Model.MaPhieu}"; }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
-    <span class="text-muted">Mã phiếu: <strong>#@Model.MaPhieu</strong></span>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-tools"></i> Chi tiết Bảo Trì #@Model.MaPhieu</h3>
+    </div>
+    <span class="badge-soft-navy font-monospace fs-6">#@Model.MaPhieu</span>
 </div>
 
 @if (TempData["Success"] != null) {
@@ -17,8 +20,8 @@
     <!-- CỘT TRÁI: THÔNG TIN SỰ CỐ, MINH CHỨNG & LỊCH SỬ THIẾT BỊ -->
     <div class="col-lg-6">
         <!-- Thông tin sự cố -->
-        <div class="card shadow border-0 mb-4">
-            <div class="card-header bg-light fw-bold py-3">
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
                 <i class="fas fa-info-circle text-primary me-2"></i> Thông Tin Sự Cố & Thiết Bị
             </div>
             <div class="card-body">
@@ -36,7 +39,7 @@
                         @if (Model.MaHopDong.HasValue) {
                             <a href="/Admin/HopDong/Details/@Model.MaHopDong" class="fw-bold text-decoration-none">Hợp đồng #@Model.MaHopDong</a>
                         } else {
-                            <span class="badge bg-secondary">Bảo dưỡng kho nội bộ</span>
+                            <span class="status-pill"><span class="status-dot dot-neutral"></span> Bảo dưỡng kho nội bộ</span>
                         }
                     </div>
                 </div>
@@ -52,17 +55,40 @@
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-4 text-muted">Serial máy:</div>
-                    <div class="col-sm-8"><span class="badge bg-dark">@Model.ThietBi?.SoSerial</span></div>
+                    <div class="col-sm-8"><span class="badge-soft-neutral font-monospace">@Model.ThietBi?.SoSerial</span></div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-sm-4 text-muted">Mức độ khẩn cấp:</div>
                     <div class="col-sm-8">
                         @if (Model.MucDoKhanCap == 2) {
-                            <span class="badge bg-danger">Khẩn cấp (SLA 12h)</span>
+                            <span class="status-pill"><span class="status-dot dot-danger"></span> Khẩn cấp (SLA 12h)</span>
                         } else if (Model.MucDoKhanCap == 3) {
-                            <span class="badge bg-warning text-dark">Ưu tiên cao (SLA 24h)</span>
+                            <span class="status-pill"><span class="status-dot dot-warning"></span> Ưu tiên cao (SLA 24h)</span>
                         } else {
-                            <span class="badge bg-info text-dark">Tiêu chuẩn (SLA 48h)</span>
+                            <span class="status-pill"><span class="status-dot dot-navy"></span> Tiêu chuẩn (SLA 48h)</span>
+                        }
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-sm-4 text-muted">Trạng thái:</div>
+                    <div class="col-sm-8">
+                        @if (Model.TrangThai == 1) { 
+                            <span class="status-pill"><span class="status-dot dot-warning"></span> Mới tiếp nhận</span> 
+                        }
+                        else if (Model.TrangThai == 2) { 
+                            <span class="status-pill"><span class="status-dot dot-navy"></span> Đang sửa chữa</span> 
+                        }
+                        else if (Model.TrangThai == 3) { 
+                            <span class="status-pill"><span class="status-dot dot-navy"></span> Đã sửa xong</span> 
+                        }
+                        else if (Model.TrangThai == 4) { 
+                            <span class="status-pill"><span class="status-dot dot-danger"></span> Hỏng thanh lý</span> 
+                        }
+                        else if (Model.TrangThai == 5) { 
+                            <span class="status-pill"><span class="status-dot dot-success"></span> Đã nghiệm thu &amp; Đóng</span> 
+                        }
+                        else {
+                            <span class="status-pill"><span class="status-dot dot-neutral"></span> Không xác định</span>
                         }
                     </div>
                 </div>
@@ -71,7 +97,7 @@
                     <div class="col-sm-8 fw-bold text-primary">
                         @(Model.HanHoanThanh.HasValue ? Model.HanHoanThanh.Value.ToString("dd/MM/yyyy HH:mm") : "Chưa đặt")
                         @if (Model.TrangThai < 3 && Model.HanHoanThanh.HasValue && Model.HanHoanThanh.Value < DateTime.Now) {
-                            <span class="badge bg-danger ms-2"><i class="fas fa-exclamation-triangle"></i> Quá hạn SLA</span>
+                            <span class="status-pill ms-2"><span class="status-dot dot-danger"></span> Quá hạn SLA</span>
                         }
                     </div>
                 </div>
@@ -125,8 +151,8 @@
         </div>
 
         <!-- Lịch sử thiết bị -->
-        <div class="card shadow border-0 mb-4">
-            <div class="card-header bg-light fw-bold py-3">
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
                 <i class="fas fa-history text-secondary me-2"></i> Lịch Sử Vòng Đời Thiết Bị (LichSuThietBi)
             </div>
             <div class="card-body p-0">
@@ -161,8 +187,8 @@
     <!-- CỘT PHẢI: FORM CẬP NHẬT TIẾN ĐỘ, THU PHÍ & GIẢM TRỪ TIỀN THUÊ -->
     <div class="col-lg-6">
         <!-- Cập nhật tiến độ xử lý -->
-        <div class="card shadow border-0 mb-4">
-            <div class="card-header bg-warning text-dark fw-bold py-3">
+        <div class="admin-card mb-4">
+            <div class="admin-card-header fw-bold">
                 <i class="fas fa-wrench me-2"></i> Xử Lý & Cập Nhật Tiến Độ Bảo Trì
             </div>
             <div class="card-body">
@@ -266,7 +292,7 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="btn btn-warning text-dark fw-bold w-100 py-2">
+                    <button type="submit" class="btn btn-navy w-100 py-2">
                         <i class="fas fa-save me-1"></i> Cập Nhật Tiến Độ & Thông Tin
                     </button>
                 </form>
@@ -275,9 +301,9 @@
 
         <!-- Thu phí bồi thường hư hỏng -->
         @if (Model.MaHopDong.HasValue && Model.PhiDenBu > 0) {
-            <div class="card shadow border-0 mb-4">
-                <div class="card-header bg-success text-white fw-bold py-3">
-                    <i class="fas fa-cash-register me-2"></i> Lập Phiếu Thu Tiền Bồi Thường
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <span class="fw-bold"><i class="fas fa-cash-register me-2"></i> Lập Phiếu Thu Tiền Bồi Thường</span>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
@@ -309,7 +335,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
-                                <button type="submit" class="btn btn-success w-100 fw-bold mt-4">
+                                <button type="submit" class="btn btn-navy w-100 fw-bold mt-4">
                                     <i class="fas fa-check"></i> Thu Tiền
                                 </button>
                             </div>
@@ -321,9 +347,9 @@
 
         <!-- Khấu trừ tiền thuê ngày bảo trì -->
         @if (Model.MaHopDong.HasValue) {
-            <div class="card shadow border-0 mb-4">
-                <div class="card-header bg-info text-dark fw-bold py-3">
-                    <i class="fas fa-calculator me-2"></i> Khấu Trừ Tiền Thuê Ngày Bảo Trì
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <span class="fw-bold"><i class="fas fa-calculator me-2"></i> Khấu Trừ Tiền Thuê Ngày Bảo Trì</span>
                 </div>
                 <div class="card-body">
                     <div class="mb-2 small text-muted">
@@ -343,7 +369,7 @@
                                     <input type="number" name="soNgayTamDung" class="form-control" value="1" min="1" required />
                                 </div>
                                 <div class="col-md-5 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-outline-primary w-100 fw-bold mt-4">
+                                    <button type="submit" class="btn btn-outline-navy w-100 fw-bold mt-4">
                                         <i class="fas fa-bolt"></i> Cấn Trừ Tiền Thuê
                                     </button>
                                 </div>

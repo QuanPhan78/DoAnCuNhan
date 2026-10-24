@@ -3,11 +3,10 @@
     ViewData["Title"] = "Chỉnh Sửa Phân Công Công Việc";
 }
 
-<div class="d-flex align-items-center mb-4">
-    <a asp-action="Index" class="btn btn-light shadow-sm me-3 border"><i class="fas fa-arrow-left"></i></a>
-    <div>
-        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-edit me-2 text-primary"></i> Chỉnh Sửa Phân Công #@Model.MaPhanCong</h3>
-        <span class="text-muted small">Cập nhật nội dung, nhân viên phụ trách hoặc trạng thái xử lý nhiệm vụ.</span>
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-edit"></i> Chỉnh Sửa Phân Công #@Model.MaPhanCong</h3>
     </div>
 </div>
 

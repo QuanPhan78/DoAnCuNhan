@@ -3,19 +3,16 @@
     ViewData["Title"] = "Quản lý Đơn Thuê";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h2 class="fw-bold mb-1"><i class="fas fa-file-contract text-brand me-2"></i> Danh Sách Hợp Đồng</h2>
-        <small class="text-muted">Quản lý vòng đời hợp đồng, bàn giao, thanh toán và xử lý ngoại lệ</small>
-    </div>
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-file-contract"></i> Danh Sách Hợp Đồng</h3>
     <div class="d-flex gap-2">
         <form asp-action="QuetDonQuaHanGiuCho" method="post" onsubmit="return confirm('Bạn có chắc muốn quét và hủy tất cả đơn quá hạn giữ chỗ 24h chưa ký?');">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-warning fw-bold shadow-sm" title="Quét giải phóng các đơn quá 24h chưa ký">
+            <button type="submit" class="btn btn-outline-navy" title="Quét giải phóng các đơn quá 24h chưa ký">
                 <i class="fas fa-broom me-1"></i> Quét Quá Hạn Giữ Chỗ
             </button>
         </form>
-        <a asp-action="Create" class="btn btn-brand fw-bold shadow-sm">
+        <a asp-action="Create" class="btn btn-navy">
             <i class="fas fa-plus-circle me-1"></i> Tạo Hợp Đồng Thủ Công
         </a>
     </div>
@@ -50,67 +47,67 @@
 
 <ul class="nav nav-pills mb-3 gap-2 flex-wrap">
     <li class="nav-item">
-        <a class="nav-link @(string.IsNullOrEmpty(currentFilter) ? "active bg-dark" : "border text-dark")" asp-action="Index">
+        <a class="nav-link @(string.IsNullOrEmpty(currentFilter) ? "active" : "border text-secondary")" asp-action="Index">
             Tất cả
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "overdue" ? "active bg-danger" : "border text-danger")" asp-action="Index" asp-route-filter="overdue">
+        <a class="nav-link @(currentFilter == "overdue" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="overdue">
             <i class="fas fa-exclamation-circle me-1"></i> Quá hạn trả máy
-            @if (overdueCount > 0) { <span class="badge bg-white text-danger ms-1">@overdueCount</span> }
+            @if (overdueCount > 0) { <span class="badge-soft-danger ms-1">@overdueCount</span> }
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "pending_extension" ? "active bg-warning text-dark" : "border text-dark")" asp-action="Index" asp-route-filter="pending_extension">
+        <a class="nav-link @(currentFilter == "pending_extension" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="pending_extension">
             <i class="fas fa-calendar-plus me-1"></i> Chờ duyệt gia hạn
-            @if (pendingExtCount > 0) { <span class="badge bg-danger ms-1">@pendingExtCount</span> }
+            @if (pendingExtCount > 0) { <span class="badge-soft-warning ms-1">@pendingExtCount</span> }
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "pending_cancel" ? "active bg-danger" : "border text-dark")" asp-action="Index" asp-route-filter="pending_cancel">
+        <a class="nav-link @(currentFilter == "pending_cancel" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="pending_cancel">
             <i class="fas fa-ban me-1"></i> Yêu cầu hủy đơn
-            @if (pendingCancelCount > 0) { <span class="badge bg-danger ms-1">@pendingCancelCount</span> }
+            @if (pendingCancelCount > 0) { <span class="badge-soft-danger ms-1">@pendingCancelCount</span> }
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "pending_proof" ? "active bg-info text-dark" : "border text-dark")" asp-action="Index" asp-route-filter="pending_proof">
+        <a class="nav-link @(currentFilter == "pending_proof" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="pending_proof">
             <i class="fas fa-receipt me-1"></i> Chờ duyệt biên lai
-            @if (pendingProofCount > 0) { <span class="badge bg-danger ms-1">@pendingProofCount</span> }
+            @if (pendingProofCount > 0) { <span class="badge-soft-navy ms-1">@pendingProofCount</span> }
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "renting" ? "active bg-brand" : "border text-dark")" asp-action="Index" asp-route-filter="renting">
+        <a class="nav-link @(currentFilter == "renting" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="renting">
             Đang thuê
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "pending" ? "active bg-warning text-dark" : "border text-dark")" asp-action="Index" asp-route-filter="pending">
+        <a class="nav-link @(currentFilter == "pending" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="pending">
             Chờ duyệt
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "returned_pending_settlement" || currentFilter == "status_4" ? "active bg-warning text-dark" : "border text-dark")" asp-action="Index" asp-route-filter="returned_pending_settlement">
+        <a class="nav-link @(currentFilter == "returned_pending_settlement" || currentFilter == "status_4" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="returned_pending_settlement">
             <i class="fas fa-undo me-1"></i> Đã trả máy (Chờ quyết toán)
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "completed" ? "active bg-success" : "border text-dark")" asp-action="Index" asp-route-filter="completed">
+        <a class="nav-link @(currentFilter == "completed" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="completed">
             Hoàn tất
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentFilter == "cancelled" ? "active bg-secondary" : "border text-dark")" asp-action="Index" asp-route-filter="cancelled">
+        <a class="nav-link @(currentFilter == "cancelled" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="cancelled">
             Đã hủy
         </a>
     </li>
 </ul>
 
-<div class="card shadow border-0">
-    <div class="card-body p-0">
+<div class="admin-card">
+    <div class="admin-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-center">
+            <table class="admin-table text-center mb-0">
                 <thead>
-                    <tr class="table-light">
+                    <tr>
                         <th style="width: 8%">Mã Đơn</th>
                         <th style="width: 22%" class="text-start">Khách Hàng</th>
                         <th style="width: 20%">Thời gian thuê</th>
@@ -152,7 +149,7 @@
                                 </div>
                                 @if (isRentalOverdue)
                                 {
-                                    <span class="badge bg-danger mt-1"><i class="fas fa-exclamation-triangle"></i> QUÁ HẠN TRẢ MÁY</span>
+                                    <span class="status-pill mt-1"><span class="status-dot dot-danger"></span> Quá hạn trả máy</span>
                                 }
                             </td>
                             <td class="text-danger fw-bold fs-6">
@@ -160,38 +157,38 @@
                                 <div class="small text-muted fw-normal">Cọc: @item.TienDaCoc.ToString("N0") đ</div>
                             </td>
                             <td>
-                                @if (isPaymentOverdue) { <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Nợ kỳ hạn</span> }
-                                else if (item.TrangThaiThanhToan == 0) { <span class="badge bg-secondary">Chưa TT</span> }
-                                else if (item.TrangThaiThanhToan == 1) { <span class="badge bg-info text-dark">Đã cọc</span> }
-                                else if (item.TrangThaiThanhToan == 2) { <span class="badge bg-warning text-dark">Còn nợ</span> }
-                                else if (item.TrangThaiThanhToan == 3) { <span class="badge bg-success">Đã TT đủ</span> }
+                                @if (isPaymentOverdue) { <span class="status-pill"><span class="status-dot dot-danger"></span> Nợ kỳ hạn</span> }
+                                else if (item.TrangThaiThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa TT</span> }
+                                else if (item.TrangThaiThanhToan == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đã cọc</span> }
+                                else if (item.TrangThaiThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Còn nợ</span> }
+                                else if (item.TrangThaiThanhToan == 3) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã TT đủ</span> }
                             </td>
                             <td>
                                 @if (item.TrangThai == 0)
                                 {
-                                    <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                                    <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
                                     @if (item.YeuCauHuy)
                                     {
-                                        <div class="mt-1"><span class="badge bg-danger"><i class="fas fa-ban"></i> Xin hủy đơn</span></div>
+                                        <div class="mt-1"><span class="status-pill"><span class="status-dot dot-danger"></span> Xin hủy đơn</span></div>
                                     }
                                 }
                                 else if (item.TrangThai == 1)
                                 {
-                                    <span class="badge bg-brand px-2 py-1"><i class="fas fa-truck"></i> Đang thuê</span>
+                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đang thuê</span>
                                     @if (item.YeuCauGiaHan)
                                     {
-                                        <div class="mt-1"><span class="badge bg-warning text-dark"><i class="fas fa-calendar-plus"></i> Xin gia hạn (+@item.SoNgayGiaHan d)</span></div>
+                                        <div class="mt-1"><span class="status-pill"><span class="status-dot dot-warning"></span> Xin gia hạn (+@item.SoNgayGiaHan d)</span></div>
                                     }
                                 }
                                 else if (item.TrangThai == 4)
                                 {
-                                    <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-undo"></i> Đã trả máy (Chờ quyết toán)</span>
+                                    <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span>
                                 }
-                                else if (item.TrangThai == 2) { <span class="badge bg-success px-2 py-1"><i class="fas fa-check"></i> Hoàn tất</span> }
-                                else if (item.TrangThai == 3) { <span class="badge bg-danger px-2 py-1"><i class="fas fa-times"></i> Đã hủy</span> }
+                                else if (item.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span> }
+                                else if (item.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
                             </td>
                             <td>
-                                <a asp-action="Details" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-outline-info fw-bold"><i class="fas fa-eye"></i> Xem</a>
+                                <a asp-action="Details" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-outline-navy fw-bold"><i class="fas fa-eye me-1"></i> Xem</a>
                             </td>
                         </tr>
                     }

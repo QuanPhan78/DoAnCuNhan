@@ -6,11 +6,11 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-danger text-white py-3">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-trash me-2"></i> Xác Nhận Xóa Thiết Bị Vật Lý</h5>
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <span class="fw-bold"><i class="fas fa-trash me-2 text-danger"></i> Xác Nhận Xóa Thiết Bị Vật Lý</span>
                 </div>
-                <div class="card-body p-4">
+                <div class="admin-card-body p-4">
                     <p class="text-danger fw-bold">Bạn có chắc chắn muốn xóa thiết bị (Serial) này khỏi hệ thống?</p>
                     <table class="table table-bordered mb-4">
                         <tr>
@@ -34,19 +34,23 @@
                             <td>
                                 @if (Model.TrangThai == 0)
                                 {
-                                    <span class="badge bg-success">Sẵn sàng</span>
+                                    <span class="status-pill"><span class="status-dot dot-success"></span> Sẵn sàng</span>
                                 }
                                 else if (Model.TrangThai == 1)
                                 {
-                                    <span class="badge bg-danger">Đang cho thuê</span>
+                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span>
+                                }
+                                else if (Model.TrangThai == 2)
+                                {
+                                    <span class="status-pill"><span class="status-dot dot-danger"></span> Bảo trì / Hỏng</span>
                                 }
                                 else if (Model.TrangThai == 3)
                                 {
-                                    <span class="badge bg-warning text-dark">Khóa giữ chỗ</span>
+                                    <span class="status-pill"><span class="status-dot dot-warning"></span> Khóa giữ chỗ</span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary">Khác (@Model.TrangThai)</span>
+                                    <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác (@Model.TrangThai)</span>
                                 }
                             </td>
                         </tr>

@@ -6,15 +6,15 @@
     var rentedMap = ViewBag.RentedMap as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark"><i class="fas fa-laptop me-2 text-brand"></i> Quản lý Dòng Sản Phẩm</h2>
-    <div class="d-flex align-items-center">
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-laptop"></i> Quản lý Dòng Sản Phẩm</h3>
+    <div class="d-flex align-items-center gap-2">
         <!-- Bộ lọc danh mục -->
-        <div class="dropdown shadow-sm me-3">
-            <button class="btn btn-outline-dark dropdown-toggle fw-bold" type="button" id="filterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="dropdown">
+            <button class="btn btn-outline-navy dropdown-toggle" type="button" id="filterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-filter me-1"></i> Lọc loại máy: Tất cả
             </button>
-            <ul class="dropdown-menu shadow" aria-labelledby="filterDropdownBtn" style="max-height: 300px; overflow-y: auto;">
+            <ul class="dropdown-menu shadow-sm" aria-labelledby="filterDropdownBtn" style="max-height: 300px; overflow-y: auto;">
                 <li><a class="dropdown-item filter-btn active bg-brand text-white" href="#" data-filter="all" data-name="Tất cả">Tất cả</a></li>
                 @if(ViewBag.Categories != null)
                 {
@@ -26,7 +26,7 @@
                 }
             </ul>
         </div>
-        <a asp-action="Create" class="btn btn-brand fw-bold shadow-sm"><i class="fas fa-plus me-1"></i> Thêm máy mới</a>
+        <a asp-action="Create" class="btn btn-navy"><i class="fas fa-plus me-1"></i> Thêm máy mới</a>
     </div>
 </div>
 
@@ -45,13 +45,13 @@
     </div>
 }
 
-<div class="card shadow border-0">
-    <div class="card-header bg-white py-3">
-        <h6 class="mb-0 fw-bold text-muted">Danh sách sản phẩm đang cho thuê & Tồn kho thực tế</h6>
+<div class="admin-card">
+    <div class="admin-card-header">
+        <span class="fw-semibold">Danh sách thiết bị</span>
     </div>
-    <div class="card-body p-0">
+    <div class="admin-card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-center">
+            <table class="admin-table text-center">
                 <thead class="">
                     <tr>
                         <th style="width: 5%">ID</th>
@@ -80,21 +80,21 @@
                             <td class="text-start">
                                 <span class="fw-bold d-block text-dark">@item.TenSanPham</span>
                                 @if(item.LoaiThietBi != null) { 
-                                    <span class="badge bg-brand opacity-75">@item.LoaiThietBi.TenLoai</span> 
+                                    <span class="badge-soft-navy">@item.LoaiThietBi.TenLoai</span> 
                                 }
                             </td>
                             <td class="text-danger fw-bold fs-6">@item.GiaThueNgay.ToString("N0") đ/ngày</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-1">
-                                    <span class="badge bg-success py-2 px-2" title="Sẵn sàng cho thuê"><i class="fas fa-check-circle me-1"></i>Sẵn: @available</span>
-                                    <span class="badge bg-brand py-2 px-2" title="Đang cho khách thuê"><i class="fas fa-truck me-1"></i>Thuê: @rented</span>
-                                    <span class="badge bg-secondary py-2 px-2" title="Tổng số máy trong kho">Tổng: @total</span>
+                                    <span class="status-pill" title="Sẵn sàng cho thuê"><span class="status-dot dot-success"></span> Sẵn: @available</span>
+                                    <span class="status-pill" title="Đang cho khách thuê"><span class="status-dot dot-navy"></span> Thuê: @rented</span>
+                                    <span class="status-pill" title="Tổng số máy trong kho"><span class="status-dot dot-neutral"></span> Tổng: @total</span>
                                 </div>
                             </td>
                             <td>
-                                <a asp-action="Edit" asp-route-id="@item.MaSanPham" class="btn btn-sm btn-outline-warning mb-1" title="Sửa"><i class="fas fa-edit"></i></a>
+                                <a asp-action="Edit" asp-route-id="@item.MaSanPham" class="action-btn me-1" title="Sửa"><i class="fas fa-edit"></i></a>
                                 <form asp-action="Delete" asp-route-id="@item.MaSanPham" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi hệ thống?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger mb-1"><i class="fas fa-trash"></i></button>
+                                    <button type="submit" class="action-btn action-btn-danger" title="Xóa"><i class="fas fa-trash"></i></button>
                                 </form>
                             </td>
                         </tr>

@@ -1,63 +1,635 @@
-@{ ViewData["Title"] = "Thống Kê Báo Cáo"; }
-
-<h2 class="fw-bold mb-4"><i class="fas fa-chart-line text-brand"></i> Thống Kê Báo Cáo</h2>
-
-@if (TempData["Success"] != null) {
-    <div class="alert alert-success">@TempData["Success"]</div>
+@model RentalSystem.Models.ThongKeDashboardViewModel
+@{
+    ViewData["Title"] = "Thống Kê Báo Cáo Quản Trị";
 }
 
-<div class="row">
-    <div class="col-md-3 mb-3">
-        <div class="card border-left-brand shadow h-100">
-            <div class="card-body">
-                <h5 class="card-title text-success fw-bold">Tổng Doanh Thu (Dòng tiền)</h5>
-                <h3 class="fw-bold text-success">@(((decimal)ViewBag.TongDoanhThu).ToString("N0")) đ</h3>
-                <small class="text-muted d-block">Thực thu: @(((decimal)ViewBag.TongThu).ToString("N0")) đ</small>
-                <small class="text-muted d-block">Chi hoàn: @(((decimal)ViewBag.TongChi).ToString("N0")) đ</small>
+<!-- Tiêu đề trang súc tích & Bộ nút hành động xuất báo cáo -->
+<div class="page-header">
+    <h3 class="page-title"><i class="fas fa-chart-line"></i> Thống Kê & Báo Cáo Quản Trị</h3>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-navy print-btn" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> In Báo Cáo
+        </button>
+        <a id="btnExportExcel"
+           asp-action="ExportExcel" 
+           asp-route-range="@Model.Filter.Range" 
+           asp-route-tuNgay="@(Model.Filter.TuNgay?.ToString("yyyy-MM-dd"))" 
+           asp-route-denNgay="@(Model.Filter.DenNgay?.ToString("yyyy-MM-dd"))" 
+           class="btn btn-navy export-btn">
+            <i class="fas fa-file-excel me-1"></i> Xuất Báo Cáo Excel
+        </a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null) {
+    <div class="alert alert-success shadow-sm mb-4">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null) {
+    <div class="alert alert-danger shadow-sm mb-4">@TempData["Error"]</div>
+}
+
+<!-- Banner thương hiệu chỉ hiển thị khi in ấn (Print View Only) -->
+<div class="print-header d-none">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1" style="color: #0f2b5c;">ABC RENTAL SYSTEM</h2>
+            <div class="text-uppercase fw-semibold" style="letter-spacing: 1px; color: #334155;">Trung Tâm Phân Tích & Báo Cáo Quản Trị Doanh Nghiệp</div>
+        </div>
+        <div class="text-end text-muted small">
+            <div><strong>Kỳ báo cáo:</strong> @Model.Filter.RangeDisplayName</div>
+            <div><strong>Thời gian xuất:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</div>
+            <div><strong>Người lập:</strong> @(User.Identity?.Name ?? "Quản trị viên")</div>
+        </div>
+    </div>
+</div>
+
+<!-- R1: Bộ lọc Thời Gian & Động Cơ Tính Toán Đa Chiều -->
+<div class="admin-card mb-4 filter-container">
+    <div class="admin-card-body py-3">
+        <form id="analyticsFilterForm" asp-action="Index" method="get" class="row g-3 align-items-center" onsubmit="document.getElementById('filterRangeInput').value='custom'">
+            <!-- Các mốc thời gian tiêu chuẩn -->
+            <div class="col-12 col-xl-6">
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-action="Index" asp-route-range="today" class="btn btn-sm @(Model.Filter.Range == "today" ? "btn-navy" : "btn-outline-navy")">
+                        Hôm nay
+                    </a>
+                    <a asp-action="Index" asp-route-range="this_month" class="btn btn-sm @(Model.Filter.Range == "this_month" ? "btn-navy" : "btn-outline-navy")">
+                        Tháng này
+                    </a>
+                    <a asp-action="Index" asp-route-range="this_quarter" class="btn btn-sm @(Model.Filter.Range == "this_quarter" ? "btn-navy" : "btn-outline-navy")">
+                        Quý này
+                    </a>
+                    <a asp-action="Index" asp-route-range="this_year" class="btn btn-sm @(Model.Filter.Range == "this_year" ? "btn-navy" : "btn-outline-navy")">
+                        Năm nay
+                    </a>
+                    <button type="button" id="btnToggleCustomDate" class="btn btn-sm @(Model.Filter.Range == "custom" ? "btn-navy" : "btn-outline-navy")">
+                        <i class="fas fa-calendar-alt me-1"></i> Tùy chọn ngày
+                    </button>
+                </div>
+            </div>
+
+            <!-- Khung chọn khoảng ngày tùy biến -->
+            <div class="col-12 col-xl-6">
+                <input type="hidden" name="range" id="filterRangeInput" value="@Model.Filter.Range" />
+                <div class="d-flex align-items-center justify-content-xl-end gap-2 flex-wrap">
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted fw-semibold">Từ:</span>
+                        <input type="date" name="tuNgay" class="form-control form-control-sm" style="max-width: 145px;"
+                               value="@(Model.Filter.TuNgay?.ToString("yyyy-MM-dd") ?? Model.Filter.EffectiveFrom.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted fw-semibold">Đến:</span>
+                        <input type="date" name="denNgay" class="form-control form-control-sm" style="max-width: 145px;"
+                               value="@(Model.Filter.DenNgay?.ToString("yyyy-MM-dd") ?? Model.Filter.EffectiveTo.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <button type="submit" class="btn btn-navy btn-sm px-3" onclick="document.getElementById('filterRangeInput').value='custom'">
+                        <i class="fas fa-filter me-1"></i> Lọc
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- R2: 4 Thẻ Chỉ Số Tài Chính & Dòng Tiền Đa Chiều (Stat Cards) -->
+<div class="row g-3 mb-4">
+    <!-- KPI 1: Doanh thu thuần trong kỳ -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="stat-label">Doanh Thu Thuần</div>
+                <div class="stat-value text-truncate">@Model.Financial.DoanhThuThuan.ToString("N0") đ</div>
+                <div class="d-flex justify-content-between align-items-center mt-1 text-muted small" style="font-size: 0.75rem;">
+                    <span>Thực thu: @Model.Financial.TongThucThu.ToString("N0") đ</span>
+                    <span>Hoàn: @Model.Financial.TongChiHoan.ToString("N0") đ</span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-left-brand shadow h-100">
-            <div class="card-body">
-                <h5 class="card-title">Tiền cọc giữ chỗ</h5>
-                <h3 class="fw-bold text-primary">@(((decimal)ViewBag.TongCoc).ToString("N0")) đ</h3>
-                <small class="text-muted">Các đơn chờ duyệt / đang thuê</small>
+
+    <!-- KPI 2: Tiền cọc bảo đảm máy đang giữ -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="stat-label">Tiền Cọc Bảo Đảm Máy</div>
+                <div class="stat-value text-truncate">@Model.Financial.TienCocDangGiu.ToString("N0") đ</div>
+                <div class="d-flex justify-content-between align-items-center mt-1 text-muted small" style="font-size: 0.75rem;">
+                    <span>@Model.Financial.SoHopDongHieuLuc hợp đồng hiệu lực</span>
+                    <span>@Model.Financial.TongSoHopDongTrongKy đơn trong kỳ</span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-left-brand shadow h-100">
-            <div class="card-body">
-                <h5 class="card-title">Thiết bị đang thuê / Sẵn sàng</h5>
-                <h3 class="fw-bold">@ViewBag.DangChoThue / @ViewBag.SanSang Máy</h3>
-                <small class="text-muted">Kho: @ViewBag.DangSuaChua đang sửa</small>
+
+    <!-- KPI 3: Tỷ lệ khai thác kho máy (Fleet Utilization) -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-laptop"></i></div>
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="stat-label">Tỷ Lệ Khai Thác Kho</div>
+                <div class="stat-value">@Model.Fleet.TyLeKhaiThac.ToString("0.0")%</div>
+                <div class="d-flex justify-content-between align-items-center mt-1 text-muted small" style="font-size: 0.75rem;">
+                    <span>Đang thuê: @Model.Fleet.DangChoThue / @Model.Fleet.TongMay máy</span>
+                    <span>Sẵn sàng: @Model.Fleet.SanSang</span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card border-left-brand shadow h-100">
-            <div class="card-body">
-                <h5 class="card-title">Sự cố kỹ thuật</h5>
-                <h3 class="fw-bold text-danger">@ViewBag.SuCoChuaXuLy / @ViewBag.TongSuCo Phiếu</h3>
-                <small class="text-muted">Phiếu bảo trì chưa xử lý</small>
+
+    <!-- KPI 4: Hiệu suất bảo trì & sự cố kỹ thuật -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-tools"></i></div>
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="stat-label">Hiệu Suất Kỹ Thuật</div>
+                <div class="stat-value">@Model.Financial.TyLeXuLyBaoTri.ToString("0.0")%</div>
+                <div class="d-flex justify-content-between align-items-center mt-1 text-muted small" style="font-size: 0.75rem;">
+                    <span>Hoàn tất: @Model.Financial.BaoTriHoanTat / @Model.Financial.TongPhieuBaoTri phiếu</span>
+                    <span>Xử lý: @Model.Financial.BaoTriDangXuLy</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card shadow border-0">
-            <div class="card-header text-dark fw-bold fw-bold">Sao lưu & Phục hồi dữ liệu</div>
-            <div class="card-body d-flex gap-3">
-                <form asp-action="BackupDatabase" method="post">
-                    <button class="btn btn-outline-dark fw-bold"><i class="fas fa-database"></i> Backup DB</button>
-                </form>
-                <form asp-action="RestoreDatabase" method="post">
-                    <button class="btn btn-outline-danger fw-bold"><i class="fas fa-undo"></i> Restore DB</button>
-                </form>
+<!-- R2.B: Cơ cấu doanh thu theo phương thức thanh toán -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <span><i class="fas fa-money-check-alt me-2 text-primary"></i> Cơ Cấu Doanh Thu Theo Phương Thức Thanh Toán</span>
+        <span class="badge-soft-navy font-monospace">@Model.Filter.RangeDisplayName</span>
+    </div>
+    <div class="admin-card-body">
+        <div class="row g-3">
+            @foreach (var pm in Model.PaymentMethods)
+            {
+                <div class="col-12 col-md-4">
+                    <div class="p-3 rounded border bg-light d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon m-0" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                                <i class="@pm.IconClass"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">@pm.TenPhuongThuc</div>
+                                <div class="small text-muted">@pm.SoGiaoDich giao dịch thu</div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-primary">@pm.SoTien.ToString("N0") đ</div>
+                            <span class="badge-soft-navy font-monospace small">@pm.TyTrong.ToString("0.0")%</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- R3: Biểu Đồ Trực Quan Hóa (Chart.js Interactive Analytics) -->
+<div class="row g-4 mb-4">
+    <!-- Biểu đồ 1: Dòng tiền & Chi phí theo thời gian (Line Chart) -->
+    <div class="col-12 col-xl-8">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span><i class="fas fa-chart-area me-2 text-primary"></i> Xu Hướng Doanh Thu vs Chi Phí Hoàn Trả</span>
+                <span class="text-muted small">Đơn vị: VNĐ</span>
+            </div>
+            <div class="admin-card-body">
+                <div style="height: 310px; position: relative;">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ 2: Cơ cấu dòng tiền theo danh mục & Trạng thái kho (Doughnut Charts) -->
+    <div class="col-12 col-xl-4">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span><i class="fas fa-chart-pie me-2 text-primary"></i> Cơ Cấu Doanh Thu Danh Mục</span>
+            </div>
+            <div class="admin-card-body d-flex flex-column justify-content-center">
+                <div style="height: 220px; position: relative;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="mt-3 pt-2 border-top small text-muted text-center">
+                    Tỷ trọng doanh thu theo các nhóm thiết bị trong kỳ
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row g-4 mb-4">
+    <!-- Biểu đồ 3: Trạng thái thiết bị toàn kho -->
+    <div class="col-12 col-xl-4">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span><i class="fas fa-cubes me-2 text-primary"></i> Tình Trạng Thiết Bị Kho Máy</span>
+            </div>
+            <div class="admin-card-body">
+                <div style="height: 210px; position: relative;">
+                    <canvas id="fleetChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span><i class="fas fa-circle text-success me-1"></i> Sẵn sàng cho thuê</span>
+                        <strong>@Model.Fleet.SanSang máy</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span><i class="fas fa-circle text-primary me-1"></i> Đang cho thuê</span>
+                        <strong>@Model.Fleet.DangChoThue máy</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span><i class="fas fa-circle text-warning me-1"></i> Bảo trì & Sửa chữa</span>
+                        <strong>@Model.Fleet.BaoTriSuaChua máy</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 @(Model.Fleet.HongThanhLy > 0 ? "border-bottom" : "") small">
+                        <span><i class="fas fa-circle text-info me-1"></i> Đang giữ chỗ đơn hàng</span>
+                        <strong>@Model.Fleet.GiuCho máy</strong>
+                    </div>
+                    @if (Model.Fleet.HongThanhLy > 0)
+                    {
+                        <div class="d-flex justify-content-between py-1 small text-danger">
+                            <span><i class="fas fa-times-circle text-danger me-1"></i> Hỏng thanh lý</span>
+                            <strong>@Model.Fleet.HongThanhLy máy</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng phân tích chi tiết doanh thu theo từng Danh Mục Thiết Bị -->
+    <div class="col-12 col-xl-8">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span><i class="fas fa-layer-group me-2 text-primary"></i> Bảng Phân Tích Doanh Thu Theo Danh Mục</span>
+            </div>
+            <div class="admin-card-body p-0">
+                <div class="table-responsive">
+                    <table class="admin-table text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th>Danh Mục</th>
+                                <th>Tổng Máy Kho</th>
+                                <th>Lượt Thuê</th>
+                                <th>Doanh Thu Tạo Ra</th>
+                                <th>Tỷ Trọng Doanh Thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Categories.Any())
+                            {
+                                <tr><td colspan="5" class="py-4 text-muted">Chưa ghi nhận dữ liệu danh mục trong kỳ.</td></tr>
+                            }
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <tr>
+                                    <td class="text-start fw-bold">
+                                        <i class="fas fa-folder me-2 text-secondary"></i>@cat.TenLoai
+                                    </td>
+                                    <td>@cat.SoLuongMay máy</td>
+                                    <td><span class="badge-soft-navy font-monospace">@cat.SoLuotThue lượt</span></td>
+                                    <td class="fw-bold text-primary">@cat.DoanhThu.ToString("N0") đ</td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 6px; max-width: 100px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: @(cat.TyTrong.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                                            </div>
+                                            <span class="font-monospace small">@cat.TyTrong.ToString("0.0")%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        @if (Model.Categories.Any())
+                        {
+                            <tfoot>
+                                <tr class="fw-bold bg-light">
+                                    <td class="text-start">TỔNG CỘNG</td>
+                                    <td>@Model.Categories.Sum(c => c.SoLuongMay) máy</td>
+                                    <td><span class="badge-soft-navy font-monospace">@Model.Categories.Sum(c => c.SoLuotThue) lượt</span></td>
+                                    <td class="text-primary">@Model.Categories.Sum(c => c.DoanhThu).ToString("N0") đ</td>
+                                    <td><span class="font-monospace small">@(Model.Categories.Any(c => c.DoanhThu > 0) ? "100.0%" : "0.0%")</span></td>
+                                </tr>
+                            </tfoot>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- R4: Bảng Phân Tích Top Thiết Bị Cho Thuê Chạy Nhất (Fleet Performance Table) -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <span><i class="fas fa-trophy me-2 text-warning"></i> Bảng Xếp Hạng Top Thiết Bị Cho Thuê Hiệu Quả Nhất</span>
+        <span class="text-muted small">Xếp theo tổng doanh thu và tỷ lệ khai thác</span>
+    </div>
+    <div class="admin-card-body p-0">
+        <div class="table-responsive">
+            <table class="admin-table text-center mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th class="text-start">Tên Thiết Bị / Model</th>
+                        <th>Danh Mục</th>
+                        <th>Kho Máy</th>
+                        <th>Lượt Thuê Trong Kỳ</th>
+                        <th>Doanh Thu Tạo Ra</th>
+                        <th>Tỷ Lệ Khai Thác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.TopProducts.Any())
+                    {
+                        <tr><td colspan="7" class="py-4 text-muted">Chưa có dữ liệu thiết bị cho thuê trong kỳ báo cáo.</td></tr>
+                    }
+                    @{ int rank = 1; }
+                    @foreach (var prod in Model.TopProducts)
+                    {
+                        <tr>
+                            <td>
+                                @if (rank == 1) { <span class="badge-soft-warning font-monospace fw-bold"><i class="fas fa-crown me-1 text-warning"></i>1</span> }
+                                else if (rank == 2) { <span class="badge-soft-navy font-monospace fw-bold">2</span> }
+                                else if (rank == 3) { <span class="badge-soft-neutral font-monospace fw-bold">3</span> }
+                                else { <span class="text-muted font-monospace fw-semibold">@rank</span> }
+                            </td>
+                            <td class="text-start fw-bold">
+                                <div>@prod.TenSanPham</div>
+                                <small class="text-muted font-monospace" style="font-size: 0.75rem;">Mã SP: #@prod.MaSanPham</small>
+                            </td>
+                            <td><span class="badge-soft-navy">@prod.TenDanhMuc</span></td>
+                            <td>
+                                <span class="text-primary fw-bold">@prod.SoMayDangThue</span> / @prod.TongMayKho máy
+                            </td>
+                            <td><span class="badge-soft-neutral font-monospace">@prod.SoLuotThue lượt</span></td>
+                            <td class="fw-bold text-primary">@prod.DoanhThu.ToString("N0") đ</td>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
+                                        <div class="progress-bar @(prod.TyLeKhaiThac >= 70 ? "bg-success" : (prod.TyLeKhaiThac >= 40 ? "bg-primary" : "bg-warning"))" 
+                                             role="progressbar" style="width: @(prod.TyLeKhaiThac.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                                    </div>
+                                    <span class="font-monospace small">@prod.TyLeKhaiThac.ToString("0.0")%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Executive Print Stylesheet */
+    @@media print {
+        #sidebar, #toggleSidebar, .navbar, .page-header .btn, .filter-container, .btn, .action-btn {
+            display: none !important;
+        }
+        .main-content > .d-flex.justify-content-between.align-items-center.mb-4 {
+            display: none !important;
+        }
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 10pt;
+        }
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        .admin-card {
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            margin-bottom: 1rem !important;
+            page-break-inside: avoid;
+        }
+        .stat-card {
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+        }
+        .admin-table tr {
+            page-break-inside: avoid;
+        }
+        .admin-table thead {
+            display: table-header-group;
+        }
+        .print-header {
+            display: block !important;
+        }
+        @@page {
+            size: A4 portrait;
+            margin: 10mm 15mm 15mm 15mm;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Tương tác nút Tùy chọn ngày: Focus và kích hoạt bộ chọn ngày
+            var btnToggle = document.getElementById("btnToggleCustomDate");
+            if (btnToggle) {
+                btnToggle.addEventListener("click", function () {
+                    var rangeInput = document.getElementById("filterRangeInput");
+                    if (rangeInput) rangeInput.value = "custom";
+                    var tuNgayInput = document.querySelector("input[name='tuNgay']");
+                    if (tuNgayInput) {
+                        tuNgayInput.focus();
+                        if (typeof tuNgayInput.showPicker === 'function') {
+                            try { tuNgayInput.showPicker(); } catch (e) {}
+                        }
+                    }
+                });
+            }
+
+            // Tự động đồng bộ liên kết Xuất Báo Cáo Excel khi người dùng thay đổi ngày
+            var tuNgayInput = document.querySelector("input[name='tuNgay']");
+            var denNgayInput = document.querySelector("input[name='denNgay']");
+            var btnExport = document.getElementById("btnExportExcel");
+            function syncExportHref() {
+                if (btnExport && tuNgayInput && denNgayInput) {
+                    var base = btnExport.getAttribute("href") || "";
+                    var qIdx = base.indexOf("?");
+                    var basePath = qIdx >= 0 ? base.substring(0, qIdx) : base;
+                    btnExport.setAttribute("href", basePath + "?range=custom&tuNgay=" + encodeURIComponent(tuNgayInput.value) + "&denNgay=" + encodeURIComponent(denNgayInput.value));
+                }
+            }
+            if (tuNgayInput) tuNgayInput.addEventListener("change", syncExportHref);
+            if (denNgayInput) denNgayInput.addEventListener("change", syncExportHref);
+
+            // Phòng ngừa lỗi runtime nếu CDN Chart.js chưa tải được
+            if (typeof Chart === 'undefined') {
+                console.warn('Thư viện Chart.js chưa sẵn sàng hoặc không tải được.');
+                return;
+            }
+
+            // 1. Biểu đồ Đường Dòng Tiền (Cash Flow Line Chart)
+            var cashflowCtx = document.getElementById("cashflowChart");
+            if (cashflowCtx) {
+                var tfLabels = @Html.Raw(Model.TimeSeriesLabelsJson);
+                var tfRevenue = @Html.Raw(Model.TimeSeriesRevenueJson);
+                var tfExpense = @Html.Raw(Model.TimeSeriesExpenseJson);
+
+                new Chart(cashflowCtx, {
+                    type: 'line',
+                    data: {
+                        labels: tfLabels,
+                        datasets: [
+                            {
+                                label: 'Doanh Thu (Thực thu)',
+                                data: tfRevenue,
+                                borderColor: '#0f2b5c',
+                                backgroundColor: 'rgba(15, 43, 92, 0.08)',
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#0f2b5c',
+                                borderWidth: 2.5
+                            },
+                            {
+                                label: 'Chi Hoàn Cọc & Trả',
+                                data: tfExpense,
+                                borderColor: '#dc2626',
+                                backgroundColor: 'rgba(220, 38, 38, 0.04)',
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: 3,
+                                pointBackgroundColor: '#dc2626',
+                                borderDash: [5, 5],
+                                borderWidth: 1.8
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: '#f1f5f9'
+                                },
+                                ticks: {
+                                    callback: function (val) {
+                                        return new Intl.NumberFormat('vi-VN').format(val) + ' đ';
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { family: 'inherit', size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        return ctx.dataset.label + ': ' + new Intl.NumberFormat('vi-VN').format(ctx.raw) + ' VNĐ';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Biểu đồ Tròn Phân Bổ Danh Mục (Category Doughnut Chart)
+            var catCtx = document.getElementById("categoryChart");
+            if (catCtx) {
+                var catLabels = @Html.Raw(Model.CategoryLabelsJson);
+                var catValues = @Html.Raw(Model.CategoryValuesJson);
+                var corporateColors = ['#0f2b5c', '#1e3a8a', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#cbd5e1'];
+
+                new Chart(catCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catValues,
+                            backgroundColor: corporateColors.slice(0, catLabels.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 10,
+                                    font: { size: 11 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        return ctx.label + ': ' + new Intl.NumberFormat('vi-VN').format(ctx.raw) + ' VNĐ';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            // 3. Biểu đồ Trạng Thái Kho Máy (Fleet Status Doughnut Chart)
+            var fleetCtx = document.getElementById("fleetChart");
+            if (fleetCtx) {
+                var flLabels = @Html.Raw(Model.FleetLabelsJson);
+                var flValues = @Html.Raw(Model.FleetValuesJson);
+
+                new Chart(fleetCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: flLabels,
+                        datasets: [{
+                            data: flValues,
+                            backgroundColor: ['#10b981', '#0f2b5c', '#f59e0b', '#06b6d4', '#dc2626'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        return ctx.label + ': ' + ctx.raw + ' máy';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -4,8 +4,8 @@
 <div class="row justify-content-center mt-5 mb-5">
     <div class="col-md-5">
         <div class="card shadow-lg border-0 rounded-lg">
-            <div class="card-header text-brand fw-bold text-center py-4">
-                <h4 class="mb-0 fw-bold"><i class="fas fa-sign-in-alt me-2"></i> ĐĂNG NHẬP</h4>
+            <div class="card-header bg-white text-center py-4 border-bottom">
+                <h4 class="mb-0 fw-bold" style="color: var(--navy-primary);"><i class="fas fa-sign-in-alt me-2"></i> ĐĂNG NHẬP</h4>
             </div>
             <div class="card-body p-5">
                 @if (TempData["Success"] != null)
@@ -32,7 +32,7 @@
                             <input type="password" name="matKhau" class="form-control" required placeholder="Nhập mật khẩu..." />
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-brand w-100 fw-bold py-2 shadow-sm">
+                    <button type="submit" class="btn btn-navy w-100 fw-bold py-2 shadow-sm">
                         <i class="fas fa-sign-in-alt me-1"></i> Đăng Nhập
                     </button>
                 </form>

@@ -108,6 +108,15 @@ namespace RentalSystem.Controllers
                 return RedirectToAction("MyContracts", "Cart");
             }
 
+            // Chặn tạo trùng yêu cầu bảo trì nếu thiết bị đang có phiếu xử lý dang dở
+            bool hasActiveTicket = await _context.PhieuBaoTris
+                .AnyAsync(p => p.MaThietBi == maThietBi && (p.TrangThai == 1 || p.TrangThai == 2));
+            if (hasActiveTicket)
+            {
+                TempData["Error"] = "Thiết bị này đang có một phiếu bảo trì đang được xử lý. Không thể tạo thêm yêu cầu trùng lặp!";
+                return RedirectToAction(nameof(MyTickets));
+            }
+
             if (string.IsNullOrWhiteSpace(moTaLoi))
             {
                 TempData["Error"] = "Vui lòng nhập mô tả lỗi chi tiết!";
@@ -235,7 +244,7 @@ namespace RentalSystem.Controllers
                 .Include(p => p.HopDong).ThenInclude(h => h.KhachHang)
                 .Include(p => p.ThietBi).ThenInclude(t => t.SanPham)
                 .Include(p => p.KyThuatVien)
-                .FirstOrDefaultAsync(p => p.MaPhieu == id && (p.HopDong == null || p.HopDong.MaKhachHang == userId));
+                .FirstOrDefaultAsync(p => p.MaPhieu == id && p.HopDong != null && p.HopDong.MaKhachHang == userId);
 
             if (phieu == null) return NotFound();
 
@@ -267,7 +276,7 @@ namespace RentalSystem.Controllers
                 .Include(p => p.ThietBi)
                 .ThenInclude(t => t.SanPham)
                 .Include(p => p.KyThuatVien)
-                .Where(p => p.HopDong.MaKhachHang == userId)
+                .Where(p => p.HopDong != null && p.HopDong.MaKhachHang == userId)
                 .OrderByDescending(p => p.NgayBaoLoi)
                 .ToListAsync();
 
@@ -287,7 +296,7 @@ namespace RentalSystem.Controllers
 
             var phieu = await _context.PhieuBaoTris
                 .Include(p => p.HopDong)
-                .FirstOrDefaultAsync(p => p.MaPhieu == maPhieu && p.HopDong.MaKhachHang == userId);
+                .FirstOrDefaultAsync(p => p.MaPhieu == maPhieu && p.HopDong != null && p.HopDong.MaKhachHang == userId);
 
             if (phieu == null) return NotFound();
 
@@ -358,7 +367,7 @@ namespace RentalSystem.Controllers
 
             var phieu = await _context.PhieuBaoTris
                 .Include(p => p.HopDong)
-                .FirstOrDefaultAsync(p => p.MaPhieu == maPhieu && p.HopDong.MaKhachHang == userId);
+                .FirstOrDefaultAsync(p => p.MaPhieu == maPhieu && p.HopDong != null && p.HopDong.MaKhachHang == userId);
 
             if (phieu == null) return NotFound();
 
