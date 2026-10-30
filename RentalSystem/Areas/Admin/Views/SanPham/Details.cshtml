@@ -1,0 +1,124 @@
+@model RentalSystem.Models.SanPham
+@{
+    ViewData["Title"] = "Chi Tiết Sản Phẩm - " + Model.TenSanPham;
+    var devices = ViewBag.Devices as List<RentalSystem.Models.ThietBi> ?? new List<RentalSystem.Models.ThietBi>();
+}
+
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại danh sách"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-laptop"></i> Chi Tiết Dòng Sản Phẩm: @Model.TenSanPham</h3>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-navy"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+        @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.MaSanPham" class="btn btn-navy"><i class="fas fa-edit me-1"></i> Chỉnh sửa</a>
+        }
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Hình ảnh và Tổng quan sản phẩm -->
+    <div class="col-lg-4">
+        <div class="admin-card h-100 text-center p-4">
+            <div class="mb-3">
+                <img src="@(string.IsNullOrEmpty(Model.HinhAnh) ? "https://via.placeholder.com/300" : Model.HinhAnh)" 
+                     alt="@Model.TenSanPham" 
+                     class="img-fluid rounded border p-2 bg-white shadow-sm" 
+                     style="max-height: 220px; object-fit: contain;" />
+            </div>
+            <h5 class="fw-bold text-dark mb-1">@Model.TenSanPham</h5>
+            <div class="mb-3">
+                <span class="badge-soft-navy">@(Model.LoaiThietBi?.TenLoai ?? "Chưa phân loại")</span>
+            </div>
+            <hr class="my-3 text-muted" />
+            <div class="d-flex justify-content-around text-center">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Giá Thuê Ngày</div>
+                    <div class="text-danger fw-bold fs-5">@Model.GiaThueNgay.ToString("N0") đ</div>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Tiền Cọc Niêm Yết</div>
+                    <div class="fw-bold fs-5 text-dark">@Model.TienCoc.ToString("N0") đ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông số kỹ thuật & Cấu hình phần cứng -->
+    <div class="col-lg-8">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span class="fw-semibold"><i class="fas fa-microchip me-1"></i> Thông Số Kỹ Thuật & Cấu Hình Phần Cứng</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Cấu Hình Phần Cứng Chi Tiết</label>
+                    <div class="p-3 bg-light rounded border font-monospace small" style="white-space: pre-wrap; min-height: 120px;">@(string.IsNullOrWhiteSpace(Model.CauHinh) ? "Chưa cập nhật cấu hình phần cứng." : Model.CauHinh)</div>
+                </div>
+                <div>
+                    <label class="form-label text-muted small fw-bold text-uppercase">Mô Tả Kỹ Thuật, Phụ Kiện & Hướng Dẫn Bảo Trì</label>
+                    <div class="p-3 bg-light rounded border small" style="white-space: pre-wrap; min-height: 100px;">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "Chưa có mô tả kỹ thuật hoặc ghi chú linh kiện tương thích." : Model.MoTa)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách thiết bị (Serials) vật lý trong kho -->
+<div class="admin-card">
+    <div class="admin-card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="fas fa-barcode me-1"></i> Danh Sách Serial Máy Vật Lý Trong Kho (@devices.Count máy)</span>
+        @if (User.IsInRole("Admin") || User.IsInRole("KyThuat") || User.IsInRole("KinhDoanh"))
+        {
+            <a href="/Admin/ThietBi/Create" class="btn btn-sm btn-navy"><i class="fas fa-plus me-1"></i> Nhập thêm serial</a>
+        }
+    </div>
+    <div class="admin-card-body p-0">
+        <div class="table-responsive">
+            <table class="admin-table text-center mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 8%">ID</th>
+                        <th style="width: 25%">Số Serial</th>
+                        <th style="width: 30%" class="text-start">Tình Trạng Máy</th>
+                        <th style="width: 22%">Trạng Thái Kho</th>
+                        <th style="width: 15%">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!devices.Any())
+                    {
+                        <tr><td colspan="5" class="py-4 text-muted">Chưa có máy vật lý nào thuộc dòng sản phẩm này trong kho.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var tb in devices)
+                        {
+                            <tr>
+                                <td class="fw-bold text-muted">@tb.MaThietBi</td>
+                                <td><span class="badge-soft-neutral font-monospace p-2 fs-6">@tb.SoSerial</span></td>
+                                <td class="text-start">@(string.IsNullOrEmpty(tb.TinhTrangMay) ? "Mới 100%" : tb.TinhTrangMay)</td>
+                                <td>
+                                    @if (tb.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-success"></span> Sẵn sàng</span> }
+                                    else if (tb.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
+                                    else if (tb.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-danger"></span> Bảo trì / Hỏng</span> }
+                                    else if (tb.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-warning"></span> Giữ chỗ</span> }
+                                    else if (tb.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Hỏng thanh lý</span> }
+                                </td>
+                                <td>
+                                    <a href="/Admin/ThietBi/Details/@tb.MaThietBi" class="action-btn me-1" title="Chi tiết thiết bị"><i class="fas fa-eye"></i></a>
+                                    @if (tb.TrangThai != 1)
+                                    {
+                                        <a href="/Admin/ThietBi/Edit/@tb.MaThietBi" class="action-btn" title="Cập nhật trạng thái"><i class="fas fa-edit"></i></a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

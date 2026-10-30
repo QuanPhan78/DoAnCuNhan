@@ -289,8 +289,25 @@
                     <img src="@Model.ChuKyNhanVien" alt="Chữ ký NV"
                          class="img-fluid border rounded bg-white"
                          style="max-height:120px; object-fit:contain;" />
+                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                    {
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-outline-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdminSign">
+                                <i class="fas fa-edit me-1"></i> Ký lại
+                            </button>
+                        </div>
+                    }
                 }
-                else { <span class="text-muted fst-italic">Chưa ký</span> }
+                else
+                {
+                    <div class="mb-2"><span class="text-muted fst-italic">Chưa ký đối chiếu</span></div>
+                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                    {
+                        <button type="button" class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdminSign">
+                            <i class="fas fa-pen-nib me-1"></i> Ký đối chiếu ngay
+                        </button>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -1339,3 +1356,82 @@
     });
 </script>
 }
+
+<!-- Modal Ký Đối Chiếu Hợp Đồng (Dành cho Nhân Viên Kinh Doanh / Admin) -->
+<div class="modal fade" id="modalAdminSign" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-navy text-white" style="background-color: var(--navy-primary); color: #fff;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-pen-nib me-2"></i> Ký Đối Chiếu Hợp Đồng #@Model.MaHopDong</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="AdminSign" method="post" id="adminSignForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.MaHopDong" />
+                <input type="hidden" name="signatureData" id="adminSignatureData" />
+                <div class="modal-body p-4 text-center">
+                    <p class="text-muted small mb-3">
+                        Vui lòng dùng chuột hoặc màn hình cảm ứng để ký tên xác nhận đối chiếu hồ sơ và hợp đồng thuê thiết bị.
+                    </p>
+                    <div class="border rounded bg-light d-inline-block p-1 mb-2">
+                        <canvas id="admin-signature-pad" width="460" height="200" class="bg-white rounded" style="touch-action: none; cursor: crosshair;"></canvas>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="adminClearBtn">
+                            <i class="fas fa-eraser me-1"></i> Xóa chữ ký làm lại
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-navy fw-bold" id="adminSubmitBtn">
+                        <i class="fas fa-check-circle me-1"></i> Xác Nhận & Lưu Chữ Ký
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var canvas = document.getElementById('admin-signature-pad');
+        if (canvas) {
+            var signaturePad = new SignaturePad(canvas, {
+                backgroundColor: 'rgb(255, 255, 255)',
+                penColor: 'rgb(0, 0, 0)'
+            });
+
+            var clearBtn = document.getElementById('adminClearBtn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    signaturePad.clear();
+                });
+            }
+
+            var form = document.getElementById('adminSignForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (signaturePad.isEmpty()) {
+                        e.preventDefault();
+                        alert('Vui lòng ký tên vào khung trước khi xác nhận!');
+                    } else {
+                        document.getElementById('adminSignatureData').value = signaturePad.toDataURL('image/png');
+                    }
+                });
+            }
+
+            // Xử lý resize canvas khi modal hiển thị
+            var modalEl = document.getElementById('modalAdminSign');
+            if (modalEl) {
+                modalEl.addEventListener('shown.bs.modal', function () {
+                    var ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    canvas.width = 460;
+                    canvas.height = 200;
+                    signaturePad.clear();
+                });
+            }
+        }
+    });
+</script>

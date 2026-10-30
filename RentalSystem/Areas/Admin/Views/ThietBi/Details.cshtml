@@ -1,0 +1,205 @@
+@model RentalSystem.Models.ThietBi
+@{
+    ViewData["Title"] = "Chi Tiết Thiết Bị - " + Model.SoSerial;
+}
+
+<div class="page-header">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="action-btn me-3" title="Quay lại danh sách"><i class="fas fa-arrow-left"></i></a>
+        <h3 class="page-title mb-0"><i class="fas fa-barcode"></i> Chi Tiết Thiết Bị: @Model.SoSerial</h3>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-navy"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+        @if (Model.TrangThai != 1)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.MaThietBi" class="btn btn-navy"><i class="fas fa-edit me-1"></i> Cập nhật trạng thái</a>
+            @if (User.IsInRole("Admin"))
+            {
+                <form asp-action="Delete" asp-route-id="@Model.MaThietBi" method="post" class="d-inline" onsubmit="return confirm('Xác nhận xóa thiết bị này khỏi hệ thống?');">
+                    <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash me-1"></i> Xóa máy</button>
+                </form>
+            }
+        }
+        else
+        {
+            <button class="btn btn-navy" disabled title="Thiết bị đang cho thuê - Đã khóa chỉnh sửa"><i class="fas fa-lock me-1"></i> Đang cho thuê</button>
+        }
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Cột thông tin thiết bị -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span class="fw-semibold"><i class="fas fa-info-circle me-1"></i> Thông Tin Kỹ Thuật</span>
+            </div>
+            <div class="card-body p-4">
+                <table class="table table-borderless align-middle mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 35%;">Số Serial / Service Tag</td>
+                            <td class="fw-bold font-monospace fs-6">@Model.SoSerial</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Dòng Sản Phẩm</td>
+                            <td>
+                                <a href="/Admin/SanPham/Details/@Model.MaSanPham" class="fw-bold text-decoration-none">
+                                    @Model.SanPham?.TenSanPham
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Loại Thiết Bị</td>
+                            <td><span class="badge-soft-navy">@(Model.SanPham?.LoaiThietBi?.TenLoai ?? "Chưa phân loại")</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Trạng Thái Kho</td>
+                            <td>
+                                @if (Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-success"></span> Sẵn sàng</span> }
+                                else if (Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
+                                else if (Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-danger"></span> Bảo trì / Hỏng</span> }
+                                else if (Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-warning"></span> Giữ chỗ</span> }
+                                else if (Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Hỏng thanh lý</span> }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tình Trạng Máy</td>
+                            <td class="fw-semibold">@(string.IsNullOrEmpty(Model.TinhTrangMay) ? "Mới 100%" : Model.TinhTrangMay)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Giá Thuê Ngày</td>
+                            <td class="text-danger fw-bold">@((Model.SanPham?.GiaThueNgay ?? 0).ToString("N0")) đ/ngày</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tiền Cọc Niêm Yết</td>
+                            <td class="fw-semibold">@((Model.SanPham?.TienCoc ?? 0).ToString("N0")) đ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột cấu hình sản phẩm & Ghi chú -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <span class="fw-semibold"><i class="fas fa-microchip me-1"></i> Cấu Hình Phần Cứng & Hướng Dẫn Kỹ Thuật</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Thông Số Kỹ Thuật</label>
+                    <div class="p-3 bg-light rounded border font-monospace small" style="white-space: pre-wrap; min-height: 100px;">@(string.IsNullOrWhiteSpace(Model.SanPham?.CauHinh) ? "Chưa cập nhật thông số kỹ thuật." : Model.SanPham.CauHinh)</div>
+                </div>
+                <div>
+                    <label class="form-label text-muted small fw-bold text-uppercase">Mô Tả & Hướng Dẫn Bảo Trì</label>
+                    <div class="p-3 bg-light rounded border small" style="white-space: pre-wrap; min-height: 80px;">@(string.IsNullOrWhiteSpace(Model.SanPham?.MoTa) ? "Chưa có ghi chú bảo trì hoặc linh kiện tương thích." : Model.SanPham.MoTa)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lịch sử vòng đời thiết bị (LichSuThietBi) -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <span class="fw-semibold"><i class="fas fa-history me-1"></i> Nhật Ký Vòng Đời Thiết Bị</span>
+    </div>
+    <div class="admin-card-body p-0">
+        <div class="table-responsive">
+            <table class="admin-table text-center mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 20%">Thời Gian</th>
+                        <th style="width: 35%" class="text-start">Hành Động / Biến Động</th>
+                        <th style="width: 20%">Người Thực Hiện</th>
+                        <th style="width: 25%" class="text-start">Ghi Chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.LichSuThietBis == null || !Model.LichSuThietBis.Any())
+                    {
+                        <tr><td colspan="4" class="py-4 text-muted">Chưa có bản ghi nhật ký biến động nào.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var log in Model.LichSuThietBis.OrderByDescending(l => l.ThoiGian))
+                        {
+                            <tr>
+                                <td class="font-monospace small">@log.ThoiGian.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-start fw-semibold">@log.HanhDong</td>
+                                <td>@(log.NguoiThucHien?.HoTen ?? "Hệ thống")</td>
+                                <td class="text-start text-muted small">@log.GhiChu</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Lịch sử bảo trì / sự cố -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <span class="fw-semibold"><i class="fas fa-tools me-1"></i> Lịch Sử Bảo Trì & Sự Cố</span>
+    </div>
+    <div class="admin-card-body p-0">
+        <div class="table-responsive">
+            <table class="admin-table text-center mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã Phiếu</th>
+                        <th>Hợp Đồng</th>
+                        <th>Ngày Báo Lỗi</th>
+                        <th>Kỹ Thuật Viên</th>
+                        <th>Trạng Thái</th>
+                        <th>Chi Phí Sửa</th>
+                        <th>Đền Bù</th>
+                        <th>Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PhieuBaoTris == null || !Model.PhieuBaoTris.Any())
+                    {
+                        <tr><td colspan="8" class="py-4 text-muted">Thiết bị chưa từng phát sinh sự cố hoặc bảo trì.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in Model.PhieuBaoTris.OrderByDescending(x => x.NgayBaoLoi))
+                        {
+                            <tr>
+                                <td class="fw-bold">#@p.MaPhieu</td>
+                                <td>
+                                    @if (p.MaHopDong.HasValue)
+                                    {
+                                        <a href="/Admin/HopDong/Details/@p.MaHopDong" class="fw-bold text-decoration-none">#@p.MaHopDong</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill"><span class="status-dot dot-neutral"></span> Bảo dưỡng kho</span>
+                                    }
+                                </td>
+                                <td>@p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(p.KyThuatVien?.HoTen ?? "Chưa phân công")</td>
+                                <td>
+                                    @if (p.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-warning"></span> Mới tiếp nhận</span> }
+                                    else if (p.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang sửa</span> }
+                                    else if (p.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đã sửa xong</span> }
+                                    else if (p.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-danger"></span> Hỏng thanh lý</span> }
+                                    else if (p.TrangThai == 5) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã nghiệm thu</span> }
+                                </td>
+                                <td>@((p.ChiPhiSuaChua ?? 0).ToString("N0")) đ</td>
+                                <td class="@(p.PhiDenBu > 0 ? "text-danger fw-bold" : "")">@(p.PhiDenBu.ToString("N0")) đ</td>
+                                <td>
+                                    <a href="/Admin/BaoTri/Details/@p.MaPhieu" class="action-btn" title="Xem chi tiết phiếu"><i class="fas fa-eye"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

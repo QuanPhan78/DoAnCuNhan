@@ -23,22 +23,93 @@
     </div>
 }
 
+<!-- 4 Thẻ chỉ số KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-cubes"></i></div>
+            <div>
+                <div class="stat-label">Tổng số máy</div>
+                <div class="stat-value">@(ViewBag.CountAll ?? 0)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div>
+                <div class="stat-label">Sẵn sàng</div>
+                <div class="stat-value">@(ViewBag.CountReady ?? 0)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+            <div>
+                <div class="stat-label">Đang cho thuê</div>
+                <div class="stat-value">@(ViewBag.CountRenting ?? 0)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-tools"></i></div>
+            <div>
+                <div class="stat-label">Bảo trì / Hỏng</div>
+                <div class="stat-value">@((int)(ViewBag.CountMaintenance ?? 0) + (int)(ViewBag.CountDisposed ?? 0))</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc trạng thái & Tìm kiếm -->
+<div class="admin-card mb-3">
+    <div class="card-body p-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-action="Index" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-sm @(ViewBag.CurrentStatus == null ? "btn-navy" : "btn-outline-navy")">Tất cả (@(ViewBag.CountAll ?? 0))</a>
+                <a asp-action="Index" asp-route-status="0" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-sm @(ViewBag.CurrentStatus == 0 ? "btn-navy" : "btn-outline-navy")">Sẵn sàng (@(ViewBag.CountReady ?? 0))</a>
+                <a asp-action="Index" asp-route-status="1" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-sm @(ViewBag.CurrentStatus == 1 ? "btn-navy" : "btn-outline-navy")">Đang thuê (@(ViewBag.CountRenting ?? 0))</a>
+                <a asp-action="Index" asp-route-status="2" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-sm @(ViewBag.CurrentStatus == 2 ? "btn-navy" : "btn-outline-navy")">Bảo trì (@(ViewBag.CountMaintenance ?? 0))</a>
+                <a asp-action="Index" asp-route-status="3" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-sm @(ViewBag.CurrentStatus == 3 ? "btn-navy" : "btn-outline-navy")">Giữ chỗ (@(ViewBag.CountReserved ?? 0))</a>
+                <a asp-action="Index" asp-route-status="4" asp-route-search="@ViewBag.CurrentSearch" class="btn btn-sm @(ViewBag.CurrentStatus == 4 ? "btn-navy" : "btn-outline-navy")">Hỏng thanh lý (@(ViewBag.CountDisposed ?? 0))</a>
+            </div>
+            <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                @if (ViewBag.CurrentStatus != null)
+                {
+                    <input type="hidden" name="status" value="@ViewBag.CurrentStatus" />
+                }
+                <div class="input-group input-group-sm" style="width: 260px;">
+                    <input type="text" name="search" class="form-control" placeholder="Tìm số serial, dòng máy..." value="@ViewBag.CurrentSearch" />
+                    <button class="btn btn-navy" type="submit"><i class="fas fa-search"></i></button>
+                    @if (!string.IsNullOrEmpty(ViewBag.CurrentSearch as string))
+                    {
+                        <a asp-action="Index" asp-route-status="@ViewBag.CurrentStatus" class="btn btn-outline-secondary" title="Xóa tìm kiếm"><i class="fas fa-times"></i></a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="admin-card">
     <div class="admin-card-body p-0">
         <div class="table-responsive">
             <table class="admin-table text-center">
-                <thead class="">
+                <thead>
                     <tr>
                         <th style="width: 5%">ID</th>
                         <th style="width: 35%" class="text-start">Dòng Sản Phẩm</th>
-                        <th style="width: 25%">Số Serial</th>
+                        <th style="width: 20%">Số Serial</th>
                         <th style="width: 20%">Tình trạng</th>
-                        <th style="width: 15%">Thao tác</th>
+                        <th style="width: 20%">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if(!Model.Any()) {
-                        <tr><td colspan="5" class="text-center py-4">Kho máy đang trống.</td></tr>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="text-center py-4">Không tìm thấy thiết bị nào trong kho.</td></tr>
                     }
                     @foreach (var item in Model)
                     {
@@ -56,16 +127,20 @@
                                 else if (item.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Hỏng thanh lý</span> }
                             </td>
                             <td>
+                                <a asp-action="Details" asp-route-id="@item.MaThietBi" class="action-btn me-1" title="Chi tiết thiết bị"><i class="fas fa-eye"></i></a>
                                 @if (item.TrangThai == 1)
                                 {
-                                    <button class="action-btn" disabled title="Máy đang cho thuê - Đã khóa" style="opacity: 0.5;"><i class="fas fa-lock"></i></button>
+                                    <button class="action-btn me-1" disabled title="Máy đang cho thuê - Đã khóa" style="opacity: 0.5;"><i class="fas fa-lock"></i></button>
                                 }
                                 else
                                 {
-                                    <a asp-action="Edit" asp-route-id="@item.MaThietBi" class="action-btn me-1" title="Sửa"><i class="fas fa-edit"></i></a>
-                                    <form asp-action="Delete" asp-route-id="@item.MaThietBi" method="post" class="d-inline" onsubmit="return confirm('Xác nhận xóa máy này khỏi kho?');">
-                                        <button type="submit" class="action-btn action-btn-danger" title="Xóa"><i class="fas fa-trash"></i></button>
-                                    </form>
+                                    <a asp-action="Edit" asp-route-id="@item.MaThietBi" class="action-btn me-1" title="Cập nhật trạng thái"><i class="fas fa-edit"></i></a>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <form asp-action="Delete" asp-route-id="@item.MaThietBi" method="post" class="d-inline" onsubmit="return confirm('Xác nhận xóa máy này khỏi kho?');">
+                                            <button type="submit" class="action-btn action-btn-danger" title="Xóa"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    }
                                 }
                             </td>
                         </tr>

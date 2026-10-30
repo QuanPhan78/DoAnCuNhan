@@ -11,7 +11,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 {
     // Quản lý danh mục sản phẩm thiết bị
     [Area("Admin")]
-    [Authorize(Roles = "Admin,KinhDoanh")]
+    [Authorize(Roles = "Admin,KinhDoanh,KyThuat")]
     public class SanPhamController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -36,7 +36,26 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(sanPhams);
         }
 
+        // Xem thông số kỹ thuật, cấu hình phần cứng và linh kiện tương thích
+        public async Task<IActionResult> Details(int id)
+        {
+            var sp = await _context.SanPhams
+                .Include(s => s.LoaiThietBi)
+                .FirstOrDefaultAsync(m => m.MaSanPham == id);
+
+            if (sp == null) return NotFound();
+
+            // Danh sách máy vật lý thuộc dòng này trong kho
+            ViewBag.Devices = await _context.ThietBis
+                .Where(t => t.MaSanPham == id)
+                .OrderBy(t => t.SoSerial)
+                .ToListAsync();
+
+            return View(sp);
+        }
+
         // Form thêm sản phẩm mới
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public IActionResult Create()
         {
             ViewBag.MaLoai = new SelectList(_context.LoaiThietBis, "MaLoai", "TenLoai");
@@ -44,6 +63,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Lưu sản phẩm mới
+        [Authorize(Roles = "Admin,KinhDoanh")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(SanPham sp)
@@ -69,6 +89,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Form chỉnh sửa thông tin sản phẩm
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> Edit(int id)
         {
             var sp = await _context.SanPhams.FindAsync(id);
@@ -78,6 +99,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Cập nhật thông tin sản phẩm
+        [Authorize(Roles = "Admin,KinhDoanh")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, SanPham sp)
@@ -105,6 +127,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Xác nhận xóa sản phẩm
+        [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> Delete(int id)
         {
             var sp = await _context.SanPhams.Include(s => s.LoaiThietBi).FirstOrDefaultAsync(m => m.MaSanPham == id);
@@ -121,6 +144,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         }
 
         // Xóa sản phẩm khỏi hệ thống
+        [Authorize(Roles = "Admin,KinhDoanh")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

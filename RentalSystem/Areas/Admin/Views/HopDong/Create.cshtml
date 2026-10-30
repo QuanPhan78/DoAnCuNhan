@@ -1,14 +1,15 @@
 @model RentalSystem.Models.HopDong
 
 @{
-    ViewData["Title"] = "Tạo Hợp Đồng Mới";
+    ViewData["Title"] = "Lập Hợp Đồng Tại Quầy";
     var khachHangs = ViewBag.KhachHangs as List<RentalSystem.Models.NguoiDung>;
     var sanPhams = ViewBag.SanPhams as IEnumerable<dynamic>;
+    var availableDevices = ViewBag.AvailableDevices as List<RentalSystem.Models.ThietBi>;
 }
 
-<div class="page-header">
-    <h3 class="page-title"><i class="fas fa-file-signature"></i> Tạo Hợp Đồng Thủ Công</h3>
-    <a asp-action="Index" class="btn btn-outline-navy"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <h3 class="page-title"><i class="fas fa-file-contract"></i> Lập Hợp Đồng Tại Quầy</h3>
+    <a asp-action="Index" class="btn btn-outline-navy"><i class="fas fa-arrow-left me-1"></i> Danh sách hợp đồng</a>
 </div>
 
 @if (TempData["Success"] != null)
@@ -29,11 +30,33 @@
     <div class="row">
         <!-- Cột thông tin cơ bản -->
         <div class="col-lg-5 mb-4">
-            <div class="card shadow border-0 h-100">
-                <div class="card-header text-brand fw-bold fw-bold">
-                    <i class="fas fa-info-circle me-2"></i> Thông tin chung
+            <div class="admin-card h-100">
+                <div class="admin-card-header">
+                    <span><i class="fas fa-info-circle me-2 text-navy"></i> Thông tin chung</span>
                 </div>
-                <div class="card-body">
+                <div class="admin-card-body">
+                    <!-- Quick Customer Selection (Autofill) -->
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <label class="form-label fw-bold text-navy"><i class="fas fa-user-check me-1"></i> Chọn nhanh khách hàng cũ</label>
+                        <select id="cboChonKhachHang" class="form-select">
+                            <option value="">-- Khách hàng mới (nhập thông tin bên dưới) --</option>
+                            @if (khachHangs != null)
+                            {
+                                foreach (var kh in khachHangs)
+                                {
+                                    <option value="@kh.MaNguoiDung"
+                                            data-hoten="@kh.HoTen"
+                                            data-sdt="@kh.SoDienThoai"
+                                            data-email="@kh.Email"
+                                            data-cccd="@kh.CCCD"
+                                            data-diachi="@kh.DiaChi">
+                                        @kh.HoTen - @kh.SoDienThoai @(!string.IsNullOrEmpty(kh.CCCD) ? $"[CCCD: {kh.CCCD}]" : "")
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
                     <div class="row mb-3">
                         <div class="col-md-6 mb-2 mb-md-0">
                             <label class="form-label fw-bold">Họ và Tên Khách <span class="text-danger">*</span></label>
@@ -83,12 +106,12 @@
                         <div class="col-md-6 mb-2 mb-md-0">
                             <label class="form-label fw-bold">Tiền cọc bảo đảm máy (VNĐ)</label>
                             <input type="number" name="TienCocBaoDamMay" id="TienCocBaoDamMay" class="form-control text-primary fw-bold" value="0" min="0" step="1000" placeholder="0" />
-                            <small class="text-muted">Cọc bảo lãnh tài sản, hoàn trả khi trả máy</small>
+                            <small class="text-muted d-block mt-1">Cọc bảo lãnh tài sản, hoàn trả khi trả máy</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Tiền thuê trả trước (VNĐ)</label>
                             <input type="number" name="TienThueTraTruoc" id="TienThueTraTruoc" class="form-control text-success fw-bold" value="0" min="0" step="1000" placeholder="0" />
-                            <small class="text-muted">Khấu trừ trực tiếp vào các kỳ trả góp</small>
+                            <small class="text-muted d-block mt-1">Khấu trừ trực tiếp vào các kỳ trả góp</small>
                         </div>
                     </div>
 
@@ -108,7 +131,7 @@
                         <div class="col-6">
                             <label class="form-label fw-bold">Số kỳ hạn trả góp</label>
                             <input type="number" name="SoKyHan" id="SoKyHan" class="form-control" value="1" min="1" max="24" />
-                            <small class="text-muted">Hệ thống sẽ tự chia đều sau khi giao máy</small>
+                            <small class="text-muted d-block mt-1">Hệ thống sẽ tự chia đều sau khi giao máy</small>
                         </div>
                     </div>
 
@@ -128,14 +151,18 @@
 
         <!-- Cột chọn sản phẩm -->
         <div class="col-lg-7 mb-4">
-            <div class="card shadow border-0 h-100">
-                <div class="card-header text-success fw-bold fw-bold">
-                    <i class="fas fa-boxes me-2"></i> Chọn Sản phẩm & Số lượng
+            <button type="button" class="btn btn-outline-navy mb-3" data-bs-toggle="modal" data-bs-target="#modalTraCuuKho">
+                <i class="fas fa-search me-1"></i> Tra cứu Kho máy khả dụng
+            </button>
+
+            <div class="admin-card h-100">
+                <div class="admin-card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-boxes me-2 text-navy"></i> Chọn Sản phẩm & Số lượng</span>
                 </div>
-                <div class="card-body p-0">
+                <div class="admin-card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 text-center">
-                            <thead class="">
+                        <table class="admin-table text-center" id="tableSanPhams">
+                            <thead>
                                 <tr>
                                     <th class="text-start ps-3">Tên Sản phẩm</th>
                                     <th>Giá/Ngày</th>
@@ -151,7 +178,7 @@
                                                 <input type="hidden" name="SanPhamIds" value="@sp.MaSanPham" readonly />
                                                 @sp.TenSanPham
                                             </td>
-                                            <td class="text-danger">
+                                            <td class="text-danger fw-bold">
                                                 @(((decimal)sp.GiaThueNgay).ToString("N0")) đ
                                                 <input type="hidden" class="gia-thue" value="@Convert.ToInt64(sp.GiaThueNgay)" />
                                             </td>
@@ -175,13 +202,91 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer bg-white border-0 text-end p-3">
-                    <button type="submit" class="btn btn-navy btn-lg fw-bold px-5"><i class="fas fa-check-circle me-2"></i> TẠO HỢP ĐỒNG NGAY</button>
+                <div class="p-3 bg-white border-top text-end">
+                    <button type="submit" class="btn btn-navy btn-lg fw-bold px-5">
+                        <i class="fas fa-check-circle me-2"></i> TẠO HỢP ĐỒNG NGAY
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </form>
+
+<!-- Modal Tra cứu Kho máy khả dụng -->
+<div class="modal fade" id="modalTraCuuKho" tabindex="-1" aria-labelledby="modalTraCuuKhoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-navy text-white" style="background-color: var(--navy-primary); color: #fff;">
+                <h5 class="modal-title fw-bold" id="modalTraCuuKhoLabel"><i class="fas fa-boxes me-2"></i> Kho máy sẵn sàng cho thuê</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="txtSearchModal" class="form-control" placeholder="Tìm kiếm nhanh theo Tên máy, Số serial, Cấu hình..." />
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-table text-center" id="tblModalDevices">
+                        <thead>
+                            <tr>
+                                <th class="text-start ps-3">Dòng Sản Phẩm</th>
+                                <th>Số Serial</th>
+                                <th>Cấu hình</th>
+                                <th>Tình trạng máy</th>
+                                <th>Giá thuê/ngày</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (availableDevices != null && availableDevices.Any())
+                            {
+                                foreach (var tb in availableDevices)
+                                {
+                                    <tr class="modal-device-row" data-search="@(tb.SanPham?.TenSanPham?.ToLower()) @(tb.SoSerial?.ToLower()) @(tb.SanPham?.CauHinh?.ToLower())">
+                                        <td class="text-start ps-3 fw-bold text-navy">
+                                            @tb.SanPham?.TenSanPham
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border font-monospace">@tb.SoSerial</span>
+                                        </td>
+                                        <td class="small text-muted text-start" style="max-width: 250px;">
+                                            @(string.IsNullOrEmpty(tb.SanPham?.CauHinh) ? "Tiêu chuẩn" : tb.SanPham.CauHinh)
+                                        </td>
+                                        <td>
+                                            <span class="status-pill"><span class="status-dot dot-success"></span> @(string.IsNullOrEmpty(tb.TinhTrangMay) ? "Sẵn sàng (Tốt)" : tb.TinhTrangMay)</span>
+                                        </td>
+                                        <td class="text-danger fw-bold">
+                                            @((tb.SanPham?.GiaThueNgay ?? 0).ToString("N0")) đ
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-navy btn-chon-may" data-spid="@tb.MaSanPham" data-spname="@tb.SanPham?.TenSanPham">
+                                                <i class="fas fa-plus me-1"></i> Chọn máy
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="fas fa-box-open fa-2x mb-2 d-block"></i> Hiện không có thiết bị nào sẵn sàng trong kho.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <span class="text-muted small me-auto"><i class="fas fa-info-circle me-1"></i> Bấm "Chọn máy" sẽ tự động tăng số lượng tương ứng trong đơn thuê.</span>
+                <button type="button" class="btn btn-outline-navy" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -197,6 +302,84 @@
         const soKyInput = document.getElementById("SoKyHan");
         const qtyInputs = document.querySelectorAll(".input-soluong");
         const priceInputs = document.querySelectorAll(".gia-thue");
+
+        // Quick Customer Selection Autofill
+        const cboKhach = document.getElementById("cboChonKhachHang");
+        if (cboKhach) {
+            cboKhach.addEventListener("change", function () {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.value) {
+                    const hoten = document.querySelector('input[name="KhachHang_HoTen"]');
+                    const sdt = document.querySelector('input[name="KhachHang_SoDienThoai"]');
+                    const email = document.querySelector('input[name="KhachHang_Email"]');
+                    const cccd = document.querySelector('input[name="KhachHang_CCCD"]');
+                    const diachi = document.querySelector('textarea[name="KhachHang_DiaChi"]') || document.querySelector('input[name="KhachHang_DiaChi"]');
+
+                    if (hoten) hoten.value = opt.getAttribute("data-hoten") || "";
+                    if (sdt) sdt.value = opt.getAttribute("data-sdt") || "";
+                    if (email) email.value = opt.getAttribute("data-email") || "";
+                    if (cccd) cccd.value = opt.getAttribute("data-cccd") || "";
+                    if (diachi) diachi.value = opt.getAttribute("data-diachi") || "";
+                }
+            });
+        }
+
+        // Quick Device Lookup Modal Search
+        const txtSearchModal = document.getElementById("txtSearchModal");
+        if (txtSearchModal) {
+            txtSearchModal.addEventListener("input", function () {
+                const keyword = this.value.trim().toLowerCase();
+                const rows = document.querySelectorAll("#tblModalDevices tbody tr.modal-device-row");
+                rows.forEach(r => {
+                    const searchData = r.getAttribute("data-search") || "";
+                    if (keyword === "" || searchData.includes(keyword)) {
+                        r.style.display = "";
+                    } else {
+                        r.style.display = "none";
+                    }
+                });
+            });
+        }
+
+        // "Chọn máy" action in modal
+        document.querySelectorAll(".btn-chon-may").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const spId = this.getAttribute("data-spid");
+                const rows = document.querySelectorAll("#tableSanPhams tbody tr");
+                let found = false;
+                rows.forEach(r => {
+                    const hiddenId = r.querySelector('input[name="SanPhamIds"]');
+                    if (hiddenId && hiddenId.value === spId) {
+                        const qtyInput = r.querySelector('.input-soluong');
+                        if (qtyInput) {
+                            let currentVal = parseInt(qtyInput.value) || 0;
+                            let maxVal = parseInt(qtyInput.getAttribute("max")) || 999;
+                            if (currentVal < maxVal) {
+                                qtyInput.value = currentVal + 1;
+                                qtyInput.dispatchEvent(new Event("change"));
+                                qtyInput.dispatchEvent(new Event("input"));
+                                found = true;
+                                r.classList.add("table-success");
+                                setTimeout(() => r.classList.remove("table-success"), 1500);
+                            } else {
+                                alert("Sản phẩm này đã đạt số lượng tối đa sẵn có trong kho!");
+                            }
+                        }
+                    }
+                });
+                if (found) {
+                    const oldHtml = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check me-1"></i> Đã chọn';
+                    this.classList.remove("btn-navy");
+                    this.classList.add("btn-outline-navy");
+                    setTimeout(() => {
+                        this.innerHTML = oldHtml;
+                        this.classList.remove("btn-outline-navy");
+                        this.classList.add("btn-navy");
+                    }, 1200);
+                }
+            });
+        });
 
         function formatVND(n) {
             return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + " đ";

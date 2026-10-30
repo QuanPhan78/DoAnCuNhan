@@ -1,3 +1,4 @@
+@Html.AntiForgeryToken()
 @model IEnumerable<RentalSystem.Models.HopDong>
 @using RentalSystem.Common
 @{
@@ -486,10 +487,13 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Đang gửi...';
 
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        const token = tokenInput ? tokenInput.value : '';
         fetch('/Admin/CongNo/GuiNhacNo?maKyHan=' + maKyHan, {
             method: 'POST',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'RequestVerificationToken': token
             }
         })
         .then(response => {

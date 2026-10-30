@@ -20,11 +20,47 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
-        // Danh sách toàn bộ các thiết bị vật lý trong hệ thống kèm trạng thái (Sẵn sàng, Đang thuê, Bảo trì, Giữ chỗ).
-        public async Task<IActionResult> Index()
+        // Danh sách toàn bộ các thiết bị vật lý trong hệ thống kèm trạng thái và bộ lọc tìm kiếm
+        public async Task<IActionResult> Index(int? status = null, string? search = null)
         {
-            var data = await _context.ThietBis.Include(t => t.SanPham).ToListAsync();
+            var allDevices = await _context.ThietBis.ToListAsync();
+            ViewBag.CountAll = allDevices.Count;
+            ViewBag.CountReady = allDevices.Count(t => t.TrangThai == 0);
+            ViewBag.CountRenting = allDevices.Count(t => t.TrangThai == 1);
+            ViewBag.CountMaintenance = allDevices.Count(t => t.TrangThai == 2);
+            ViewBag.CountReserved = allDevices.Count(t => t.TrangThai == 3);
+            ViewBag.CountDisposed = allDevices.Count(t => t.TrangThai == 4);
+            ViewBag.CurrentStatus = status;
+            ViewBag.CurrentSearch = search;
+
+            var query = _context.ThietBis.Include(t => t.SanPham).AsQueryable();
+
+            if (status.HasValue)
+            {
+                query = query.Where(t => t.TrangThai == status.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim();
+                query = query.Where(t => t.SoSerial.Contains(s) || (t.SanPham != null && t.SanPham.TenSanPham.Contains(s)));
+            }
+
+            var data = await query.OrderByDescending(t => t.MaThietBi).ToListAsync();
             return View(data);
+        }
+
+        // Xem thông tin chi tiết thiết bị, thông số cấu hình và lịch sử vòng đời
+        public async Task<IActionResult> Details(int id)
+        {
+            var tb = await _context.ThietBis
+                .Include(t => t.SanPham).ThenInclude(s => s.LoaiThietBi)
+                .Include(t => t.LichSuThietBis).ThenInclude(l => l.NguoiThucHien)
+                .Include(t => t.PhieuBaoTris).ThenInclude(p => p.KyThuatVien)
+                .FirstOrDefaultAsync(m => m.MaThietBi == id);
+
+            if (tb == null) return NotFound();
+            return View(tb);
         }
 
         // Mở form nhập thiết bị (Serial) mới vào kho.
@@ -111,6 +147,35 @@ namespace RentalSystem.Areas.Admin.Controllers
                     }
                 }
 
+                if (oldTb != null && oldTb.TrangThai != tb.TrangThai)
+                {
+                    int? currentUserId = null;
+                    var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                    if (claim != null && int.TryParse(claim.Value, out int uid))
+                    {
+                        currentUserId = uid;
+                    }
+
+                    string statusName(int st) => st switch
+                    {
+                        0 => "Sẵn sàng",
+                        1 => "Đang cho thuê",
+                        2 => "Bảo trì / Hỏng",
+                        3 => "Đang giữ chỗ",
+                        4 => "Hỏng thanh lý",
+                        _ => $"Trạng thái {st}"
+                    };
+
+                    _context.LichSuThietBis.Add(new LichSuThietBi
+                    {
+                        MaThietBi = tb.MaThietBi,
+                        HanhDong = $"Cập nhật trạng thái: {statusName(oldTb.TrangThai)} -> {statusName(tb.TrangThai)}",
+                        ThoiGian = DateTime.Now,
+                        MaNguoiThucHien = currentUserId,
+                        GhiChu = $"Tình trạng máy: {tb.TinhTrangMay}"
+                    });
+                }
+
                 _context.Update(tb);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã cập nhật thông tin thiết bị thành công!";
@@ -120,7 +185,8 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(tb);
         }
 
-        // Mở màn hình xác nhận xóa thiết bị khỏi hệ thống.
+        // Mở màn hình xác nhận xóa thiết bị khỏi hệ thống (Chỉ dành cho Admin)
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var tb = await _context.ThietBis.Include(t => t.SanPham).FirstOrDefaultAsync(m => m.MaThietBi == id);
@@ -128,7 +194,8 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(tb);
         }
 
-        // Xóa thiết bị khỏi hệ thống (kiểm tra không cho xóa máy đang thuê hoặc đã có lịch sử hợp đồng)
+        // Xóa thiết bị khỏi hệ thống (kiểm tra không cho xóa máy đang thuê hoặc đã có lịch sử hợp đồng - Chỉ dành cho Admin)
+        [Authorize(Roles = "Admin")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
