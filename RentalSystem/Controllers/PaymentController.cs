@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,7 @@ namespace RentalSystem.Controllers
         /// <summary>
         /// Tạo URL thanh toán VNPay và chuyển hướng khách hàng sang cổng VNPay
         /// </summary>
+        [Authorize]
         [HttpGet, HttpPost]
         public async Task<IActionResult> CreatePaymentUrl(int maHopDong, int? maKyHan = null, decimal? soTien = null)
         {
@@ -45,6 +47,15 @@ namespace RentalSystem.Controllers
             if (hopDong == null)
             {
                 return NotFound("Không tìm thấy hợp đồng yêu cầu.");
+            }
+
+            // Kiểm tra quyền sở hữu hợp đồng: Chỉ chủ sở hữu đơn thuê hoặc nhân viên nội bộ (Admin/KinhDoanh) mới được tạo URL thanh toán
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            int? currentUserId = userIdClaim != null && int.TryParse(userIdClaim.Value, out int uid) ? uid : null;
+            bool isStaff = User.IsInRole("Admin") || User.IsInRole("KinhDoanh");
+            if (!isStaff && (currentUserId == null || hopDong.MaKhachHang != currentUserId))
+            {
+                return Forbid();
             }
 
             decimal amountToPay = 0;

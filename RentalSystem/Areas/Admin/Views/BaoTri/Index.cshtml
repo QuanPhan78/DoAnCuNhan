@@ -1,5 +1,7 @@
 @model IEnumerable<RentalSystem.Models.PhieuBaoTri>
-@{ ViewData["Title"] = "Quản lý Bảo Trì - Sự Cố"; }
+@{ 
+    ViewData["Title"] = "Quản lý Bảo Trì - Sự Cố"; 
+}
 
 <div class="page-header">
     <h3 class="page-title"><i class="fas fa-tools"></i> Quản lý Bảo Trì - Sự Cố</h3>
@@ -9,23 +11,76 @@
 </div>
 
 @if (TempData["Success"] != null) {
-    <div class="alert alert-success shadow-sm">@TempData["Success"]</div>
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 @if (TempData["Error"] != null) {
-    <div class="alert alert-danger shadow-sm">@TempData["Error"]</div>
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
-<!-- Bộ lọc danh sách -->
-<div class="mb-3 d-flex flex-wrap gap-2">
-    <a asp-action="Index" class="btn btn-sm @(ViewBag.CurrentTrangThai == null && ViewBag.CurrentFilter == null ? "btn-navy" : "btn-outline-navy")">Tất cả</a>
-    <a asp-action="Index" asp-route-trangThai="1" class="btn btn-sm @(ViewBag.CurrentTrangThai == 1 ? "btn-navy" : "btn-outline-navy")">Mới tiếp nhận</a>
-    <a asp-action="Index" asp-route-trangThai="2" class="btn btn-sm @(ViewBag.CurrentTrangThai == 2 ? "btn-navy" : "btn-outline-navy")">Đang xử lý</a>
-    <a asp-action="Index" asp-route-trangThai="3" class="btn btn-sm @(ViewBag.CurrentTrangThai == 3 ? "btn-navy" : "btn-outline-navy")">Đã sửa xong</a>
-    <a asp-action="Index" asp-route-trangThai="4" class="btn btn-sm @(ViewBag.CurrentTrangThai == 4 ? "btn-navy" : "btn-outline-navy")">Hỏng thanh lý</a>
-    <a asp-action="Index" asp-route-trangThai="5" class="btn btn-sm @(ViewBag.CurrentTrangThai == 5 ? "btn-navy" : "btn-outline-navy")">Đã nghiệm thu</a>
-    <a asp-action="Index" asp-route-filter="overdue_sla" class="btn btn-sm @(ViewBag.CurrentFilter == "overdue_sla" ? "btn-navy" : "btn-outline-navy")">
-        <i class="fas fa-exclamation-triangle me-1"></i> Trễ hạn SLA
-    </a>
+<!-- 4 Thẻ chỉ số KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div>
+                <div class="stat-label">Tổng số phiếu</div>
+                <div class="stat-value">@(ViewBag.CountAll ?? 0)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-inbox"></i></div>
+            <div>
+                <div class="stat-label">Mới tiếp nhận</div>
+                <div class="stat-value">@(ViewBag.CountNew ?? 0)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-wrench"></i></div>
+            <div>
+                <div class="stat-label">Đang sửa chữa</div>
+                <div class="stat-value">@(ViewBag.CountProcessing ?? 0)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div>
+                <div class="stat-label">Quá hạn SLA</div>
+                <div class="stat-value text-danger">@(ViewBag.CountOverdue ?? 0)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc trạng thái & SLA -->
+<div class="admin-card mb-3">
+    <div class="card-body p-3">
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-sm @(ViewBag.CurrentTrangThai == null && ViewBag.CurrentFilter == null ? "btn-navy" : "btn-outline-navy")">Tất cả (@(ViewBag.CountAll ?? 0))</a>
+            <a asp-action="Index" asp-route-trangThai="1" class="btn btn-sm @(ViewBag.CurrentTrangThai == 1 ? "btn-navy" : "btn-outline-navy")">Mới tiếp nhận (@(ViewBag.CountNew ?? 0))</a>
+            <a asp-action="Index" asp-route-trangThai="2" class="btn btn-sm @(ViewBag.CurrentTrangThai == 2 ? "btn-navy" : "btn-outline-navy")">Đang sửa chữa (@(ViewBag.CountProcessing ?? 0))</a>
+            <a asp-action="Index" asp-route-trangThai="3" class="btn btn-sm @(ViewBag.CurrentTrangThai == 3 ? "btn-navy" : "btn-outline-navy")">Đã sửa xong (@(ViewBag.CountDone ?? 0))</a>
+            <a asp-action="Index" asp-route-trangThai="4" class="btn btn-sm @(ViewBag.CurrentTrangThai == 4 ? "btn-navy" : "btn-outline-navy")">Hỏng thanh lý</a>
+            <a asp-action="Index" asp-route-trangThai="5" class="btn btn-sm @(ViewBag.CurrentTrangThai == 5 ? "btn-navy" : "btn-outline-navy")">Đã nghiệm thu</a>
+            <a asp-action="Index" asp-route-filter="overdue_sla" class="btn btn-sm @(ViewBag.CurrentFilter == "overdue_sla" ? "btn-navy" : "btn-outline-navy")">
+                <i class="fas fa-exclamation-circle me-1 text-danger"></i> Trễ hạn SLA (@(ViewBag.CountOverdue ?? 0))
+            </a>
+            <a asp-action="Index" asp-route-filter="near_sla" class="btn btn-sm @(ViewBag.CurrentFilter == "near_sla" ? "btn-navy" : "btn-outline-navy")">
+                <i class="fas fa-clock me-1 text-warning"></i> Sắp đến hạn (&lt; 12h)
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="admin-card">
@@ -34,24 +89,26 @@
             <table class="admin-table text-center mb-0">
                 <thead>
                     <tr>
-                        <th>Mã Phiếu</th>
-                        <th>Hợp Đồng</th>
-                        <th>Thiết Bị</th>
-                        <th>Ngày Báo Lỗi</th>
-                        <th>Cam Kết SLA</th>
-                        <th>Kỹ Thuật Viên</th>
-                        <th>Trạng Thái</th>
-                        <th>Chi Phí / Bồi Thường</th>
-                        <th>Thao Tác</th>
+                        <th style="width: 7%">Mã Phiếu</th>
+                        <th style="width: 10%">Hợp Đồng</th>
+                        <th style="width: 20%" class="text-start">Thiết Bị</th>
+                        <th style="width: 12%">Ngày Báo Lỗi</th>
+                        <th style="width: 15%">Cam Kết SLA</th>
+                        <th style="width: 12%">Kỹ Thuật Viên</th>
+                        <th style="width: 12%">Trạng Thái</th>
+                        <th style="width: 8%">Chi Phí</th>
+                        <th style="width: 4%">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (!Model.Any()) {
-                        <tr><td colspan="9" class="py-4 text-muted">Không tìm thấy phiếu bảo trì nào.</td></tr>
+                        <tr><td colspan="9" class="py-4 text-muted">Không tìm thấy phiếu bảo trì nào phù hợp điều kiện lọc.</td></tr>
                     }
                     @foreach (var item in Model) {
                         bool isOverdue = item.TrangThai < 3 && item.HanHoanThanh.HasValue && item.HanHoanThanh.Value < DateTime.Now;
-                        <tr class="@(isOverdue ? "table-danger" : "")">
+                        bool isNearDeadline = item.TrangThai < 3 && item.HanHoanThanh.HasValue && item.HanHoanThanh.Value >= DateTime.Now && (item.HanHoanThanh.Value - DateTime.Now).TotalHours <= 12;
+                        
+                        <tr class="@(isOverdue ? "table-danger" : (isNearDeadline ? "table-warning" : ""))">
                             <td class="fw-bold">#@item.MaPhieu</td>
                             <td>
                                 @if (item.MaHopDong.HasValue) {
@@ -62,16 +119,21 @@
                             </td>
                             <td class="text-start">
                                 <div class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</div>
-                                <small class="text-muted">Serial: @item.ThietBi?.SoSerial</small>
+                                <small class="text-muted font-monospace">Serial: @item.ThietBi?.SoSerial</small>
                             </td>
                             <td>@item.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")</td>
                             <td>
                                 @if (item.HanHoanThanh.HasValue) {
-                                    <div>@item.HanHoanThanh.Value.ToString("dd/MM/yyyy HH:mm")</div>
-                                    @if (isOverdue) {
-                                        <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn SLA</span>
+                                    <div class="font-monospace small mb-1">@item.HanHoanThanh.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                    @if (item.TrangThai >= 3) {
+                                        <span class="badge-soft-navy"><i class="fas fa-check me-1"></i> Hoàn thành</span>
+                                    } else if (isOverdue) {
+                                        <span class="badge-soft-danger"><i class="fas fa-exclamation-circle me-1"></i> Quá hạn SLA</span>
+                                    } else if (isNearDeadline) {
+                                        int hoursLeft = Math.Max(1, (int)(item.HanHoanThanh.Value - DateTime.Now).TotalHours);
+                                        <span class="badge-soft-warning"><i class="fas fa-clock me-1"></i> Sắp hết (@(hoursLeft)h)</span>
                                     } else {
-                                        <span class="status-pill"><span class="status-dot dot-success"></span> Còn hạn</span>
+                                        <span class="badge-soft-success"><i class="fas fa-check-circle me-1"></i> Đúng hạn</span>
                                     }
                                 } else {
                                     <span class="text-muted small">--</span>
@@ -83,27 +145,27 @@
                                     <span class="status-pill"><span class="status-dot dot-warning"></span> Mới tiếp nhận</span> 
                                 }
                                 else if (item.TrangThai == 2) { 
-                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đang sửa</span> 
+                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đang sửa chữa</span> 
                                 }
                                 else if (item.TrangThai == 3) { 
-                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Đã sửa xong</span> 
+                                    <span class="status-pill"><span class="status-dot dot-success"></span> Đã sửa xong</span> 
                                 }
                                 else if (item.TrangThai == 4) { 
                                     <span class="status-pill"><span class="status-dot dot-danger"></span> Hỏng thanh lý</span> 
                                 }
                                 else if (item.TrangThai == 5) { 
-                                    <span class="status-pill"><span class="status-dot dot-success"></span> Đã nghiệm thu</span> 
+                                    <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã nghiệm thu</span> 
                                 }
                             </td>
-                            <td class="text-end pe-3">
+                            <td class="text-end pe-2">
                                 <div class="small">Sửa: <strong>@((item.ChiPhiSuaChua ?? 0).ToString("N0")) đ</strong></div>
                                 @if (item.PhiDenBu > 0) {
                                     <div class="small text-danger">Đền bù: <strong>@item.PhiDenBu.ToString("N0") đ</strong></div>
                                 }
                             </td>
                             <td>
-                                <a asp-action="Details" asp-route-id="@item.MaPhieu" class="btn btn-sm btn-outline-navy">
-                                    <i class="fas fa-eye me-1"></i> Xử lý
+                                <a asp-action="Details" asp-route-id="@item.MaPhieu" class="action-btn" title="Chi tiết & Xử lý">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                             </td>
                         </tr>

@@ -427,6 +427,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         // Gửi thông báo nhắc nợ kỳ hạn thanh toán kèm mã VietQR và lưu lịch sử nhắc nợ
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> GuiNhacNo(int maKyHan)
         {
             var kyHan = await _context.KyHanThanhToans

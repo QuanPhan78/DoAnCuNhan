@@ -265,6 +265,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         // Cập nhật tiến độ và trạng thái công việc
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize]
         public async Task<IActionResult> UpdateStatus(int id, int status, string? ghiChu)
         {

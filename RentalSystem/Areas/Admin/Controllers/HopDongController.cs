@@ -257,6 +257,14 @@ namespace RentalSystem.Areas.Admin.Controllers
 
             ViewBag.KhachHangs = khachHangs;
             ViewBag.SanPhams = sanPhams;
+
+            var availableDevices = await _context.ThietBis
+                .Include(t => t.SanPham)
+                .Where(t => t.TrangThai == 0)
+                .OrderBy(t => t.SanPham.TenSanPham)
+                .ToListAsync();
+            ViewBag.AvailableDevices = availableDevices;
+
             return View();
         }
 

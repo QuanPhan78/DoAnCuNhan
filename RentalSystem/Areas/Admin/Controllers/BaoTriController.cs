@@ -38,6 +38,20 @@ namespace RentalSystem.Areas.Admin.Controllers
                 var now = DateTime.Now;
                 query = query.Where(p => p.TrangThai < 3 && p.HanHoanThanh.HasValue && p.HanHoanThanh.Value < now);
             }
+            else if (filter == "near_sla")
+            {
+                var now = DateTime.Now;
+                var warningThreshold = now.AddHours(12);
+                query = query.Where(p => p.TrangThai < 3 && p.HanHoanThanh.HasValue && p.HanHoanThanh.Value >= now && p.HanHoanThanh.Value <= warningThreshold);
+            }
+
+            var allTickets = await _context.PhieuBaoTris.ToListAsync();
+            var nowTime = DateTime.Now;
+            ViewBag.CountAll = allTickets.Count;
+            ViewBag.CountNew = allTickets.Count(p => p.TrangThai == 1);
+            ViewBag.CountProcessing = allTickets.Count(p => p.TrangThai == 2);
+            ViewBag.CountDone = allTickets.Count(p => p.TrangThai == 3);
+            ViewBag.CountOverdue = allTickets.Count(p => p.TrangThai < 3 && p.HanHoanThanh.HasValue && p.HanHoanThanh.Value < nowTime);
 
             var data = await query.OrderByDescending(p => p.NgayBaoLoi).ToListAsync();
             ViewBag.CurrentTrangThai = trangThai;

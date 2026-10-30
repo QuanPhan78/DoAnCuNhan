@@ -187,6 +187,8 @@
     <!-- CỘT PHẢI: FORM CẬP NHẬT TIẾN ĐỘ, THU PHÍ & GIẢM TRỪ TIỀN THUÊ -->
     <div class="col-lg-6">
         <!-- Cập nhật tiến độ xử lý -->
+        @if (User.IsInRole("Admin") || User.IsInRole("KyThuat"))
+        {
         <div class="admin-card mb-4">
             <div class="admin-card-header fw-bold">
                 <i class="fas fa-wrench me-2"></i> Xử Lý & Cập Nhật Tiến Độ Bảo Trì
@@ -298,6 +300,30 @@
                 </form>
             </div>
         </div>
+        }
+        else
+        {
+        <div class="admin-card mb-4">
+            <div class="admin-card-header fw-bold">
+                <i class="fas fa-info-circle me-2"></i> Tiến Độ Xử Lý Kỹ Thuật
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded border">
+                    <div>
+                        <div class="text-muted small">Trạng thái kỹ thuật:</div>
+                        <div class="fw-bold fs-6">
+                            @if (Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-warning"></span> 1 - Mới tiếp nhận</span> }
+                            else if (Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-navy"></span> 2 - Đang sửa chữa</span> }
+                            else if (Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-success"></span> 3 - Đã sửa xong</span> }
+                            else if (Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-danger"></span> 4 - Hỏng không thể khắc phục</span> }
+                            else if (Model.TrangThai == 5) { <span class="status-pill"><span class="status-dot dot-neutral"></span> 5 - Đã nghiệm thu & đóng phiếu</span> }
+                        </div>
+                    </div>
+                    <span class="badge-soft-navy"><i class="fas fa-user-cog me-1"></i> Kỹ thuật viên phụ trách: @(Model.KyThuatVien?.HoTen ?? "Chưa phân công")</span>
+                </div>
+            </div>
+        </div>
+        }
 
         <!-- Thu phí bồi thường hư hỏng -->
         @if (Model.MaHopDong.HasValue && Model.PhiDenBu > 0) {
@@ -319,6 +345,8 @@
                         <span class="fw-bold text-danger">@((Model.PhiDenBu - (decimal)ViewBag.DaThuPhiDenBu).ToString("N0")) đ</span>
                     </div>
 
+                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                    {
                     <form asp-action="ThuPhiDenBu" method="post" class="p-3 bg-light rounded border">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.MaPhieu" />
@@ -341,6 +369,13 @@
                             </div>
                         </div>
                     </form>
+                    }
+                    else
+                    {
+                    <div class="p-3 bg-light rounded border text-muted small">
+                        <i class="fas fa-info-circle me-1"></i> Thao tác thu phí bồi thường do Bộ phận Kinh doanh / Kế toán thực hiện đối soát.
+                    </div>
+                    }
                 </div>
             </div>
         }

@@ -28,10 +28,10 @@
             @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
             {
                 <a href="/Admin/Home"><i class="fas fa-tachometer-alt"></i> <span class="nav-text">Dashboard</span></a>
-                <a href="/Admin/SanPham"><i class="fas fa-boxes"></i> <span class="nav-text">Dòng sản phẩm</span></a>
             }
             @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh") || User.IsInRole("KyThuat"))
             {
+                <a href="/Admin/SanPham"><i class="fas fa-boxes"></i> <span class="nav-text">Dòng sản phẩm</span></a>
                 <a href="/Admin/ThietBi"><i class="fas fa-barcode"></i> <span class="nav-text">Serial Máy</span></a>
             }
             @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
