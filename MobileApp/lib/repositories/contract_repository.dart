@@ -13,4 +13,8 @@ class ContractRepository {
   Future<bool> updateContractStatus(String contractId, String newStatus) {
     return _dataSource.updateContractStatus(contractId, newStatus);
   }
+
+  Future<String> getContractHtml(String contractId, String userId, Role role) {
+    return _dataSource.getContractHtml(contractId, userId, role);
+  }
 }

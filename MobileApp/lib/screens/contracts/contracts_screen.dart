@@ -157,7 +157,7 @@ class _ContractsScreenState extends State<ContractsScreen> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           hint: Text(hint, style: AppTextStyles.bodySecondary),
-          value: value,
+          value: (value != null && items.contains(value)) ? value : null,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded, 
             size: 20,

@@ -62,7 +62,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: provider.currentTimeFilter,
+                value: ['Tuần này', 'Tháng này', 'Năm nay'].contains(provider.currentTimeFilter)
+                    ? provider.currentTimeFilter
+                    : 'Tháng này',
                 icon: const Icon(Icons.filter_list_rounded, color: AppColors.primary, size: 20),
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
                 dropdownColor: AppColors.surface,

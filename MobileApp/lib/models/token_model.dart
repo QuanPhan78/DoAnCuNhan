@@ -1,4 +1,4 @@
-﻿class TokenModel {
+class TokenModel {
   final String accessToken;
   final String refreshToken;
   final DateTime expiresIn;
@@ -11,10 +11,20 @@
 
   // Mock token cho nay. Sau nay xai JWT that.
   factory TokenModel.fromJson(Map<String, dynamic> json) {
+    final token = json['access_token'] ?? json['accessToken'] ?? '';
+    final refresh = json['refresh_token'] ?? json['refreshToken'] ?? '';
+    final expires = json['expires_in'] ?? json['expiresIn'];
+    DateTime expiresDate;
+    if (expires != null) {
+      expiresDate = DateTime.tryParse(expires.toString()) ?? DateTime.now().add(const Duration(days: 7));
+    } else {
+      expiresDate = DateTime.now().add(const Duration(days: 7));
+    }
+
     return TokenModel(
-      accessToken: json['access_token'],
-      refreshToken: json['refresh_token'],
-      expiresIn: DateTime.parse(json['expires_in']),
+      accessToken: token.toString(),
+      refreshToken: refresh.toString(),
+      expiresIn: expiresDate,
     );
   }
 

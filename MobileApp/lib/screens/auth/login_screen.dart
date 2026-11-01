@@ -101,8 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 // Inputs
                 CustomTextField(
-                  label: 'Email hoặc Tên đăng nhập',
-                  hint: 'Nhập email',
+                  label: 'Email hoặc Số điện thoại',
+                  hint: 'Nhập email hoặc số điện thoại',
                   prefixIcon: Icons.email_outlined,
                   controller: _emailController,
                   enabled: !isLoading,
@@ -186,7 +186,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text('Chưa có tài khoản? ', style: AppTextStyles.bodySecondary),
                     TextButton(
-                      onPressed: isLoading ? null : () {},
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              Navigator.of(context).pushNamed('/register');
+                            },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,

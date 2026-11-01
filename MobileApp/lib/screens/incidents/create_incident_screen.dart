@@ -140,7 +140,7 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
                 _buildDropdown(
                   value: _selectedDeviceId,
                   hint: 'Chọn thiết bị gặp sự cố',
-                  items: _contractDevices.map((d) => DropdownMenuItem(value: d, child: Text('Mã TB: $d'))).toList(),
+                  items: _contractDevices.map((d) => DropdownMenuItem(value: d, child: Text(d, overflow: TextOverflow.ellipsis))).toList(),
                   onChanged: (v) => setState(() => _selectedDeviceId = v),
                   validator: (v) => v == null ? 'Vui lòng chọn thiết bị' : null,
                 ),
@@ -255,8 +255,10 @@ class _CreateIncidentScreenState extends State<CreateIncidentScreen> {
     required void Function(String?) onChanged,
     String? Function(String?)? validator,
   }) {
+    final bool hasValue = value != null && items.any((item) => item.value == value);
     return DropdownButtonFormField<String>(
-      initialValue: value,
+      isExpanded: true,
+      initialValue: hasValue ? value : null,
       hint: Text(hint, style: AppTextStyles.bodySecondary),
       items: items,
       onChanged: onChanged,

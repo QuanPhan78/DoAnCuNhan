@@ -15,6 +15,7 @@ import '../../theme/app_text_styles.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_shadows.dart';
 import 'package:intl/intl.dart';
+import 'contract_pdf_viewer_screen.dart';
 
 class ContractDetailScreen extends StatefulWidget {
   final ContractModel contract;
@@ -32,6 +33,15 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InstallationProvider>().fetchInstallation(widget.contract.id);
     });
+  }
+
+  void _openPdfViewer(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ContractPdfViewerScreen(contract: widget.contract),
+      ),
+    );
   }
 
   BadgeStatus _getBadgeStatus(String? status) {
@@ -65,7 +75,16 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(title: 'Chi tiết Hợp đồng'),
+      appBar: CustomAppBar(
+        title: 'Chi tiết Hợp đồng',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
+            tooltip: 'Xem file PDF',
+            onPressed: () => _openPdfViewer(context),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -87,7 +106,22 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => _openPdfViewer(context),
+              icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
+              label: const Text(
+                'Xem văn bản hợp đồng (PDF)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.mdRadius),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.04),
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Section 1 & 2: Thông tin & Khách hàng
             _buildSectionCard(

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../models/dashboard_model.dart';
 import '../models/role_enum.dart';
 import '../repositories/dashboard_repository.dart';
@@ -17,13 +17,13 @@ class DashboardProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isEmpty => _data == null && !_isLoading && _errorMessage == null;
 
-  Future<void> loadDashboard(Role role) async {
+  Future<void> loadDashboard(Role role, {String? userId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _data = await _repository.getDashboardData(role);
+      _data = await _repository.getDashboardData(role, userId: userId);
     } catch (e) {
       _errorMessage = e.toString();
       _data = null;

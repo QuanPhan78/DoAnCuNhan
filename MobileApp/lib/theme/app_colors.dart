@@ -2,21 +2,28 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Brand Colors
-  static const Color primary = Color(0xFF1565C0); // Xanh dÆ°Æ¡ng Ä‘áº­m chuyĂªn nghiá»‡p
+  static const Color primary = Color(0xFF1565C0);
   static const Color primaryLight = Color(0xFF5E92F3);
   static const Color primaryDark = Color(0xFF003C8F);
-  static const Color secondary = Color(0xFF039BE5); // Xanh nhĂ¡nh thá»ƒ hiá»‡n tech/modern
+  static const Color secondary = Color(0xFF039BE5);
 
   // Background & Surface
-  static const Color background = Color(0xFFF8FAFC); // XĂ¡m nháº¡t tráº¯ng tĂ´n ná» n
+  static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
 
+  // Dark Mode Palette
+  static const Color darkBackground = Color(0xFF0F172A);
+  static const Color darkSurface = Color(0xFF1E293B);
+  static const Color darkDivider = Color(0xFF334155);
+  static const Color darkTextPrimary = Color(0xFFF8FAFC);
+  static const Color darkTextSecondary = Color(0xFF94A3B8);
+
   // Text Colors
-  static const Color textPrimary = Color(0xFF1E293B); // Slate 800 - XĂ¡m Ä‘áº­m, dá»… Ä‘á» c hÆ¡n Ä‘en thuáº§n
-  static const Color textSecondary = Color(0xFF64748B); // Slate 500
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
 
   // Border & Divider
-  static const Color divider = Color(0xFFE2E8F0); // Slate 200
+  static const Color divider = Color(0xFFE2E8F0);
 
   // Semantic / Status Colors
   static const Color error = Color(0xFFEF4444);

@@ -50,4 +50,9 @@ class LocalContractDataSource implements ContractDataSource {
     }
     return false;
   }
+
+  @override
+  Future<String> getContractHtml(String contractId, String userId, Role role) async {
+    return '<html><body><h1>Hợp đồng $contractId</h1></body></html>';
+  }
 }

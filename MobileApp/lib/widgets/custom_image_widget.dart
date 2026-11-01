@@ -22,9 +22,14 @@ class CustomImageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget imageWidget;
     
-    if (imageUrl.startsWith('http') || imageUrl.startsWith('https')) {
+    String cleanUrl = imageUrl.trim();
+    if (cleanUrl.startsWith('/')) {
+      cleanUrl = cleanUrl.substring(1);
+    }
+
+    if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
       imageWidget = Image.network(
-        imageUrl,
+        cleanUrl,
         width: width,
         height: height,
         fit: fit,
@@ -36,11 +41,23 @@ class CustomImageWidget extends StatelessWidget {
       );
     } else {
       imageWidget = Image.asset(
-        imageUrl,
+        cleanUrl,
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => _buildError(),
+        errorBuilder: (context, error, stackTrace) {
+          // Thử tìm trong assets nếu đường dẫn chưa có tiền tố assets/
+          if (!cleanUrl.startsWith('assets/')) {
+            return Image.asset(
+              'assets/$cleanUrl',
+              width: width,
+              height: height,
+              fit: fit,
+              errorBuilder: (context, error, stackTrace) => _buildError(),
+            );
+          }
+          return _buildError();
+        },
       );
     }
 

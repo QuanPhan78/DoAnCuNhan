@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_shadows.dart';
+import 'package:intl/intl.dart';
 
 class DeviceCard extends StatelessWidget {
   final DeviceModel device;
@@ -114,7 +115,9 @@ class DeviceCard extends StatelessWidget {
                           Icon(Icons.payments_outlined, size: 16, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
-                            device.rentalPrice != null ? '${device.rentalPrice} đ/ngày' : 'Liên hệ để báo giá',
+                            device.rentalPrice != null 
+                                ? '${NumberFormat('#,###').format(device.rentalPrice)} VNĐ / ngày' 
+                                : 'Liên hệ để báo giá',
                             style: AppTextStyles.body.copyWith(
                               color: device.rentalPrice != null ? AppColors.error : AppColors.textSecondary,
                               fontWeight: FontWeight.w600,

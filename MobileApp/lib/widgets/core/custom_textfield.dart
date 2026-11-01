@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final int maxLines;
   final TextInputType keyboardType;
+  final TextCapitalization textCapitalization;
   final void Function(String)? onChanged;
   final bool enabled;
 
@@ -26,6 +27,7 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.maxLines = 1,
     this.keyboardType = TextInputType.text,
+    this.textCapitalization = TextCapitalization.none,
     this.onChanged,
     this.enabled = true,
   });
@@ -43,6 +45,7 @@ class CustomTextField extends StatelessWidget {
           validator: validator,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           enabled: enabled,
           onChanged: onChanged,
           style: AppTextStyles.body,

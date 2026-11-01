@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/search_provider.dart';
+import '../../providers/device_provider.dart';
+import '../../models/device_model.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_radius.dart';
@@ -186,7 +188,9 @@ class _SearchScreenState extends State<SearchScreen> {
               onTap: () {
                 switch (result.type) {
                   case 'device':
-                    Navigator.pushNamed(context, '/device_detail', arguments: result.originalData);
+                    final devModel = result.originalData as DeviceModel;
+                    final fullDev = context.read<DeviceProvider>().getDeviceById(devModel.id) ?? devModel;
+                    Navigator.pushNamed(context, '/device_detail', arguments: fullDev);
                     break;
                   case 'contract':
                     Navigator.pushNamed(context, '/contract_detail', arguments: result.originalData);

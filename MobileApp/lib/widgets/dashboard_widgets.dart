@@ -71,12 +71,18 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: AppTextStyles.h2),
+          Text(
+            title, 
+            style: AppTextStyles.h2.copyWith(
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            ),
+          ),
           if (actionText != null && onAction != null)
             TextButton(
               onPressed: onAction,
@@ -112,11 +118,13 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
-      elevation: 0, // Handled by AppTheme
+      elevation: 0,
+      color: isDark ? AppColors.darkSurface : AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.lgRadius,
-        side: const BorderSide(color: AppColors.divider),
+        side: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider),
       ),
       child: InkWell(
         onTap: onTap,
@@ -138,14 +146,24 @@ class SummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: AppTextStyles.bodySecondary),
+                    Text(
+                      title, 
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(value, style: AppTextStyles.h2),
+                    Text(
+                      value, 
+                      style: AppTextStyles.h2.copyWith(
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      ),
+                    ),
                   ],
                 ),
               ),
               if (onTap != null)
-                const Icon(Icons.chevron_right, color: AppColors.textSecondary)
+                Icon(Icons.chevron_right, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
             ],
           ),
         ),
@@ -168,6 +186,7 @@ class QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.mdRadius,
@@ -175,10 +194,10 @@ class QuickActionCard extends StatelessWidget {
         width: 80,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
           borderRadius: AppRadius.mdRadius,
-          border: Border.all(color: AppColors.divider),
-          boxShadow: AppShadows.cardShadow,
+          border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+          boxShadow: isDark ? [] : AppShadows.cardShadow,
         ),
         child: Column(
           children: [
@@ -194,7 +213,10 @@ class QuickActionCard extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.w500, 
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
             ),
           ],
         ),

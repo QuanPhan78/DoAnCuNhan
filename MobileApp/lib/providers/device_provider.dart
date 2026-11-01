@@ -18,7 +18,16 @@ class DeviceProvider with ChangeNotifier {
   String? _selectedStatus;
 
   List<DeviceModel> get devices => _filteredDevices;
+  List<DeviceModel> get allDevices => _allDevices;
   bool get isLoading => _isLoading;
+
+  DeviceModel? getDeviceById(String id) {
+    try {
+      return _allDevices.firstWhere((d) => d.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
   String? get errorMessage => _errorMessage;
 
   List<String> get availableTypes => _allDevices.map((d) => d.type).toSet().toList();

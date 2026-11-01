@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user_model.dart';
 import '../../models/token_model.dart';
@@ -71,6 +71,51 @@ class LocalAuthDataSource implements AuthDataSource {
   }
 
   @override
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String phone,
+    required String email,
+    required String password,
+    String? address,
+    String? cccd,
+  }) async {
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (email.isEmpty || password.isEmpty || name.isEmpty || phone.isEmpty) {
+      throw Exception('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+    }
+
+    if (_mockUsers.any((u) => u['email'] == email)) {
+      throw Exception('Email này đã được sử dụng.');
+    }
+
+    final newUser = {
+      'id': (_mockUsers.length + 1).toString(),
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'password': password,
+      'address': address,
+      'cccd': cccd,
+      'role': 'Khách hàng',
+    };
+    _mockUsers.add(newUser);
+
+    final token = TokenModel(
+      accessToken: 'mock_token_${newUser['id']}',
+      refreshToken: 'mock_refresh_${newUser['id']}',
+      expiresIn: DateTime.now().add(const Duration(days: 1)),
+    );
+
+    final userModel = UserModel.fromJson(newUser);
+
+    return {
+      'user': userModel,
+      'token': token,
+    };
+  }
+
+  @override
   Future<void> saveSession(UserModel user, TokenModel token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, jsonEncode(user.toJson()));
@@ -102,6 +147,26 @@ class LocalAuthDataSource implements AuthDataSource {
       return TokenModel.fromJson(jsonDecode(tokenStr));
     }
     return null;
+  }
+
+  @override
+  Future<UserModel> updateProfile(String userId, {String? name, String? phone, String? address, String? cccd}) async {
+    final currentUser = await getCurrentUser();
+    if (currentUser != null) {
+      final updated = UserModel(
+        id: currentUser.id,
+        name: name ?? currentUser.name,
+        email: currentUser.email,
+        phone: phone ?? currentUser.phone,
+        role: currentUser.role,
+        address: address ?? currentUser.address,
+        cccd: cccd ?? currentUser.cccd,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_userKey, jsonEncode(updated.toJson()));
+      return updated;
+    }
+    throw Exception('Không tìm thấy người dùng');
   }
 
   @override

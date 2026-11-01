@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/device_provider.dart';
 import '../../models/device_model.dart';
 import '../../widgets/custom_image_widget.dart';
 import '../../widgets/dashboard_widgets.dart'; // StatusBadge, BadgeStatus
 import '../../widgets/core/custom_app_bar.dart';
+import '../../widgets/core/custom_button.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_shadows.dart';
+import 'package:intl/intl.dart';
 
 class DeviceDetailScreen extends StatelessWidget {
   final DeviceModel device;
 
   const DeviceDetailScreen({super.key, required this.device});
+
+  DeviceModel _resolveDevice(BuildContext context) {
+    final cached = context.watch<DeviceProvider>().getDeviceById(device.id);
+    if (cached != null && (device.code == null || device.imageUrl == null || device.brand == null || device.serialNumber == null)) {
+      return cached;
+    }
+    return device;
+  }
 
   BadgeStatus _getBadgeStatus(String? status) {
     if (status == null) return BadgeStatus.neutral;
@@ -30,6 +42,8 @@ class DeviceDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final d = _resolveDevice(context);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(title: 'Chi tiết thiết bị'),
@@ -39,7 +53,7 @@ class DeviceDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // PHẦN 1: Ảnh thiết bị lớn
-            _buildDeviceImage(),
+            _buildDeviceImage(d),
             
             // Container bọc toàn bộ nội dung phía dưới để tạo cảm giác chìm nhẹ
             Padding(
@@ -48,7 +62,7 @@ class DeviceDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // PHẦN 2: Tên, Mã, Trạng thái, Loại
-                  _buildHeaderSection(),
+                  _buildHeaderSection(d),
                   
                   const SizedBox(height: 24),
                   
@@ -58,16 +72,16 @@ class DeviceDetailScreen extends StatelessWidget {
                     icon: Icons.info_outline_rounded,
                     content: Column(
                       children: [
-                        _buildInfoRow('Hãng sản xuất', device.brand),
+                        _buildInfoRow('Hãng sản xuất', d.brand),
                         _buildDivider(),
-                        _buildInfoRow('Model', device.model),
-                        if (device.serialNumber != null && device.serialNumber!.isNotEmpty) ...[
+                        _buildInfoRow('Model', d.model),
+                        if (d.serialNumber != null && d.serialNumber!.isNotEmpty) ...[
                           _buildDivider(),
-                          _buildInfoRow('Serial Number', device.serialNumber),
+                          _buildInfoRow('Serial Number', d.serialNumber),
                         ],
-                        if (device.condition != null && device.condition!.isNotEmpty) ...[
+                        if (d.condition != null && d.condition!.isNotEmpty) ...[
                           _buildDivider(),
-                          _buildInfoRow('Tình trạng', device.condition),
+                          _buildInfoRow('Tình trạng', d.condition),
                         ],
                       ],
                     ),
@@ -76,12 +90,12 @@ class DeviceDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   
                   // PHẦN 4: Thông số kỹ thuật
-                  if (device.specifications != null && device.specifications!.isNotEmpty)
+                  if (d.specifications != null && d.specifications!.isNotEmpty)
                     _buildSectionCard(
                       title: 'Thông số kỹ thuật',
                       icon: Icons.memory_rounded,
                       content: Text(
-                        device.specifications!, 
+                        d.specifications!, 
                         style: AppTextStyles.body.copyWith(height: 1.5),
                       ),
                     ),
@@ -89,7 +103,7 @@ class DeviceDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   
                   // PHẦN 5: Thông tin thuê
-                  if (device.rentalPrice != null)
+                  if (d.rentalPrice != null)
                     _buildSectionCard(
                       title: 'Thông tin thuê',
                       icon: Icons.payments_outlined,
@@ -99,7 +113,7 @@ class DeviceDetailScreen extends StatelessWidget {
                           const Text('Đơn giá:', style: AppTextStyles.bodySecondary),
                           const Spacer(),
                           Text(
-                            '${device.rentalPrice} đ / ngày',
+                            '${NumberFormat('#,###').format(d.rentalPrice)} VNĐ / ngày',
                             style: AppTextStyles.h2.copyWith(color: AppColors.error),
                           ),
                         ],
@@ -109,12 +123,12 @@ class DeviceDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   
                   // PHẦN 6: Mô tả
-                  if (device.description != null && device.description!.isNotEmpty)
+                  if (d.description != null && d.description!.isNotEmpty)
                     _buildSectionCard(
                       title: 'Mô tả',
                       icon: Icons.description_outlined,
                       content: Text(
-                        device.description!, 
+                        d.description!, 
                         style: AppTextStyles.body.copyWith(height: 1.5),
                       ),
                     ),
@@ -124,16 +138,43 @@ class DeviceDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+            border: const Border(top: BorderSide(color: AppColors.divider)),
+          ),
+          child: CustomButton(
+            text: d.rentalStatus?.toLowerCase() == 'sẵn sàng' ? 'Thuê ngay' : 'Không khả dụng',
+            type: ButtonType.primary,
+            isFullWidth: true,
+            onPressed: d.rentalStatus?.toLowerCase() == 'sẵn sàng'
+                ? () {
+                    Navigator.pushNamed(context, '/rental_form', arguments: d);
+                  }
+                : null,
+            icon: Icons.shopping_cart_checkout,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildDeviceImage() {
-    final hasImage = (device.imageUrl != null && device.imageUrl!.isNotEmpty) || 
-                     (device.imageAsset != null && device.imageAsset!.isNotEmpty);
+  Widget _buildDeviceImage(DeviceModel dev) {
+    final hasImage = (dev.imageUrl != null && dev.imageUrl!.isNotEmpty) || 
+                     (dev.imageAsset != null && dev.imageAsset!.isNotEmpty);
                      
-    final imagePath = (device.imageUrl != null && device.imageUrl!.isNotEmpty) 
-        ? device.imageUrl! 
-        : (device.imageAsset ?? '');
+    final imagePath = (dev.imageUrl != null && dev.imageUrl!.isNotEmpty) 
+        ? dev.imageUrl! 
+        : (dev.imageAsset ?? '');
 
     return Container(
       width: double.infinity,
@@ -155,7 +196,7 @@ class DeviceDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderSection() {
+  Widget _buildHeaderSection(DeviceModel dev) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -164,7 +205,7 @@ class DeviceDetailScreen extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                device.name,
+                dev.name,
                 style: AppTextStyles.h1.copyWith(fontSize: 24, height: 1.3),
               ),
             ),
@@ -172,7 +213,7 @@ class DeviceDetailScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Mã: ${device.code ?? "---"}',
+          'Mã: ${dev.code ?? "---"}',
           style: AppTextStyles.bodySecondary.copyWith(fontSize: 16),
         ),
         const SizedBox(height: 16),
@@ -180,11 +221,11 @@ class DeviceDetailScreen extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            StatusBadge(text: device.type, color: AppColors.primary),
-            if (device.rentalStatus != null)
+            StatusBadge(text: dev.type, color: AppColors.primary),
+            if (dev.rentalStatus != null)
               StatusBadge(
-                text: device.rentalStatus!,
-                status: _getBadgeStatus(device.rentalStatus!),
+                text: dev.rentalStatus!,
+                status: _getBadgeStatus(dev.rentalStatus!),
               ),
           ],
         ),

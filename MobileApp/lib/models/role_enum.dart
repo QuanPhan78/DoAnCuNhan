@@ -1,4 +1,4 @@
-﻿enum Role {
+enum Role {
   customer,
   staff,
   admin
@@ -13,12 +13,15 @@ extension RoleExtension on Role {
     }
   }
 
-  static Role fromString(String role) {
-    switch (role) {
-      case 'Khách hàng': return Role.customer;
-      case 'Nhân viên': return Role.staff;
-      case 'Quản lý': return Role.admin;
-      default: return Role.customer;
+  static Role fromString(String? role) {
+    if (role == null) return Role.customer;
+    final r = role.trim().toLowerCase();
+    if (r == 'admin' || r == 'quản lý' || r == 'quanly' || r == 'quản trị viên') {
+      return Role.admin;
     }
+    if (r == 'nhân viên' || r == 'nhanvien' || r == 'staff' || r == 'kinhdoanh' || r == 'kythuat') {
+      return Role.staff;
+    }
+    return Role.customer;
   }
 }

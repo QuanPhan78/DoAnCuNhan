@@ -19,7 +19,7 @@ namespace RentalSystem.Controllers
             _context = context;
         }
 
-        // Xem bản in Hợp Đồng Thuê Thiết Bị chuẩn pháp lý:
+        // Xem bản in Hợp Đồng Thuê Thiết Bị chuẩn pháp lý (Web MVC Cookie Auth):
         // Bao gồm điều khoản thuê, thông tin 2 bên, danh sách máy serial kèm chữ ký số điện tử Base64.
         // Bảo mật: Khách hàng thông thường chỉ được in hợp đồng của chính mình.
         [HttpGet]
@@ -54,6 +54,46 @@ namespace RentalSystem.Controllers
 
             ViewBag.ChiTiets = chiTiets;
             return View(hopDong);
+        }
+
+        // Endpoint dành cho Mobile App lấy bản in HTML hợp đồng với phân quyền bảo mật nghiêm ngặt
+        [AllowAnonymous]
+        [HttpGet("api/contracts/{id}/html")]
+        public async Task<IActionResult> InHopDongHtml(int id, [FromQuery] int? userId, [FromQuery] string? role)
+        {
+            var hopDong = await _context.HopDongs
+                .Include(h => h.KhachHang)
+                .Include(h => h.NhanVien)
+                .FirstOrDefaultAsync(h => h.MaHopDong == id);
+
+            if (hopDong == null)
+            {
+                return NotFound(new { message = $"Không tìm thấy hợp đồng #{id} trong hệ thống." });
+            }
+
+            // Kiểm tra phân quyền bảo mật:
+            // Chỉ Admin hoặc Nhân viên kinh doanh mới được xem toàn bộ.
+            // Khách hàng bắt buộc phải có userId trùng với MaKhachHang của hợp đồng này.
+            bool isAdminOrStaff = !string.IsNullOrEmpty(role) && 
+                (role.Equals("Admin", System.StringComparison.OrdinalIgnoreCase) || 
+                 role.Equals("NhanVien", System.StringComparison.OrdinalIgnoreCase) || 
+                 role.Equals("KinhDoanh", System.StringComparison.OrdinalIgnoreCase));
+
+            if (!isAdminOrStaff)
+            {
+                if (!userId.HasValue || hopDong.MaKhachHang != userId.Value)
+                {
+                    return StatusCode(403, new { message = "BẢO MẬT: Bạn không có quyền truy cập hoặc xem hợp đồng của khách hàng khác." });
+                }
+            }
+
+            var chiTiets = await _context.ChiTietHopDongs
+                .Include(c => c.ThietBi).ThenInclude(t => t.SanPham)
+                .Where(c => c.MaHopDong == id)
+                .ToListAsync();
+
+            ViewBag.ChiTiets = chiTiets;
+            return View("~/Views/Document/InHopDong.cshtml", hopDong);
         }
     }
 }

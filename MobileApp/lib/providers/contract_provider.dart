@@ -21,7 +21,18 @@ class ContractProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  List<String> get availableStatuses => _allContracts.map((c) => c.status ?? 'Khác').toSet().toList();
+  static const List<String> _defaultStatuses = [
+    'Chờ duyệt',
+    'Đang hiệu lực',
+    'Hoàn thành',
+    'Đã hủy',
+  ];
+
+  List<String> get availableStatuses {
+    final set = <String>{..._defaultStatuses};
+    set.addAll(_allContracts.map((c) => c.status ?? 'Khác'));
+    return set.toList();
+  }
   String? get selectedStatus => _selectedStatus;
 
   Future<void> fetchContracts(Role role, String userId) async {
@@ -55,6 +66,10 @@ class ContractProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<String> getContractHtml(String contractId, String userId, Role role) {
+    return _repository.getContractHtml(contractId, userId, role);
   }
 
   void search(String query) {
