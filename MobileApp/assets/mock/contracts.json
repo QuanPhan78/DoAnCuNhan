@@ -1,0 +1,51 @@
+[
+  {
+    "id": "C001",
+    "contractCode": "HD-2026-001",
+    "customerId": "1",
+    "customerName": "Nguyễn Khách Hàng",
+    "deviceIds": [
+      "1",
+      "2"
+    ],
+    "rentalStart": "01/09/2026",
+    "rentalEnd": "01/10/2026",
+    "rentalType": "Ngắn hạn",
+    "status": "Đang hiệu lực",
+    "totalAmount": 1500000.0,
+    "installationDetails": "Cài đặt Windows và Office tại nhà",
+    "extensionDetails": ""
+  },
+  {
+    "id": "C002",
+    "contractCode": "HD-2026-002",
+    "customerId": "1",
+    "customerName": "Nguyễn Khách Hàng",
+    "deviceIds": [
+      "4"
+    ],
+    "rentalStart": "15/09/2026",
+    "rentalEnd": "15/12/2026",
+    "rentalType": "Dài hạn",
+    "status": "Chờ duyệt",
+    "totalAmount": 2400000.0,
+    "installationDetails": "Giao thiết bị tận nơi",
+    "extensionDetails": ""
+  },
+  {
+    "id": "C003",
+    "contractCode": "HD-2026-003",
+    "customerId": "99",
+    "customerName": "Trần Khách Khác",
+    "deviceIds": [
+      "3"
+    ],
+    "rentalStart": "01/08/2026",
+    "rentalEnd": "01/09/2026",
+    "rentalType": "Ngắn hạn",
+    "status": "Đã thanh lý",
+    "totalAmount": 500000.0,
+    "installationDetails": "",
+    "extensionDetails": "Gia hạn thêm 1 tuần"
+  }
+]

@@ -8,9 +8,9 @@ namespace RentalSystem.Common
 {
     public static class DebtCalculationHelper
     {
-        /// <summary>
+        
         /// Tính phí phạt trễ hạn dựa trên số tiền chưa trả và số ngày quá hạn (sau thời gian ân hạn 3 ngày).
-        /// </summary>
+       
         public static decimal CalculateLateFee(decimal unpaidAmount, DateTime dueDate, DateTime asOfDate)
         {
             if (unpaidAmount <= 0)
@@ -23,9 +23,9 @@ namespace RentalSystem.Common
             return Math.Round(unpaidAmount * 0.001m * daysPastDue, 0);
         }
 
-        /// <summary>
+        
         /// Phân loại nhóm tuổi nợ theo số ngày quá hạn thanh toán.
-        /// </summary>
+        
         public static int CalculateAgingTier(int overdueDays)
         {
             if (overdueDays <= 0)
@@ -65,9 +65,7 @@ namespace RentalSystem.Common
             };
         }
 
-        /// <summary>
         /// Tính tổng công nợ hợp đồng bao gồm tiền thuê và chi phí đền bù hư hại bảo trì.
-        /// </summary>
         public static (decimal totalReceivable, decimal totalCollected, decimal remainingDebt) CalculateContractDebt(HopDong hopDong)
         {
             if (hopDong == null)
@@ -82,9 +80,8 @@ namespace RentalSystem.Common
             return (totalReceivable, totalCollected, remainingDebt);
         }
 
-        /// <summary>
         /// Quyết toán tiền đặt cọc và xác định số tiền hoàn cọc hoặc khoản nợ còn thiếu.
-        /// </summary>
+
         public static (decimal refund, decimal remainingDebt) CalculateDepositSettlement(HopDong hopDong, decimal unpaidRent, decimal unpaidDamages)
         {
             if (hopDong == null)
@@ -97,9 +94,9 @@ namespace RentalSystem.Common
             return (refund, remainingDebt);
         }
 
-        /// <summary>
+
         /// Overload tự động tính unpaidRent và unpaidDamages từ dữ liệu liên kết của hợp đồng.
-        /// </summary>
+
         public static (decimal refund, decimal remainingDebt) CalculateDepositSettlement(HopDong hopDong)
         {
             if (hopDong == null)
@@ -118,10 +115,9 @@ namespace RentalSystem.Common
             return CalculateDepositSettlement(hopDong, unpaidRent, unpaidDamages);
         }
 
-        /// <summary>
+
         /// Kiểm tra khách hàng có thuộc diện nợ xấu bị hạn chế thuê tiếp hay không.
         /// Điều kiện: Có kỳ hạn trễ hạn > 15 ngày HOẶC tổng dư nợ quá hạn > 3.000.000 VNĐ.
-        /// </summary>
         public static bool IsCustomerBlacklisted(int customerId, ApplicationDbContext context, out string reason)
         {
             reason = string.Empty;

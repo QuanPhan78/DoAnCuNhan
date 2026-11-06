@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using RentalSystem.Common;
+using RentalSystem.Database;
 using RentalSystem.Models;
 
 namespace RentalSystem.Models
@@ -16,7 +18,8 @@ namespace RentalSystem.Models
         /// <param name="forceReload">Nếu true, luôn xóa và nạp lại toàn bộ dữ liệu mẫu</param>
         public static void Initialize(ApplicationDbContext context, bool forceReload = false)
         {
-            context.Database.EnsureCreated();
+            DatabaseSchema.RequireRehearsal(context.Database.GetDbConnection(),
+                context.Database.CurrentTransaction?.GetDbTransaction());
 
             // Nếu đã có đủ dữ liệu chuẩn và không yêu cầu reload thì bỏ qua
             if (!forceReload && context.HopDongs.Count() >= 7 && context.ThietBis.Count() >= 20 && context.KyHanThanhToans.Count() >= 10)
@@ -33,6 +36,8 @@ namespace RentalSystem.Models
         /// </summary>
         public static void ClearData(ApplicationDbContext context)
         {
+            DatabaseSchema.RequireRehearsal(context.Database.GetDbConnection(),
+                context.Database.CurrentTransaction?.GetDbTransaction());
             if (context.Database.IsSqlServer())
             {
                 context.Database.ExecuteSqlRaw(@"
@@ -452,7 +457,7 @@ namespace RentalSystem.Models
                 TrangThai = 0, // Chờ duyệt
                 SoKyHan = 1,
                 TrangThaiThanhToan = 0,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 HanChotKy = now.AddHours(24),
@@ -473,7 +478,7 @@ namespace RentalSystem.Models
                 SoKyHan = 1,
                 TrangThaiThanhToan = 2, // Đã thanh toán đủ
                 NgayKy = now.AddDays(-5).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Hợp đồng thuê trả thẳng trọn gói 1 tháng. Đã thanh toán 100% tiền cọc và tiền thuê qua VNPay."
@@ -494,7 +499,7 @@ namespace RentalSystem.Models
                 SoKyHan = 3,
                 TrangThaiThanhToan = 1, // Còn nợ (còn kỳ 3)
                 NgayKy = now.AddDays(-60).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Hợp đồng thuê thiết bị doanh nghiệp thanh toán trả góp 3 đợt. Doanh nghiệp thanh toán đúng hạn."
@@ -514,7 +519,7 @@ namespace RentalSystem.Models
                 SoKyHan = 4,
                 TrangThaiThanhToan = 1,
                 NgayKy = now.AddDays(-110).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Hợp đồng phát sinh nhiều đợt quá hạn nợ. Khách hàng đang có kỳ hạn trễ hạn cần đôn đốc thu hồi."
@@ -534,7 +539,7 @@ namespace RentalSystem.Models
                 SoKyHan = 1,
                 TrangThaiThanhToan = 2,
                 NgayKy = now.AddDays(-25).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 YeuCauGiaHan = true,
@@ -559,7 +564,7 @@ namespace RentalSystem.Models
                 TrangThaiThanhToan = 1, // Còn nợ chi phí bồi thường
                 TienGiamTruBaoTri = 640000m,
                 NgayKy = now.AddDays(-20).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Hợp đồng phát sinh sự cố rơi vỡ laptop. Đã lập phiếu bảo trì tính phí bồi thường và tạm dừng tiền thuê 4 ngày."
@@ -580,7 +585,7 @@ namespace RentalSystem.Models
                 TrangThaiThanhToan = 2,
                 TrangThaiHoanCoc = 0, // Chưa hoàn cọc
                 NgayKy = now.AddDays(-35).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Khách hàng đã bàn giao trả lại đầy đủ máy tại kho. Đang chờ kế toán đối soát quyết toán hoàn cọc 8.000.000 VNĐ."
@@ -604,7 +609,7 @@ namespace RentalSystem.Models
                 NgayHoanCoc = now.AddDays(-4).Date,
                 GhiChuHoanCoc = "Đã hoàn trả 100% tiền cọc 15.000.000 VNĐ qua tài khoản MB của Công ty Phong Vũ.",
                 NgayKy = now.AddDays(-20).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Hợp đồng thuê ngắn hạn cho dự án hội chợ triển lãm. Đã nghiệm thu và hoàn tất quyết toán."
@@ -630,7 +635,7 @@ namespace RentalSystem.Models
                 TienCocThucHoan = 5000000m,
                 NgayHoanCoc = now.AddDays(-13).Date,
                 GhiChuHoanCoc = "Đã hoàn trả 5.000.000 VNĐ tiền cọc cho khách hàng Phan Minh Quân.",
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Hợp đồng hủy trước ngày nhận thiết bị, thực hiện hoàn trả tiền cọc theo quy định."
@@ -654,7 +659,7 @@ namespace RentalSystem.Models
                 NgayHoanCoc = now.AddMonths(-1).AddDays(26).Date,
                 GhiChuHoanCoc = "Đã hoàn trả 100% tiền cọc cho khách doanh nghiệp.",
                 NgayKy = now.AddMonths(-1).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Đơn thuê máy trọn gói cho chi nhánh Phong Vũ tháng trước."
@@ -678,7 +683,7 @@ namespace RentalSystem.Models
                 NgayHoanCoc = now.AddMonths(-2).AddDays(21).Date,
                 GhiChuHoanCoc = "Đã hoàn cọc đầy đủ cho khách.",
                 NgayKy = now.AddMonths(-2).Date,
-                AnhCMND = "/uploads/cmnd/cmnd_default.png",
+                AnhCCCD_Truoc = "/uploads/cmnd/cmnd_default.png",
                 ChuKyKhachHang = "/uploads/signatures/kh_sig.png",
                 ChuKyNhanVien = "/uploads/signatures/nv_sig.png",
                 GhiChu = "Đơn thuê bộ PC Dell văn phòng 2 tháng trước đã kết thúc trọn vẹn."

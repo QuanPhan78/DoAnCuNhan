@@ -16,3 +16,12 @@
 Thông tin/
 Thng tin/
 ChallengerTests/
+/RentalSystem/wwwroot/uploads/cmnd/
+/RentalSystem/wwwroot/uploads/signatures/
+
+# Generated demo databases' snapshots, browser profiles and portable tools
+/outputs/demo/
+/outputs/demo-check/
+/outputs/database-cutover/
+/tools/demo/__pycache__/
+/tools/database/__pycache__/

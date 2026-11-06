@@ -4,14 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using RentalSystem.Database;
 using RentalSystem.Models;
 
 namespace RentalSystem.Areas.Admin.Controllers
@@ -100,10 +103,10 @@ namespace RentalSystem.Areas.Admin.Controllers
                         if (conn.State != System.Data.ConnectionState.Open)
                             await conn.OpenAsync();
 
-                        string? backupDir = null;
-                        using (var cmd = conn.CreateCommand())
+                        string? backupDir = ConfiguredBackupDirectory();
+                        if (backupDir == null)
                         {
-
+                            using var cmd = conn.CreateCommand();
                             cmd.CommandText = "SELECT CAST(SERVERPROPERTY('InstanceDefaultBackupPath') AS NVARCHAR(512))";
                             var result = await cmd.ExecuteScalarAsync();
                             if (result != null && result != DBNull.Value)
@@ -118,8 +121,13 @@ namespace RentalSystem.Areas.Admin.Controllers
                         }
 
                         var fullBakPath = Path.Combine(backupDir, bakFileName);
-                        var sql = $"BACKUP DATABASE [{dbName}] TO DISK = '{fullBakPath}' WITH FORMAT, INIT;";
-                        await _context.Database.ExecuteSqlRawAsync(sql);
+                        using (var backupCommand = conn.CreateCommand())
+                        {
+                            backupCommand.CommandText = $"BACKUP DATABASE [{dbName.Replace("]", "]]")}] TO DISK = @path WITH COPY_ONLY, CHECKSUM, INIT;";
+                            backupCommand.CommandTimeout = 300;
+                            backupCommand.Parameters.Add(new SqlParameter("@path", fullBakPath));
+                            await backupCommand.ExecuteNonQueryAsync();
+                        }
 
                         if (System.IO.File.Exists(fullBakPath))
                         {
@@ -213,7 +221,27 @@ namespace RentalSystem.Areas.Admin.Controllers
                         ReferenceHandler = ReferenceHandler.IgnoreCycles
                     };
 
-                    var payload = await JsonSerializer.DeserializeAsync<DatabaseBackupPayload>(stream, options);
+                    var backup = await JsonNode.ParseAsync(stream,
+                        new JsonNodeOptions { PropertyNameCaseInsensitive = true });
+                    if (backup is JsonObject root && root["HopDongs"] is JsonArray contracts)
+                    {
+                        foreach (var contract in contracts.OfType<JsonObject>())
+                        {
+                            var front = contract["AnhCCCD_Truoc"];
+                            bool missingFront = front == null ||
+                                (front is JsonValue value && value.TryGetValue<string>(out var path) &&
+                                    string.IsNullOrWhiteSpace(path));
+
+                            if (missingFront && contract["AnhCMND"] is JsonValue legacy &&
+                                legacy.TryGetValue<string>(out var legacyPath) &&
+                                !string.IsNullOrWhiteSpace(legacyPath))
+                            {
+                                contract["AnhCCCD_Truoc"] = legacyPath;
+                            }
+                        }
+                    }
+
+                    var payload = backup?.Deserialize<DatabaseBackupPayload>(options);
 
                     if (payload == null)
                     {
@@ -226,29 +254,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                 }
                 else if (ext == ".bak")
                 {
-                    var dbName = _context.Database.GetDbConnection().Database ?? "RentalSystemDB";
-                    var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.bak");
-
-                    using (var fs = new FileStream(tempPath, FileMode.Create))
-                    {
-                        await backupFile.CopyToAsync(fs);
-                    }
-
-                    try
-                    {
-                        var sql = $"ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; " +
-                                  $"RESTORE DATABASE [{dbName}] FROM DISK = '{tempPath}' WITH REPLACE; " +
-                                  $"ALTER DATABASE [{dbName}] SET MULTI_USER;";
-                        await _context.Database.ExecuteSqlRawAsync(sql);
-                        TempData["Success"] = "Khôi phục cơ sở dữ liệu thành công từ tệp .bak!";
-                    }
-                    finally
-                    {
-                        if (System.IO.File.Exists(tempPath))
-                        {
-                            try { System.IO.File.Delete(tempPath); } catch { }
-                        }
-                    }
+                    await RestoreNativeBackupAsync(backupFile);
+                    TempData["Success"] = "Khôi phục cơ sở dữ liệu thành công từ tệp .bak!";
                 }
                 else
                 {
@@ -261,6 +268,147 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private string? ConfiguredBackupDirectory()
+        {
+            string? setting = _config["Database:BackupDirectory"];
+            if (string.IsNullOrWhiteSpace(setting)) return null;
+            string path = Path.GetFullPath(setting, _env.ContentRootPath);
+            if (!Directory.Exists(path)) throw new DirectoryNotFoundException(path);
+            return path;
+        }
+
+        private async Task RestoreNativeBackupAsync(IFormFile backupFile)
+        {
+            var connectionString = new SqlConnectionStringBuilder(_context.Database.GetConnectionString())
+            {
+                InitialCatalog = "master"
+            };
+            string databaseName = _context.Database.GetDbConnection().Database;
+            if (string.IsNullOrWhiteSpace(databaseName))
+                throw new InvalidOperationException("Chưa xác định cơ sở dữ liệu cần khôi phục.");
+
+            string databaseIdentifier = "[" + databaseName.Replace("]", "]]") + "]";
+            await using var connection = new SqlConnection(connectionString.ConnectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandTimeout = 300;
+            command.CommandText = $"""
+                SELECT COUNT(*) FROM {databaseIdentifier}.sys.extended_properties
+                WHERE class = 0 AND name = N'RentalSystem.Rehearsal' AND TRY_CONVERT(int, value) = 1;
+                """;
+            bool wasRehearsal = await command.ExecuteScalarAsync() is 1;
+            string? backupDirectory = ConfiguredBackupDirectory();
+            if (backupDirectory == null)
+            {
+                command.CommandText = "SELECT CAST(SERVERPROPERTY('InstanceDefaultBackupPath') AS nvarchar(512))";
+                backupDirectory = await command.ExecuteScalarAsync() as string;
+            }
+            if (string.IsNullOrEmpty(backupDirectory) || !Directory.Exists(backupDirectory))
+                backupDirectory = Path.GetTempPath();
+
+            string tempPath = Path.Combine(backupDirectory, $"RentalSystemRestore_{Guid.NewGuid():N}.bak");
+            try
+            {
+                await using (var stream = new FileStream(tempPath, FileMode.CreateNew))
+                {
+                    await backupFile.CopyToAsync(stream);
+                }
+
+                // Map the backup's logical files onto this database's own files.
+                // A legacy backup restored to V2 must never target the legacy MDF/LDF.
+                command.CommandText = """
+                    SELECT CASE type WHEN 0 THEN 'D' ELSE 'L' END, physical_name
+                    FROM sys.master_files
+                    WHERE database_id = DB_ID(@databaseName) AND type IN (0, 1)
+                    ORDER BY file_id;
+                    """;
+                command.Parameters.AddWithValue("@databaseName", databaseName);
+                var targetFiles = new Dictionary<string, Queue<string>>();
+                await using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        string type = reader.GetString(0);
+                        if (!targetFiles.TryGetValue(type, out var paths))
+                            targetFiles[type] = paths = new Queue<string>();
+                        paths.Enqueue(reader.GetString(1));
+                    }
+                }
+                command.Parameters.Clear();
+                command.CommandText = "RESTORE FILELISTONLY FROM DISK = @backupPath;";
+                command.Parameters.AddWithValue("@backupPath", tempPath);
+                var sourceFiles = new List<(string Name, string Type, long Id)>();
+                await using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                        sourceFiles.Add((reader.GetString(reader.GetOrdinal("LogicalName")),
+                            reader.GetString(reader.GetOrdinal("Type")).Trim(),
+                            Convert.ToInt64(reader["FileID"])));
+                }
+                var moves = new List<string>();
+                foreach (var file in sourceFiles.OrderBy(f => f.Id))
+                {
+                    if (!targetFiles.TryGetValue(file.Type, out var paths) || !paths.TryDequeue(out var path))
+                        throw new InvalidOperationException("Số lượng tệp dữ liệu/log trong bản sao lưu không khớp cơ sở dữ liệu đích.");
+                    moves.Add($"MOVE N'{file.Name.Replace("'", "''")}' TO N'{path.Replace("'", "''")}'");
+                }
+                if (moves.Count == 0 || targetFiles.Values.Any(paths => paths.Count > 0))
+                    throw new InvalidOperationException("Số lượng tệp dữ liệu/log trong bản sao lưu không khớp cơ sở dữ liệu đích.");
+
+                command.Parameters.Clear();
+                command.CommandText = $"ALTER DATABASE {databaseIdentifier} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;";
+                await command.ExecuteNonQueryAsync();
+                try
+                {
+                    command.CommandText = $"RESTORE DATABASE {databaseIdentifier} FROM DISK = @backupPath WITH REPLACE, {string.Join(", ", moves)};";
+                    command.Parameters.AddWithValue("@backupPath", tempPath);
+                    await command.ExecuteNonQueryAsync();
+                    command.Parameters.Clear();
+                    command.CommandText = $"ALTER DATABASE {databaseIdentifier} SET READ_WRITE;";
+                    await command.ExecuteNonQueryAsync();
+
+                    await connection.ChangeDatabaseAsync(databaseName);
+                    try
+                    {
+                        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync();
+                        command.Transaction = transaction;
+                        command.CommandText = DatabaseSchema.ReadSql("UpgradeContractIdentityImages.sql");
+                        await command.ExecuteNonQueryAsync();
+                        await DatabaseSchema.VerifyModelAsync(_context.Model, connection, transaction);
+                        command.CommandText = DatabaseSchema.ReadSql("RegisterExisting001.sql");
+                        await command.ExecuteNonQueryAsync();
+                        command.CommandText = """
+                            IF EXISTS (SELECT 1 FROM sys.extended_properties WHERE class = 0 AND name = N'RentalSystem.Rehearsal')
+                                EXEC sys.sp_dropextendedproperty @name = N'RentalSystem.Rehearsal';
+                            IF @wasRehearsal = 1
+                                EXEC sys.sp_addextendedproperty @name = N'RentalSystem.Rehearsal', @value = 1;
+                            """;
+                        command.Parameters.AddWithValue("@wasRehearsal", wasRehearsal);
+                        await command.ExecuteNonQueryAsync();
+                        await transaction.CommitAsync();
+                    }
+                    catch (SqlException ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"Đã khôi phục tệp .bak nhưng chưa nâng cấp được các cột ảnh. " +
+                            $"Chạy UpgradeContractIdentityImages.sql trước khi sử dụng dữ liệu. {ex.Message}", ex);
+                    }
+                }
+                finally
+                {
+                    command.Transaction = null;
+                    command.Parameters.Clear();
+                    await connection.ChangeDatabaseAsync("master");
+                    command.CommandText = $"ALTER DATABASE {databaseIdentifier} SET MULTI_USER WITH ROLLBACK IMMEDIATE;";
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+            finally
+            {
+                try { System.IO.File.Delete(tempPath); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
         }
 
         // Khôi phục dữ liệu theo quan hệ các bảng

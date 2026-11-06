@@ -1,0 +1,24 @@
+[
+  {
+    "id": "F001",
+    "feedbackCode": "FB-2026-001",
+    "contractId": "C001",
+    "maintenanceId": "",
+    "content": "Thiết bị hoạt động rất tốt, tuy nhiên giao hàng hơi chậm một chút.",
+    "rating": 4,
+    "status": "Đã phản hồi",
+    "createdAt": "12/09/2026 10:00",
+    "response": "Cảm ơn quý khách đã góp ý. Chúng tôi sẽ cải thiện tốc độ giao hàng trong lần sau."
+  },
+  {
+    "id": "F002",
+    "feedbackCode": "FB-2026-002",
+    "contractId": "",
+    "maintenanceId": "M001",
+    "content": "Nhân viên bảo trì nhiệt tình, chuyên môn tốt.",
+    "rating": 5,
+    "status": "Đã ghi nhận",
+    "createdAt": "13/09/2026 15:30",
+    "response": ""
+  }
+]

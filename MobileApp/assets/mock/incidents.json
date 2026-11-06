@@ -1,0 +1,37 @@
+[
+  {
+    "id": "I001",
+    "code": "INC-2026-001",
+    "contractId": "C001",
+    "deviceId": "1",
+    "issueType": "Không lên nguồn",
+    "description": "Bật máy không thấy màn hình sáng, quạt không quay.",
+    "severity": "Nghiêm trọng",
+    "occurrenceTime": "05/09/2026 08:00",
+    "status": "Chờ xử lý",
+    "assignedStaff": "",
+    "createdAt": "05/09/2026 08:30",
+    "attachments": []
+  },
+  {
+    "id": "I002",
+    "code": "INC-2026-002",
+    "contractId": "C001",
+    "deviceId": "2",
+    "issueType": "Lỗi phần mềm",
+    "description": "Máy in không nhận lệnh in từ Windows 11.",
+    "severity": "Trung bình",
+    "occurrenceTime": "10/09/2026 14:00",
+    "status": "Đang xử lý",
+    "assignedStaff": "Trần Nhân Viên",
+    "createdAt": "10/09/2026 14:15",
+    "attachments": [
+      {
+        "id": "A001",
+        "localPath": "assets/images/placeholder.png",
+        "url": "",
+        "type": "image"
+      }
+    ]
+  }
+]

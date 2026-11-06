@@ -483,7 +483,6 @@ namespace RentalSystem.Areas.Admin.Controllers
                     NgayKy = null,
                     ChuKyKhachHang = "",
                     ChuKyNhanVien = "",
-                    AnhCMND = "",
                     TrangThaiThanhToan = 0,
                     GhiChu = GhiChu ?? "",
                     TongTien = totalMoney,
@@ -659,7 +658,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             if (status == 1) // Giao máy & Cho thuê -> Chuyển máy sang 1 (Đang cho thuê)
             {
                 // Kiểm tra chữ ký khách hàng và ảnh CCCD trước khi bàn giao máy
-                if (string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || (string.IsNullOrEmpty(hopDong.AnhCMND) && string.IsNullOrEmpty(hopDong.AnhCCCD_Truoc)))
+                if (string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || string.IsNullOrWhiteSpace(hopDong.AnhCCCD_Truoc))
                 {
                     TempData["Error"] = "CẢNH BÁO BẢO MẬT: Không thể giao máy khi hợp đồng chưa có chữ ký của khách hàng hoặc chưa có ảnh CCCD!";
                     return RedirectToAction(nameof(Details), new { id = id });

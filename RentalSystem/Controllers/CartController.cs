@@ -394,7 +394,6 @@ namespace RentalSystem.Controllers
                     NgayKy = null,
                     ChuKyKhachHang = "",
                     ChuKyNhanVien = "",
-                    AnhCMND = "",
                     TrangThaiThanhToan = 0,
                     GhiChu = ghiChu,
                     SoKyHan = 1,
@@ -659,6 +658,7 @@ namespace RentalSystem.Controllers
             }
 
             // Lưu ảnh CCCD mặt trước
+            bool usedLegacyFrontUpload = false;
             if (cmndTruocFile != null && cmndTruocFile.Length > 0)
             {
                 var (success, error, path) = await ValidateAndSaveImageAsync(cmndTruocFile, "cmnd", "cccd_front", hopDong.MaHopDong);
@@ -668,7 +668,6 @@ namespace RentalSystem.Controllers
                     return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
                 }
                 hopDong.AnhCCCD_Truoc = path;
-                hopDong.AnhCMND = path;
             }
             else if (cmndFile != null && cmndFile.Length > 0)
             {
@@ -679,7 +678,7 @@ namespace RentalSystem.Controllers
                     return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
                 }
                 hopDong.AnhCCCD_Truoc = path;
-                hopDong.AnhCMND = path;
+                usedLegacyFrontUpload = true;
             }
 
             // Lưu ảnh CCCD mặt sau
@@ -694,13 +693,13 @@ namespace RentalSystem.Controllers
                 hopDong.AnhCCCD_Sau = path;
             }
 
-            if (string.IsNullOrEmpty(hopDong.AnhCMND) && string.IsNullOrEmpty(hopDong.AnhCCCD_Truoc))
+            if (string.IsNullOrWhiteSpace(hopDong.AnhCCCD_Truoc))
             {
                 TempData["Error"] = "Vui lòng tải lên ảnh CCCD mặt trước!";
                 return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
             }
 
-            if (string.IsNullOrEmpty(hopDong.AnhCCCD_Sau) && cmndSauFile == null && cmndFile == null)
+            if (string.IsNullOrWhiteSpace(hopDong.AnhCCCD_Sau) && !usedLegacyFrontUpload)
             {
                 TempData["Error"] = "Vui lòng tải lên ảnh CCCD mặt sau!";
                 return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
@@ -766,7 +765,7 @@ namespace RentalSystem.Controllers
                 return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
             }
 
-            if (string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || (string.IsNullOrEmpty(hopDong.AnhCMND) && string.IsNullOrEmpty(hopDong.AnhCCCD_Truoc)))
+            if (string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || string.IsNullOrWhiteSpace(hopDong.AnhCCCD_Truoc))
             {
                 TempData["Error"] = "Vui lòng tải lên CCCD và Ký tên đầy đủ!";
                 return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });

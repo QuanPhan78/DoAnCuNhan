@@ -1,0 +1,41 @@
+[
+  {
+    "id": "M001",
+    "requestCode": "INC-2026-001",
+    "contractId": "C001",
+    "deviceId": "1",
+    "customer": "Nguyễn Khách Hàng",
+    "description": "Bật máy không thấy màn hình sáng, quạt không quay.",
+    "status": "Đang xử lý",
+    "assignedEmployee": "Trần Nhân Viên",
+    "createdAt": "05/09/2026 09:00",
+    "completedAt": "",
+    "result": "",
+    "notes": [
+      {
+        "time": "05/09/2026 09:15",
+        "content": "Đã tiếp nhận yêu cầu",
+        "author": "Trần Nhân Viên"
+      },
+      {
+        "time": "05/09/2026 10:00",
+        "content": "Kiểm tra thấy cháy nguồn, cần thay thế",
+        "author": "Trần Nhân Viên"
+      }
+    ]
+  },
+  {
+    "id": "M002",
+    "requestCode": "INC-2026-002",
+    "contractId": "C001",
+    "deviceId": "2",
+    "customer": "Nguyễn Khách Hàng",
+    "description": "Máy in không nhận lệnh in từ Windows 11.",
+    "status": "Chờ tiếp nhận",
+    "assignedEmployee": "",
+    "createdAt": "10/09/2026 14:30",
+    "completedAt": "",
+    "result": "",
+    "notes": []
+  }
+]

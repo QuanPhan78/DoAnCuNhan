@@ -248,7 +248,7 @@
             <div class="col-md-3">
                 <p class="text-muted small fw-bold mb-2">CCCD Mặt trước</p>
                 @{
-                    string? anhTruoc = !string.IsNullOrEmpty(Model.AnhCCCD_Truoc) ? Model.AnhCCCD_Truoc : Model.AnhCMND;
+                    string? anhTruoc = Model.AnhCCCD_Truoc;
                 }
                 @if (!string.IsNullOrEmpty(anhTruoc))
                 {

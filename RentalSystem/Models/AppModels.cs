@@ -103,7 +103,6 @@ namespace RentalSystem.Models
         public int SoKyHan { get; set; } = 1; 
 
         // Thông tin ký số và ảnh xác minh
-        public string AnhCMND { get; set; }
         public string? AnhCCCD_Truoc { get; set; }
         public string? AnhCCCD_Sau { get; set; }
         public string ChuKyKhachHang { get; set; }

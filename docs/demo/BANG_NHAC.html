@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bảng nhắc demo RentalSystem — 11 phút 30 giây</title>
+<style>
+  @page { size: A4 landscape; margin: 9mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e8edf3; color: #14263b; font: 12px/1.35 Arial,sans-serif; }
+  main { width: 279mm; min-height: 190mm; margin: 16px auto; padding: 8mm; background: white; }
+  header { display:flex; align-items: baseline; justify-content:space-between; border-bottom:3px solid #17395a; padding-bottom:7px; }
+  h1 { font-size:23px; margin:0; letter-spacing:-.4px; }
+  h2 { font-size:13px; margin:0 0 5px; }
+  .tag { font-weight:700; color:#315674; }
+  .cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:10px 0; }
+  .card { background:#f1f5f9; padding:8px 10px; border-left:3px solid #91a9bf; }
+  .card p { margin:3px 0; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; background:#17395a; color:white; padding:7px 8px; }
+  td { border-bottom:1px solid #d6e0e9; padding:6px 8px; vertical-align:top; }
+  tbody tr:nth-child(even) { background:#f6f8fb; }
+  td:first-child { white-space:nowrap; font-weight:bold; width:97px; }
+  td:nth-child(2) { width:150px; }
+  td:last-child { width:248px; }
+  .transition { background:#fff8e9; }
+  .footer { display:grid; grid-template-columns:1.3fr 1fr; gap:12px; margin-top:10px; }
+  .box { border:1px solid #b9c9d7; padding:8px 10px; }
+  .box p { margin:3px 0; }
+  .write { display:inline-block; min-width:112px; border-bottom:1px dotted #17395a; height:16px; }
+  .note { margin:7px 0 0; color:#44566a; font-size:11px; }
+  @media print {
+    body { background:white; font-size:11.5px; line-height:1.3; }
+    main { margin:0; width:auto; min-height:0; padding:0; }
+    td { padding:5px 8px; }
+    .cards { margin:8px 0; }
+    .footer { margin-top:8px; }
+    .note { font-size:10px; }
+  }
+</style>
+<main>
+  <header><h1>RENTALSYSTEM · BẢNG NHẮC DEMO</h1><span class="tag">1 người · Web + Android thật · 11:30 + đệm 0:30</span></header>
+  <section class="cards">
+    <div class="card"><h2>TÀI KHOẢN · Demo@123</h2><p>Mobile: <b>customer@demo.invalid</b></p><p>Web: <b>sale / tech / admin</b>@demo.invalid</p><p>Ba hồ sơ trình duyệt riêng; USB đã chiếu.</p></div>
+    <div class="card"><h2>DỮ LIỆU CHÍNH</h2><p>Sản phẩm <b>SP-0001</b> · Laptop Demo Dell</p><p>1 máy · Theo ngày · D → D+6 = 7 ngày lịch</p><p><b>1.190.000đ</b> · Đã thu cọc đơn mới <b>0đ</b></p></div>
+    <div class="card"><h2>MÃ CẦN GHI KHI THAO TÁC</h2><p>Đơn vừa tạo: <span class="write"></span></p><p>Phiếu sự cố mới: <span class="write"></span></p><p>HĐ báo lỗi <b>HD-0001 / DEMO-LAP-001</b></p></div>
+  </section>
+  <table>
+    <thead><tr><th>Mốc giờ</th><th>Cửa sổ</th><th>Thao tác chính</th><th>Điều cần nói / đối chiếu</th></tr></thead>
+    <tbody>
+      <tr><td>0:00–0:40</td><td>Mobile + Web</td><td>Giới thiệu khách dùng Mobile, nhân viên dùng Web.</td><td>“Em đối chiếu dữ liệu giữa hai nền tảng.”</td></tr>
+      <tr><td>0:40–2:30</td><td>Mobile · Khách</td><td>Thiết bị → Laptop Demo Dell → Thuê ngay → 1 máy, D đến D+6 → xác nhận <b>1.190.000đ</b>. Ghi mã đơn.</td><td>Địa chỉ: Phòng demo, 123 Đường Minh Họa, TP.HCM. Chưa thu cọc.</td></tr>
+      <tr><td>2:30–4:00</td><td>Web · Kinh doanh</td><td>Hợp đồng → tải lại → mở đúng mã đơn vừa tạo.</td><td>Chỉ mã đơn, Khách hàng Demo An, thiết bị, ngày, tiền; trạng thái chờ duyệt.</td></tr>
+      <tr class="transition"><td>4:00–5:00</td><td>Web · Kinh doanh</td><td>Mở <b>HD-0001</b>, serial <b>DEMO-LAP-001</b>; chỉ chữ ký và biên bản mã 1.</td><td><b>“Em chuyển sang hợp đồng khác đã bàn giao, chuẩn bị sẵn hồ sơ giả lập.”</b></td></tr>
+      <tr><td>5:00–6:30</td><td>Mobile → Web Admin</td><td>Vào Hợp đồng tải danh sách → Yêu cầu &amp; Sự cố → + → HD-0001 → DEMO-LAP-001 → Mất kết nối → gửi. Ghi mã phiếu.</td><td>Mô tả: <b>Máy không kết nối Wi-Fi</b>. Web tải lại, kiểm tra đúng hợp đồng/serial.</td></tr>
+      <tr><td>6:30–8:30</td><td>Web · Admin → Kỹ thuật</td><td>Admin phân công <b>Kỹ thuật Demo</b>, trạng thái 1, lưu. KTV mở đúng phiếu: trạng thái 2, lưu → trạng thái 3, nhập kết quả, lưu.</td><td>“Đã cấu hình lại kết nối, kiểm tra hoạt động ổn định.” Phí <b>0đ</b>; không bật giảm trừ/thu phí.</td></tr>
+      <tr><td>8:30–9:30</td><td>Mobile · Khách</td><td>Tải lại phiếu, xem kết quả → Phản hồi → tạo → chủ đề <b>Bảo trì</b> → nhập đúng <b>SC-…</b> → 5 sao → gửi.</td><td>“Hỗ trợ nhanh, máy hoạt động ổn định.” Đừng giữ chủ đề “Chung”.</td></tr>
+      <tr><td>9:30–10:45</td><td>Web · Admin</td><td>Thống kê → khoảng tùy chỉnh từ D−60 đến D theo manifest → doanh thu/công nợ → Xuất Excel.</td><td>HD-0004 có công nợ quá hạn. Chỉ số liệu đang hiển thị, không đọc số nhớ sẵn.</td></tr>
+      <tr><td>10:45–11:30</td><td>Web · Admin</td><td>CSDL → xác nhận <b>RentalSystemDemoDB</b> → tải JSON → kết thúc.</td><td>“Tiếp nhận đa nền tảng, theo dõi bảo trì, tổng hợp quản lý.”</td></tr>
+    </tbody>
+  </table>
+  <section class="footer">
+    <div class="box"><h2>CHUYỂN DỰ PHÒNG · TỐI ĐA 20 GIÂY KHẮC PHỤC</h2><p>Đơn chờ duyệt: <b>HD-0003</b>. Phiếu sửa xong: <b>SC-0001</b> thuộc <b>HD-0002</b>.</p><p>“Em chuyển sang dữ liệu dự phòng / bản quay trước của bước này.”</p><p>Thiếu giờ: rút đọc hồ sơ, mở Excel sẵn, sao lưu giới thiệu một câu; giữ hai lần đối chiếu Mobile–Web.</p></div>
+    <div class="box"><h2>TRƯỚC KHI BẮT ĐẦU</h2><p>☐ SQL + Web demo &nbsp; ☐ USB/chiếu &nbsp; ☐ Đăng nhập đủ vai trò</p><p>☐ Điện thoại tải hợp đồng &nbsp; ☐ Tắt thông báo &nbsp; ☐ Video mở được</p><p>Lượt tập: <span class="write"></span> &nbsp; Thời gian: <span class="write"></span></p></div>
+  </section>
+  <p class="note">In A4 ngang, tắt đầu/chân trang trình duyệt. Hồ sơ/chữ ký và tài khoản đều giả lập. D là ngày đặt thuê; kỳ báo cáo dùng ngày chuẩn bị ghi trong manifest.json. Đọc kịch bản đầy đủ tại docs/demo/KICH_BAN.md.</p>
+</main>
+</html>

@@ -1,12 +1,20 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using RentalSystem.Database;
 using RentalSystem.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddHostedService<RentalSystem.Services.ReservationCleanupService>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+if (builder.Configuration.GetValue("Database:EnableBackgroundJobs", true))
+{
+    builder.Services.AddHostedService<RentalSystem.Services.ReservationCleanupService>();
+}
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<RentalSystem.Services.IVnPayService, RentalSystem.Services.VnPayService>();
 builder.Services.AddSession(options => { options.IdleTimeout = System.TimeSpan.FromMinutes(60); options.Cookie.HttpOnly = true; options.Cookie.IsEssential = true; });
@@ -46,11 +54,15 @@ app.UseHttpsRedirection();
 app.UseStaticFiles(); 
 app.UseRouting();
 
+app.UseCors("AllowAll");
+
 // Middleware Rate Limiting (sau UseRouting và trước UseAuthorization)
 app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "areas",
@@ -60,19 +72,10 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Tự động gọi DbInitializer để đổ dữ liệu mẫu khi web chạy
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        DbInitializer.Initialize(context);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("Lỗi khi đổ dữ liệu mẫu: " + ex.Message);
-    }
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DatabaseSchema.VerifyAsync(context.Database.GetDbConnection());
 }
 
 app.Run();
