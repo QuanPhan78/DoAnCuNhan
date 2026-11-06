@@ -1,15 +1,30 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository;
+  StreamSubscription<void>? _sessionExpiry;
 
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
 
-  AuthProvider(this._repository);
+  AuthProvider(this._repository, {Stream<void>? sessionExpired}) {
+    _sessionExpiry = sessionExpired?.listen((_) {
+      _currentUser = null;
+      _errorMessage = 'Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.';
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _sessionExpiry?.cancel();
+    super.dispose();
+  }
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -54,7 +69,7 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
     String? address,
-    String? cccd,
+    required String cccd,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -109,6 +124,18 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<String?> changePassword(String current, String next, String confirmation) async {
+    final user = _currentUser;
+    if (user == null) return 'Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.';
+
+    try {
+      await _repository.changePassword(user.id, current, next, confirmation);
+      return null;
+    } catch (e) {
+      return e.toString().replaceFirst('Exception: ', '');
     }
   }
 

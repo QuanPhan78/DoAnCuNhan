@@ -60,9 +60,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case Role.staff:
         return [
           HomeScreen(onSelectTab: handleSelectTab),
-          TasksScreen(initialFilter: _staffTaskFilter),
+          TasksScreen(initialFilter: _staffTaskFilter, isActive: _currentIndex == 1),
           const MaintenanceListScreen(),
-          const NotificationsScreen(),
+          NotificationsScreen(isActive: _currentIndex == 3),
           const AccountScreen(),
         ];
       case Role.admin:

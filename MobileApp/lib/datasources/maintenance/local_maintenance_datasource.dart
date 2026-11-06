@@ -22,8 +22,7 @@ class LocalMaintenanceDataSource implements MaintenanceDataSource {
     if (role == Role.customer) {
       return _inMemoryData!.where((m) => m.customer != null && m.customer!.contains('Nguyễn Khách Hàng')).toList(); // Mock filtering
     } else if (role == Role.staff) {
-      // Return all or assigned to this staff, for mock let's return all so they can take unassigned ones
-      return _inMemoryData!;
+      return _inMemoryData!.where((m) => m.assignedStaffId == userId).toList();
     }
     return _inMemoryData!;
   }

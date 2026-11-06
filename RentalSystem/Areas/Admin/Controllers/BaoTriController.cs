@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Services;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
@@ -19,6 +20,11 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
+        private bool CanAccessTicket(PhieuBaoTri ticket) =>
+            !User.IsInRole("KyThuat") ||
+            (int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId) &&
+             ticket.MaKyThuatVien == userId);
+
         // Danh sách toàn bộ phiếu yêu cầu bảo trì, sự cố thiết bị được gửi từ khách hàng hoặc nội bộ kho.
         public async Task<IActionResult> Index(int? trangThai = null, string filter = null)
         {
@@ -27,6 +33,15 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .Include(p => p.ThietBi).ThenInclude(t => t.SanPham)
                 .Include(p => p.KyThuatVien)
                 .AsQueryable();
+
+            var visibleTickets = _context.PhieuBaoTris.AsQueryable();
+            if (User.IsInRole("KyThuat") && !User.IsInRole("Admin"))
+            {
+                int? userId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var technicianId)
+                    ? technicianId : null;
+                query = query.Where(p => userId.HasValue && p.MaKyThuatVien == userId);
+                visibleTickets = visibleTickets.Where(p => userId.HasValue && p.MaKyThuatVien == userId);
+            }
 
             if (trangThai.HasValue)
             {
@@ -45,7 +60,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 query = query.Where(p => p.TrangThai < 3 && p.HanHoanThanh.HasValue && p.HanHoanThanh.Value >= now && p.HanHoanThanh.Value <= warningThreshold);
             }
 
-            var allTickets = await _context.PhieuBaoTris.ToListAsync();
+            var allTickets = await visibleTickets.ToListAsync();
             var nowTime = DateTime.Now;
             ViewBag.CountAll = allTickets.Count;
             ViewBag.CountNew = allTickets.Count(p => p.TrangThai == 1);
@@ -90,6 +105,13 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Create));
             }
 
+            if (maKtv.HasValue && !await MaintenanceAssignment.IsActiveTechnicianAsync(_context, maKtv.Value))
+            {
+                TempData["Error"] = "Hãy chọn kỹ thuật viên đang hoạt động.";
+                return RedirectToAction(nameof(Create));
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             var thietBi = await _context.ThietBis.Include(t => t.SanPham).FirstOrDefaultAsync(t => t.MaThietBi == maThietBi);
             if (thietBi == null) return NotFound();
 
@@ -130,7 +152,9 @@ namespace RentalSystem.Areas.Admin.Controllers
                 MaNguoiThucHien = adminId,
                 GhiChu = $"Bảo dưỡng nội bộ kho. SLA hoàn thành: {deadline:dd/MM/yyyy HH:mm}"
             });
+            await MaintenanceAssignment.SyncAsync(_context, phieu, adminId);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             TempData["Success"] = $"Đã tạo phiếu bảo dưỡng kho #{phieu.MaPhieu} cho thiết bị {thietBi.SoSerial} thành công!";
             return RedirectToAction(nameof(Index));
@@ -145,7 +169,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .Include(p => p.KyThuatVien)
                 .FirstOrDefaultAsync(p => p.MaPhieu == id);
 
-            if (phieu == null) return NotFound();
+            if (phieu == null || !CanAccessTicket(phieu)) return NotFound();
 
             // Nạp danh sách nhân viên có vai trò Kỹ Thuật (KyThuat) để phân công phụ trách
             ViewData["MaKyThuatVien"] = new SelectList(
@@ -172,7 +196,12 @@ namespace RentalSystem.Areas.Admin.Controllers
             return View(phieu);
         }
 
-        // Cập nhật tiến độ sửa chữa: 1=Mới tiếp nhận, 2=Đang sửa chữa, 3=Đã sửa xong, 4=Hỏng không thể khắc phục, 5=Đã nghiệm thu.
+        // Cập nhật tiến độ sửa chữa:
+        // 1=Mới tiếp nhận,
+        // 2=Đang sửa chữa,
+        // 3=Đã sửa xong,
+        // 4=Hỏng không thể khắc phục,
+        // 5=Đã nghiệm thu.
         [Authorize(Roles = "Admin,KyThuat")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -205,16 +234,38 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Details), new { id = id });
             }
 
+            await using var transaction = await MaintenanceAssignment.BeginUpdateAsync(_context, id);
             var phieu = await _context.PhieuBaoTris
                 .Include(p => p.HopDong)
                 .Include(p => p.ThietBi)
                 .FirstOrDefaultAsync(p => p.MaPhieu == id);
-            if (phieu == null) return NotFound();
+            if (phieu == null || !CanAccessTicket(phieu)) return NotFound();
+            if (User.IsInRole("KyThuat") && maKtv.HasValue && maKtv != phieu.MaKyThuatVien)
+                return Forbid();
 
             var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             int? adminId = (claim != null && int.TryParse(claim.Value, out int aId)) ? aId : null;
 
-            phieu.TrangThai = status;
+            if (phieu.TrangThai is 4 or 5 && status != phieu.TrangThai)
+            {
+                TempData["Error"] = "Phiếu đã đóng.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            if (status == 5 && phieu.TrangThai != 5 &&
+                (phieu.MaHopDong.HasValue || !User.IsInRole("Admin") || phieu.TrangThai != 3))
+            {
+                TempData["Error"] = "Khách hàng nghiệm thu phiếu thuê. Admin có thể đóng phiếu nội bộ đã sửa xong.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            if (maKtv.HasValue && maKtv != phieu.MaKyThuatVien &&
+                !await MaintenanceAssignment.IsActiveTechnicianAsync(_context, maKtv.Value))
+            {
+                TempData["Error"] = "Hãy chọn kỹ thuật viên đang hoạt động.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            bool statusChanged = phieu.TrangThai != status;
+            await MaintenanceAssignment.ApplyStatusAsync(_context, phieu, status);
             phieu.GhiChuSuaChua = ghiChu ?? "";
             phieu.PhiDenBu = phiDenBu;
             
@@ -236,13 +287,11 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
 
             // Khi chuyển sang trạng thái 4: Hỏng không thể khắc phục / Thanh lý
-            if (status == 4)
+            if (statusChanged && status == 4)
             {
                 var tb = await _context.ThietBis.FindAsync(phieu.MaThietBi);
                 if (tb != null)
                 {
-                    tb.TrangThai = 4; // 4: Hỏng không thể khắc phục / Thanh lý
-                    tb.TinhTrangMay = $"Hỏng không thể khắc phục (Thanh lý) - Phiếu #{phieu.MaPhieu}";
                     _context.LichSuThietBis.Add(new LichSuThietBi
                     {
                         MaThietBi = tb.MaThietBi,
@@ -253,14 +302,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                     });
                 }
             }
-            else if (status == 2) // Bắt đầu sửa chữa
+            else if (statusChanged && status == 2) // Bắt đầu sửa chữa
             {
-                phieu.NgayBatDauBaoTri ??= DateTime.Now;
-                var tb = await _context.ThietBis.FindAsync(phieu.MaThietBi);
-                if (tb != null && tb.TrangThai != 4)
-                {
-                    tb.TrangThai = 2; // Đang bảo dưỡng / Sửa chữa
-                }
                 _context.LichSuThietBis.Add(new LichSuThietBi
                 {
                     MaThietBi = phieu.MaThietBi,
@@ -272,8 +315,6 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
             else if (status == 3) // Sửa xong
             {
-                phieu.NgayHoanThanh = DateTime.Now;
-                phieu.NgayKetThucBaoTri ??= DateTime.Now;
 
                 // Tạm dừng tính tiền thuê trong thời gian thiết bị bảo trì
                 if (tamDungTinhTien || phieu.TamDungTinhTien)
@@ -342,7 +383,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     }
                 }
 
-                _context.LichSuThietBis.Add(new LichSuThietBi
+                if (statusChanged) _context.LichSuThietBis.Add(new LichSuThietBi
                 {
                     MaThietBi = phieu.MaThietBi,
                     HanhDong = $"Hoàn thành sửa chữa phiếu #{phieu.MaPhieu} (TrangThai = 3). Chi phí: {phieu.ChiPhiSuaChua:N0}đ, Bồi thường: {phieu.PhiDenBu:N0}đ",
@@ -389,7 +430,9 @@ namespace RentalSystem.Areas.Admin.Controllers
                 }
             }
 
+            await MaintenanceAssignment.SyncAsync(_context, phieu, adminId);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = "Cập nhật tiến độ bảo trì thành công!";
             return RedirectToAction(nameof(Details), new { id = id });
         }
@@ -406,11 +449,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Details), new { id = id });
             }
 
+            await using var transaction = await MaintenanceAssignment.BeginUpdateAsync(_context, id);
             var phieu = await _context.PhieuBaoTris
                 .Include(p => p.HopDong).ThenInclude(h => h.KyHanThanhToans)
                 .FirstOrDefaultAsync(p => p.MaPhieu == id);
 
-            if (phieu == null) return NotFound();
+            if (phieu == null || !CanAccessTicket(phieu)) return NotFound();
 
             if (!phieu.MaHopDong.HasValue || phieu.HopDong == null)
             {
@@ -478,6 +522,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             });
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = $"Đã áp dụng giảm trừ {deduction:N0}đ cho {soNgayTamDung} ngày bảo trì thành công!";
             return RedirectToAction(nameof(Details), new { id = id });
         }

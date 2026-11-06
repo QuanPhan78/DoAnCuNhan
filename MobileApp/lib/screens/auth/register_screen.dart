@@ -85,6 +85,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (!RegExp(r'^[0-9]{12}$').hasMatch(cccd)) {
+      _showError('Số CCCD phải có đúng 12 chữ số.');
+      return;
+    }
+
     if (password.isEmpty || password.length < 6) {
       _showError('Mật khẩu phải từ 6 ký tự trở lên');
       return;
@@ -102,7 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: email,
       password: password,
       address: address.isNotEmpty ? address : null,
-      cccd: cccd.isNotEmpty ? cccd : null,
+      cccd: cccd,
     );
 
     if (!mounted) return;
@@ -162,14 +167,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Tạo tài khoản mới',
+                  'Đăng ký',
                   style: AppTextStyles.h1.copyWith(fontSize: 26),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Đăng ký tài khoản khách hàng để thuê thiết bị trực tuyến',
-                  style: AppTextStyles.bodySecondary,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -177,7 +176,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Form fields
                 CustomTextField(
                   label: 'Họ và tên *',
-                  hint: 'Nguyễn Văn A',
                   prefixIcon: Icons.badge_outlined,
                   controller: _nameController,
                   enabled: !isLoading,
@@ -187,7 +185,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 CustomTextField(
                   label: 'Số điện thoại *',
-                  hint: '0901234567',
                   prefixIcon: Icons.phone_outlined,
                   controller: _phoneController,
                   enabled: !isLoading,
@@ -197,7 +194,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 CustomTextField(
                   label: 'Email *',
-                  hint: 'example@gmail.com',
                   prefixIcon: Icons.email_outlined,
                   controller: _emailController,
                   enabled: !isLoading,
@@ -206,8 +202,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
 
                 CustomTextField(
-                  label: 'Số CCCD / CMND',
-                  hint: 'Nhập số căn cước công dân',
+                  label: 'Số CCCD *',
+                  hint: '12 chữ số',
                   prefixIcon: Icons.credit_card_outlined,
                   controller: _cccdController,
                   enabled: !isLoading,
@@ -217,7 +213,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 CustomTextField(
                   label: 'Địa chỉ',
-                  hint: 'Số nhà, đường, phường, quận/huyện',
                   prefixIcon: Icons.location_on_outlined,
                   controller: _addressController,
                   enabled: !isLoading,
@@ -247,7 +242,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 CustomTextField(
                   label: 'Nhập lại mật khẩu *',
-                  hint: 'Nhập lại mật khẩu vừa tạo',
                   prefixIcon: Icons.lock_outline_rounded,
                   controller: _confirmPasswordController,
                   enabled: !isLoading,

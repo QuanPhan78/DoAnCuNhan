@@ -22,57 +22,65 @@
 
                     <form asp-action="Profile" method="post">
                         @Html.AntiForgeryToken()
-                        <input type="hidden" asp-for="MaNguoiDung" />
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Họ và tên <span class="text-danger">*</span></label>
-                            <input asp-for="HoTen" class="form-control" required placeholder="Nhập họ và tên..." />
+                            <label for="HoTen" class="form-label fw-bold">Họ và tên <span class="text-danger">*</span></label>
+                            <input asp-for="HoTen" class="form-control" required />
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Số điện thoại <span class="text-danger">*</span></label>
-                                <input asp-for="SoDienThoai" class="form-control" required placeholder="Nhập số điện thoại..." />
+                                <label for="SoDienThoai" class="form-label fw-bold">Số điện thoại <span class="text-danger">*</span></label>
+                                <input asp-for="SoDienThoai" type="tel" class="form-control" required />
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Địa chỉ Email</label>
+                                <label for="Email" class="form-label fw-bold">Email</label>
                                 <input asp-for="Email" class="form-control bg-light" readonly />
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Số CCCD / CMND</label>
-                                <input asp-for="CCCD" class="form-control" placeholder="Nhập số CCCD..." />
+                                <label for="CCCD" class="form-label fw-bold">Số CCCD</label>
+                                <input asp-for="CCCD" class="form-control" inputmode="numeric" />
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Vai trò</label>
-                                <input type="text" class="form-control bg-light" value="@Model.VaiTro?.TenVaiTro" readonly />
+                                <label for="vaiTro" class="form-label fw-bold">Vai trò</label>
+                                <input id="vaiTro" type="text" class="form-control bg-light" value="@Model.VaiTro?.TenVaiTro" readonly />
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Địa chỉ liên hệ</label>
-                            <input asp-for="DiaChi" class="form-control" placeholder="Nhập địa chỉ..." />
-                        </div>
-
-                        <hr class="my-4" />
-                        <h5 class="fw-bold mb-3 text-secondary"><i class="fas fa-key me-2"></i>Đổi Mật Khẩu</h5>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Mật khẩu hiện tại</label>
-                            <input type="password" name="currentPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại nếu muốn đổi mật khẩu..." autocomplete="current-password" />
-                            <small class="text-muted">Bắt buộc phải nhập mật khẩu hiện tại khi thực hiện thay đổi mật khẩu.</small>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Mật khẩu mới</label>
-                            <input type="password" name="MatKhau" class="form-control" placeholder="Nhập mật khẩu mới (để trống nếu không đổi)..." autocomplete="new-password" />
+                            <label for="DiaChi" class="form-label fw-bold">Địa chỉ liên hệ</label>
+                            <input asp-for="DiaChi" class="form-control" />
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="/" class="btn btn-light">Quay lại</a>
-                            <button type="submit" class="btn btn-navy fw-bold px-4"><i class="fas fa-save me-1"></i> Lưu Thay Đổi</button>
+                            <button type="submit" class="btn btn-navy fw-bold px-4">Lưu hồ sơ</button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4" />
+                    <h5 class="fw-bold mb-3 text-secondary"><i class="fas fa-key me-2"></i>Đổi mật khẩu</h5>
+                    <form asp-action="DoiMatKhau" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label fw-bold">Mật khẩu hiện tại</label>
+                            <input type="password" id="currentPassword" name="currentPassword" class="form-control" autocomplete="current-password" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label fw-bold">Mật khẩu mới</label>
+                            <input type="password" id="newPassword" name="newPassword" class="form-control" autocomplete="new-password" required minlength="6" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confirmPassword" class="form-label fw-bold">Nhập lại mật khẩu mới</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" autocomplete="new-password" required minlength="6" />
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-navy fw-bold px-4">Đổi mật khẩu</button>
                         </div>
                     </form>
                 </div>

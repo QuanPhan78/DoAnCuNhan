@@ -27,32 +27,11 @@ class LocalContractDataSource implements ContractDataSource {
   }
 
   @override
-  Future<bool> updateContractStatus(String contractId, String newStatus) async {
-    await _initData();
-    final idx = _inMemoryData!.indexWhere((c) => c.id == contractId);
-    if (idx >= 0) {
-      final old = _inMemoryData![idx];
-      _inMemoryData![idx] = ContractModel(
-        id: old.id,
-        contractCode: old.contractCode,
-        customerId: old.customerId,
-        customerName: old.customerName,
-        deviceIds: old.deviceIds,
-        rentalStart: old.rentalStart,
-        rentalEnd: old.rentalEnd,
-        rentalType: old.rentalType,
-        status: newStatus,
-        totalAmount: old.totalAmount,
-        installationDetails: old.installationDetails,
-        extensionDetails: old.extensionDetails,
-      );
-      return true;
-    }
-    return false;
-  }
-
-  @override
-  Future<String> getContractHtml(String contractId, String userId, Role role) async {
-    return '<html><body><h1>Hợp đồng $contractId</h1></body></html>';
+  Future<ContractModel> getContract(String contractId, String userId, Role role) async {
+    final contracts = await getContracts(role, userId);
+    return contracts.firstWhere(
+      (contract) => contract.id == contractId,
+      orElse: () => throw Exception('Không tìm thấy hợp đồng.'),
+    );
   }
 }

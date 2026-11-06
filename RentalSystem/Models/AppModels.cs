@@ -108,7 +108,7 @@ namespace RentalSystem.Models
         public string ChuKyKhachHang { get; set; }
         public string ChuKyNhanVien { get; set; }
         public DateTime? NgayKy { get; set; }
-        public int TrangThaiThanhToan { get; set; } // 0: Chưa thanh toán, 1: Còn nợ, 2: Đã thanh toán đủ
+        public int TrangThaiThanhToan { get; set; } // 0: Chưa thanh toán, 1: Đã đặt cọc, 2: Còn nợ, 3: Đã tất toán
         public string GhiChu { get; set; }
 
         // Hoàn cọc và quyết toán
@@ -135,6 +135,7 @@ namespace RentalSystem.Models
         [Column(TypeName = "decimal(18,2)")] public decimal TienGiamTruBaoTri { get; set; } = 0;
         [Column(TypeName = "decimal(18,2)")] public decimal TienCocBaoDamMay { get; set; } = 0;
         [Column(TypeName = "decimal(18,2)")] public decimal TienThueTraTruoc { get; set; } = 0;
+        public bool YeuCauThanhToanLanDau { get; set; }
 
         public ICollection<KyHanThanhToan> KyHanThanhToans { get; set; }
         public ICollection<BienBanBanGiao>? BienBanBanGiaos { get; set; }
@@ -387,6 +388,8 @@ namespace RentalSystem.Models
         public int? MaPhieuBaoTri { get; set; }
         public PhieuBaoTri? PhieuBaoTri { get; set; }
 
+        public bool TuDongTuBaoTri { get; set; }
+
         // 0: Mới, 1: Đang thực hiện, 2: Hoàn thành, 3: Đã hủy
         public int TrangThai { get; set; } = 0;
 
@@ -468,6 +471,11 @@ namespace RentalSystem.Models
                 .HasForeignKey(y => y.MaNguoiDuyet)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PhanCongCongViec>()
+                .HasIndex(p => p.MaPhieuBaoTri, "UX_PhanCongCongViecs_PhieuBaoTriTuDong")
+                .IsUnique()
+                .HasFilter("[TuDongTuBaoTri] = 1 AND [MaPhieuBaoTri] IS NOT NULL");
 
             modelBuilder.Entity<PhanCongCongViec>()
                 .HasOne(p => p.NhanVien)

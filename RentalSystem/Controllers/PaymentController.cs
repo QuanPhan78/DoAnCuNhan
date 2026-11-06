@@ -58,6 +58,12 @@ namespace RentalSystem.Controllers
                 return Forbid();
             }
 
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+            {
+                TempData["Warning"] = "Hãy dùng thông tin chuyển khoản thanh toán lần đầu trên hợp đồng.";
+                return RedirectToAction("ContractDetail", "Cart", new { id = maHopDong });
+            }
+
             decimal amountToPay = 0;
             if (soTien.HasValue && soTien.Value > 0)
             {
@@ -216,11 +222,26 @@ namespace RentalSystem.Controllers
         // Xử lý ghi nhận thanh toán VNPay vào CSDL
         private async Task<(string rspCode, string message)> ProcessPaymentAsync(VnPaymentResponseModel response)
         {
+            await HopDongController.PaymentLock.WaitAsync();
+            try
+            {
+                return await RecordVnPayPaymentAsync(response);
+            }
+            finally
+            {
+                HopDongController.PaymentLock.Release();
+            }
+        }
+
+        private async Task<(string rspCode, string message)> RecordVnPayPaymentAsync(VnPaymentResponseModel response)
+        {
             // Kiểm tra tính hợp lệ cơ bản
             if (response.Amount <= 0)
             {
                 return ("04", "Invalid amount");
             }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
             // Kiểm tra giao dịch đã được ghi nhận trước đó hay chưa
             if (!string.IsNullOrEmpty(response.TransactionId))
@@ -243,6 +264,13 @@ namespace RentalSystem.Controllers
                 _logger.LogWarning("VNPay IPN: Contract #{ContractId} not found.", response.ContractId);
                 return ("01", "Order not found");
             }
+
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+                return ("01", "First payment requires bank verification");
+
+            if (response.InstallmentId is > 0 &&
+                hopDong.KyHanThanhToans?.Any(k => k.MaKyHan == response.InstallmentId && k.TrangThai != 3) != true)
+                return ("01", "Installment not found or cancelled");
 
             // Xác định loại phiếu thu (0: Thu thuê kỳ hạn, 1: Thu cọc)
             int loaiPhieu = 0;
@@ -292,7 +320,7 @@ namespace RentalSystem.Controllers
                 // Nếu thanh toán chung cho hợp đồng, trừ dần vào các kỳ hạn chưa trả
                 decimal remainingPaid = response.Amount;
                 var unpaidKyHans = hopDong.KyHanThanhToans?
-                    .Where(k => k.TrangThai != 1)
+                    .Where(k => k.TrangThai != 1 && k.TrangThai != 3)
                     .OrderBy(k => k.SoKyHan)
                     .ToList();
 
@@ -322,24 +350,10 @@ namespace RentalSystem.Controllers
                 }
             }
 
-            // Đồng bộ trạng thái thanh toán của hợp đồng
-            if (hopDong.KyHanThanhToans != null && hopDong.KyHanThanhToans.Any())
-            {
-                if (hopDong.KyHanThanhToans.All(k => k.TrangThai == 1))
-                {
-                    hopDong.TrangThaiThanhToan = 2; // Đã thanh toán đủ (hoặc 3 khi áp dụng 4 cấp)
-                }
-                else if (hopDong.KyHanThanhToans.Any(k => k.SoTienDaTra > 0) || hopDong.TienDaCoc > 0)
-                {
-                    hopDong.TrangThaiThanhToan = 1; // Còn nợ
-                }
-            }
-            else if (hopDong.TienDaCoc > 0)
-            {
-                hopDong.TrangThaiThanhToan = 1;
-            }
-
             await _context.SaveChangesAsync();
+            await HopDongController.SyncTrangThaiThanhToanHopDong(hopDong, _context);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             _logger.LogInformation("Successfully processed VNPay payment for Contract #{ContractId}, Amount: {Amount}, Receipt #{ReceiptId}", response.ContractId, response.Amount, phieuThu.MaPhieuThu);
 
             return ("00", "Confirm Success");
@@ -529,6 +543,18 @@ namespace RentalSystem.Controllers
                                 success = false,
                                 message = $"Contract #{maHopDong} not found"
                             }
+                        };
+                    }
+
+                    if (hd.YeuCauThanhToanLanDau &&
+                        (hd.TrangThai is 0 or 3 || Regex.IsMatch(rawContent, @"(?i)\b(?:HD|HĐ)[\s\-_:#]*[0-9]{1,10}\s+LD\b")))
+                    {
+                        _logger.LogInformation("First payment {Reference} for HD{ContractId} requires staff verification.",
+                            referenceCode, maHopDong);
+                        return new BankingExecutionResult
+                        {
+                            StatusCode = 200,
+                            ResponseData = new { success = true, requiresManualReview = true }
                         };
                     }
 

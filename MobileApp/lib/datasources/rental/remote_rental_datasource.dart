@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/rental_request_model.dart';
 import '../../models/rental_status.dart';
 import '../../services/api_config.dart';
@@ -14,30 +14,16 @@ class RemoteRentalDataSource implements RentalDataSource {
   @override
   Future<List<RentalRequestModel>> getRentals({String? userId}) async {
     try {
-      final url = Uri.parse('$baseUrl/contracts${userId != null ? '?userId=$userId' : ''}');
-      final response = await http.get(url);
+      final url = Uri.parse('$baseUrl/contracts');
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         return data.map((jsonItem) {
-          final statusCode = jsonItem['statusCode'] as int? ?? 0;
-          RentalStatus status;
-          switch (statusCode) {
-            case 0:
-              status = RentalStatus.pending;
-              break;
-            case 1:
-              status = RentalStatus.renting;
-              break;
-            case 2:
-              status = RentalStatus.completed;
-              break;
-            case 3:
-              status = RentalStatus.cancelled;
-              break;
-            default:
-              status = RentalStatus.pending;
-          }
+          final status = RentalStatus.fromApi(
+            (jsonItem['statusCode'] as num?)?.toInt(),
+            cancellationRequested: jsonItem['cancellationRequested'] == true,
+          );
 
           final deviceNames = (jsonItem['deviceIds'] as List<dynamic>?)
                   ?.map((e) => e.toString())
@@ -75,6 +61,7 @@ class RemoteRentalDataSource implements RentalDataSource {
             note: jsonItem['note'] ?? '',
             estimatedAmount: (jsonItem['totalAmount'] as num?)?.toDouble() ?? 0,
             status: status,
+            cancellationReason: jsonItem['cancellationReason'],
             createdAt: start,
           );
         }).toList();
@@ -87,63 +74,91 @@ class RemoteRentalDataSource implements RentalDataSource {
     }
   }
 
-  @override
-  Future<RentalRequestModel> createRental(RentalRequestModel request) async {
-    final url = Uri.parse('$baseUrl/contracts');
-    try {
-      final firstItem = request.items.isNotEmpty ? request.items.first : null;
-      final payload = {
-        'customerId': request.customerId,
-        'deviceId': firstItem?.deviceId ?? '1',
-        'quantity': firstItem?.quantity ?? 1,
-        'rentalType': request.rentalType,
-        'startDate': request.startDate.toIso8601String(),
-        'endDate': request.endDate.toIso8601String(),
-        'deliveryAddress': request.deliveryAddress,
-        'note': request.note,
-        'estimatedAmount': request.estimatedAmount,
-        'rentalPrice': firstItem?.rentalPrice,
-        'installmentCount': 1,
-        'items': request.items.map((i) => {
-          'deviceId': i.deviceId,
-          'deviceName': i.deviceName,
-          'quantity': i.quantity,
-          'rentalPrice': i.rentalPrice,
-          'subtotal': i.subtotal,
-        }).toList(),
-      };
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-
-      final data = json.decode(utf8.decode(response.bodyBytes));
-      if (response.statusCode >= 200 && response.statusCode < 300 && data['success'] == true) {
-        return request.copyWith(
-          id: data['contractId']?.toString() ?? request.id,
-          contractId: data['contractCode'] ?? 'HD-${data['contractId']}',
-          status: RentalStatus.pending,
-        );
-      } else {
-        final message = data['message'] ?? 'Không thể tạo hợp đồng (${response.statusCode})';
-        throw Exception(message);
-      }
-    } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Lỗi kết nối máy chủ: $e');
-    }
+  Map<String, dynamic> _payload(RentalRequestModel request) {
+    String date(DateTime value) =>
+        DateTime.utc(value.year, value.month, value.day).toIso8601String().split('T').first;
+    return {
+      'startDate': date(request.startDate),
+      'endDate': date(request.endDate),
+      'deliveryAddress': request.deliveryAddress,
+      'note': request.note,
+      'promoCode': request.promoCode,
+      'items': request.items.map((item) => {
+        'productId': int.tryParse(item.deviceId),
+        'quantity': item.quantity,
+      }).toList(),
+    };
   }
 
   @override
-  Future<bool> cancelRental(String id) async {
-    try {
-      final url = Uri.parse('$baseUrl/contracts/$id/cancel');
-      final response = await http.put(url);
-      return response.statusCode == 200;
-    } catch (_) {
-      return false;
+  Future<RentalRequestModel> quoteRental(RentalRequestModel request) async {
+    final response = await ApiSession.post(
+      Uri.parse('$baseUrl/contracts/quote'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(_payload(request)),
+    );
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200) {
+      throw Exception(data['message'] ?? 'Không thể báo giá đơn thuê.');
+    }
+
+    final items = (data['items'] as List<dynamic>).map((item) {
+      final id = item['productId'].toString();
+      final original = request.items.firstWhere((line) => int.tryParse(line.deviceId) == item['productId']);
+      return RentalRequestItem(
+        deviceId: id,
+        deviceName: item['productName'],
+        imageUrl: original.imageUrl,
+        quantity: item['quantity'],
+        rentalPrice: (item['dailyPrice'] as num).toDouble(),
+        subtotal: (item['subtotal'] as num).toDouble(),
+      );
+    }).toList();
+    return request.copyWith(
+      items: items,
+      rentalDays: data['rentalDays'],
+      estimatedAmount: (data['totalAmount'] as num).toDouble(),
+      discountAmount: (data['discountAmount'] as num).toDouble(),
+      promoCode: data['promoCode'],
+    );
+  }
+
+  @override
+  Future<RentalRequestModel> createRental(RentalRequestModel request) async {
+    final response = await ApiSession.post(
+      Uri.parse('$baseUrl/contracts'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        ..._payload(request),
+        if (request.rentalDays != null) 'expectedTotal': request.estimatedAmount,
+      }),
+    );
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Không thể tạo hợp đồng.');
+    }
+
+    return request.copyWith(
+      id: data['contractId']?.toString(),
+      contractId: data['contractCode'],
+      customerId: data['customerId']?.toString(),
+      estimatedAmount: (data['totalAmount'] as num).toDouble(),
+      rentalDays: data['rentalDays'],
+      discountAmount: (data['discountAmount'] as num).toDouble(),
+      status: RentalStatus.pending,
+    );
+  }
+
+  @override
+  Future<void> requestCancellation(String id, String reason) async {
+    final response = await ApiSession.post(
+      Uri.parse('$baseUrl/contracts/$id/cancellation-request'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'reason': reason}),
+    );
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200 || data['cancellationRequested'] != true) {
+      throw Exception(data['message'] ?? 'Không thể gửi yêu cầu hủy.');
     }
   }
 }

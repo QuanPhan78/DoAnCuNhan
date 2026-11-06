@@ -1,3 +1,4 @@
+import 'services/api_session.dart';
 import 'providers/rental_provider.dart';
 import 'repositories/rental_repository.dart';
 import 'datasources/rental/remote_rental_datasource.dart';
@@ -24,7 +25,7 @@ import 'repositories/promotion_repository.dart';
 import 'datasources/promotion/remote_promotion_datasource.dart';
 import 'providers/installation_provider.dart';
 import 'repositories/installation_repository.dart';
-import 'datasources/installation/local_installation_datasource.dart';
+import 'datasources/installation/remote_installation_datasource.dart';
 import 'providers/contract_provider.dart';
 import 'repositories/contract_repository.dart';
 import 'datasources/contract/remote_contract_datasource.dart';
@@ -102,7 +103,7 @@ void main() {
           ),
           ChangeNotifierProvider(
             create: (_) => InstallationProvider(
-              InstallationRepository(LocalInstallationDataSource()),
+              InstallationRepository(RemoteInstallationDataSource()),
             ),
           ),
           ChangeNotifierProvider(
@@ -126,8 +127,8 @@ void main() {
           create: (_) => AuthProvider(
 
             AuthRepository(RemoteAuthDataSource()),
-
-          )..checkSession(),
+            sessionExpired: ApiSession.expired,
+          ),
 
         ),
 

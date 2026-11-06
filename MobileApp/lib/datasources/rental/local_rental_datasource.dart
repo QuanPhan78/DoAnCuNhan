@@ -1,3 +1,4 @@
+import '../../services/rental_service.dart';
 import '../../models/rental_request_model.dart';
 import '../../models/rental_status.dart';
 import 'rental_datasource.dart';
@@ -107,6 +108,20 @@ class LocalRentalDataSource implements RentalDataSource {
   }
 
   @override
+  Future<RentalRequestModel> quoteRental(RentalRequestModel request) async {
+    if (request.promoCode?.trim().isNotEmpty == true) {
+      throw Exception('Cần kết nối máy chủ để áp dụng mã khuyến mãi.');
+    }
+    final days = RentalService.rentalDays(request.startDate, request.endDate);
+    return request.copyWith(
+      rentalDays: days,
+      estimatedAmount: request.items.fold<double>(
+        0, (total, item) => total + item.rentalPrice * item.quantity * days,
+      ),
+    );
+  }
+
+  @override
   Future<RentalRequestModel> createRental(RentalRequestModel request) async {
     await Future.delayed(const Duration(milliseconds: 500));
     _rentals.insert(0, request);
@@ -114,14 +129,14 @@ class LocalRentalDataSource implements RentalDataSource {
   }
 
   @override
-  Future<bool> cancelRental(String id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final index = _rentals.indexWhere((r) => r.id == id);
-    if (index != -1 && _rentals[index].status == RentalStatus.pending) {
-      _rentals[index] = _rentals[index].copyWith(status: RentalStatus.cancelled);
-      return true;
+  Future<void> requestCancellation(String id, String reason) async {
+    final index = _rentals.indexWhere((request) => request.id == id);
+    if (index == -1 || _rentals[index].status != RentalStatus.pending) {
+      throw Exception('Chỉ có thể yêu cầu hủy đơn chờ duyệt.');
     }
-    return false;
+    _rentals[index] = _rentals[index].copyWith(
+      status: RentalStatus.cancellationRequested,
+      cancellationReason: reason,
+    );
   }
 }
-

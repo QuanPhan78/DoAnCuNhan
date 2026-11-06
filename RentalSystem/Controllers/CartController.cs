@@ -56,8 +56,8 @@ namespace RentalSystem.Controllers
             var product = await _context.SanPhams.FindAsync(id);
             if (product == null) return NotFound();
 
-            // Kiểm tra tồn kho khả dụng trước khi thêm vào giỏ (loại trừ máy đang bảo trì)
-            int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && t.TrangThai != 2 && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now));
+            // Giới hạn giỏ theo số máy có thể cho thuê. Lịch cụ thể được kiểm tra ở bước chọn ngày.
+            int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && RentalBooking.RentableStatuses.Contains(t.TrangThai));
             if (available <= 0)
             {
                 TempData["Error"] = $"Sản phẩm '{product.TenSanPham}' hiện đang tạm hết máy trong kho!";
@@ -120,8 +120,8 @@ namespace RentalSystem.Controllers
                     }
                     else
                     {
-                        // Kiểm tra tồn kho khả dụng (loại trừ máy đang bảo trì)
-                        int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && t.TrangThai != 2 && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now));
+                        // Giới hạn số lượng theo số máy có thể cho thuê.
+                        int available = await _context.ThietBis.CountAsync(t => t.MaSanPham == id && RentalBooking.RentableStatuses.Contains(t.TrangThai));
                         if (qty > available)
                         {
                             TempData["Error"] = $"Sản phẩm '{item.TenSanPham}' chỉ còn tối đa {available} máy trong kho!";
@@ -211,237 +211,83 @@ namespace RentalSystem.Controllers
                 return Json(new { success = false, message = "Vui lòng nhập mã khuyến mãi!" });
             }
 
-            var cleanCode = code.Trim().ToUpperInvariant();
-            var now = DateTime.Now;
-
-            var km = await _context.KhuyenMais.FirstOrDefaultAsync(k =>
-                (k.Code.ToUpper() == cleanCode || (k.MaCode != null && k.MaCode.ToUpper() == cleanCode)));
-
-            if (km == null)
+            try
             {
-                return Json(new { success = false, message = "Mã khuyến mãi không tồn tại trong hệ thống!" });
+                var promo = await RentalBooking.FindPromotionAsync(_context, code, DateTime.Now, HttpContext.RequestAborted);
+                return Json(new { success = true, code = promo!.Code, discountPercent = promo.PhanTramGiam,
+                    message = $"Áp dụng mã {promo.Code}, giảm {promo.PhanTramGiam}%." });
             }
-
-            if (!km.KichHoat)
+            catch (RentalBookingException error)
             {
-                return Json(new { success = false, message = "Mã khuyến mãi hiện đang tạm khóa hoặc đã ngừng hoạt động!" });
+                return Json(new { success = false, message = error.Message });
             }
-
-            if (now < km.NgayBatDau)
-            {
-                return Json(new { success = false, message = $"Mã khuyến mãi chỉ có hiệu lực từ ngày {km.NgayBatDau:dd/MM/yyyy}!" });
-            }
-
-            if (now > km.NgayKetThuc)
-            {
-                return Json(new { success = false, message = $"Mã khuyến mãi đã hết hạn sử dụng vào ngày {km.NgayKetThuc:dd/MM/yyyy}!" });
-            }
-
-            if (km.SoLuong <= 0)
-            {
-                return Json(new { success = false, message = "Mã khuyến mãi đã hết lượt sử dụng!" });
-            }
-
-            return Json(new
-            {
-                success = true,
-                code = km.Code ?? km.MaCode,
-                discountPercent = km.PhanTramGiam,
-                message = $"Áp dụng thành công mã {km.Code ?? km.MaCode}: Giảm {km.PhanTramGiam}% tổng tiền thuê!"
-            });
         }
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        // Xử lý đặt thuê thiết bị từ giỏ hàng. Kiểm tra chống trùng lịch, trừ tồn kho và tạo hợp đồng chờ duyệt.
-        public async Task<IActionResult> Checkout(DateTime NgayBatDau, DateTime NgayKetThuc, string DiaChi)
+        public async Task<IActionResult> Quote(DateTime? ngayBatDau, DateTime? ngayKetThuc, string? diaChi, string? promoCode)
         {
-            string? promoCode = null;
+            if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
+                return Unauthorized();
+
             try
             {
-                if (Request != null && Request.HasFormContentType && Request.Form.ContainsKey("PromoCode"))
-                {
-                    promoCode = Request.Form["PromoCode"].ToString();
-                }
+                var order = CartOrder(ngayBatDau, ngayKetThuc, diaChi, promoCode);
+                return Json(await RentalBooking.QuoteAsync(_context, userId, order, HttpContext.RequestAborted));
             }
-            catch { }
-
-            return await Checkout(NgayBatDau, NgayKetThuc, DiaChi, promoCode);
+            catch (RentalBookingException error)
+            {
+                return StatusCode(error.StatusCode, new { message = error.Message });
+            }
         }
 
-        [NonAction]
-        public async Task<IActionResult> Checkout(DateTime NgayBatDau, DateTime NgayKetThuc, string DiaChi, string? PromoCode)
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Checkout(DateTime? NgayBatDau, DateTime? NgayKetThuc, string? DiaChi,
+            string? PromoCode, string? ExpectedTotal = null)
         {
-            var nameIdentifierClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (nameIdentifierClaim == null || !int.TryParse(nameIdentifierClaim.Value, out int userId))
-            {
+            if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
                 return RedirectToAction("Login", "Account", new { returnUrl = "/Cart/Checkout" });
-            }
 
-            var user = await _context.NguoiDungs.FindAsync(userId);
-            if (user == null || string.IsNullOrWhiteSpace(user.CCCD))
+            var order = CartOrder(NgayBatDau, NgayKetThuc, DiaChi, PromoCode);
+            if (order.Lines.Count == 0) return RedirectToAction("Index");
+            if (!string.IsNullOrWhiteSpace(ExpectedTotal))
             {
-                TempData["Error"] = "Vui lòng cập nhật số CCCD/CMND trong thông tin tài khoản trước khi đặt thuê thiết bị!";
-                return RedirectToAction("Profile", "Account");
+                if (!decimal.TryParse(ExpectedTotal, System.Globalization.NumberStyles.AllowDecimalPoint,
+                    System.Globalization.CultureInfo.InvariantCulture, out decimal quoted))
+                {
+                    TempData["Error"] = "Tổng tiền tạm tính không hợp lệ. Vui lòng kiểm tra lại.";
+                    return RedirectToAction(nameof(Checkout));
+                }
+                order = order with { ExpectedTotal = quoted };
             }
-
-            if (DebtCalculationHelper.IsCustomerBlacklisted(user.MaNguoiDung, _context, out string blacklistReason))
-            {
-                TempData["Error"] = $"Không thể hoàn tất đặt thuê/ký hợp đồng do tài khoản đang bị khóa vì nợ xấu: {blacklistReason}. Vui lòng hoàn thành nghĩa vụ tài chính tại Sổ công nợ.";
-                return RedirectToAction("MyDebt", "Account");
-            }
-
-            if (NgayKetThuc.Date < NgayBatDau.Date)
-            {
-                TempData["Error"] = "BẢO MẬT: Phát hiện can thiệp dữ liệu! Ngày trả máy không thể nhỏ hơn ngày nhận máy.";
-                return RedirectToAction("Checkout");
-            }
-            if (NgayBatDau.Date < DateTime.Now.Date)
-            {
-                TempData["Error"] = "Ngày nhận máy không thể nằm trong quá khứ!";
-                return RedirectToAction("Checkout");
-            }
-
-            var cart = HttpContext.Session.Get<List<CartItem>>("GioHang");
-            if (cart == null || !cart.Any()) return RedirectToAction("Index");
-
-            int days = (int)(NgayKetThuc.Date - NgayBatDau.Date).TotalDays;
-            if (days <= 0) days = 1;
 
             await InventoryLock.WaitAsync();
             try
             {
-                bool cartModified = false;
-                for (int i = cart.Count - 1; i >= 0; i--)
-                {
-                    var item = cart[i];
-                    int available = await _context.ThietBis
-                        .CountAsync(t => t.MaSanPham == item.MaSanPham && t.TrangThai != 2 && !_context.ChiTietHopDongs.Any(c => 
-                            c.MaThietBi == t.MaThietBi && 
-                            c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 &&
-                            c.HopDong.NgayBatDau < NgayKetThuc && 
-                            c.HopDong.NgayKetThuc > NgayBatDau));
-                    if (available < item.SoLuong)
-                    {
-                        cartModified = true;
-                        if (available == 0) 
-                        {
-                            cart.RemoveAt(i);
-                            TempData["Error"] = "Sản phẩm '" + item.TenSanPham + "' đã hết hàng và bị xóa khỏi giỏ!";
-                        } 
-                        else 
-                        {
-                            item.SoLuong = available;
-                            TempData["Error"] = "Sản phẩm '" + item.TenSanPham + "' không đủ số lượng, hệ thống đã điều chỉnh lại!";
-                        }
-                    }
-                }
-                if (cartModified)
-                {
-                    HttpContext.Session.Set("GioHang", cart);
-                    return RedirectToAction("Index");
-                }
-
-                decimal totalAmount = 0;
-                foreach (var item in cart)
-                {
-                    var dbProd = await _context.SanPhams.FindAsync(item.MaSanPham);
-                    decimal p = dbProd != null ? dbProd.GiaThueNgay : item.GiaThueNgay;
-                    totalAmount += (p * item.SoLuong) * days;
-                }
-
-                // Xử lý áp dụng mã khuyến mãi (nếu có)
-                KhuyenMai? appliedKM = null;
-                decimal discountAmount = 0;
-                if (!string.IsNullOrWhiteSpace(PromoCode))
-                {
-                    var codeClean = PromoCode.Trim().ToUpperInvariant();
-                    var now = DateTime.Now;
-                    appliedKM = await _context.KhuyenMais.FirstOrDefaultAsync(k =>
-                        (k.Code.ToUpper() == codeClean || (k.MaCode != null && k.MaCode.ToUpper() == codeClean)) &&
-                        k.KichHoat &&
-                        k.NgayBatDau <= now &&
-                        k.NgayKetThuc >= now &&
-                        k.SoLuong > 0);
-
-                    if (appliedKM != null)
-                    {
-                        discountAmount = Math.Round((totalAmount * appliedKM.PhanTramGiam) / 100m);
-                        totalAmount = Math.Max(0m, totalAmount - discountAmount);
-                        appliedKM.SoLuong = Math.Max(0, appliedKM.SoLuong - 1);
-                    }
-                }
-
-                var firstAdmin = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.VaiTro.TenVaiTro == "Admin" || u.VaiTro.TenVaiTro == "KinhDoanh");
-                int adminId = firstAdmin != null ? firstAdmin.MaNguoiDung : userId;
-
-                string ghiChu = "Giao hàng tới: " + DiaChi;
-                if (appliedKM != null)
-                {
-                    ghiChu += $" [Giảm {appliedKM.PhanTramGiam}% theo mã {appliedKM.Code}: -{discountAmount:N0}đ]";
-                }
-
-                var hopDong = new HopDong
-                {
-                    MaKhachHang = userId,
-                    MaNhanVien = adminId,
-                    NgayBatDau = NgayBatDau,
-                    NgayKetThuc = NgayKetThuc,
-                    TongTien = totalAmount,
-                    MaKhuyenMai = appliedKM?.MaKM,
-                    TrangThai = 0, // Chờ duyệt
-                    NgayKy = null,
-                    ChuKyKhachHang = "",
-                    ChuKyNhanVien = "",
-                    TrangThaiThanhToan = 0,
-                    GhiChu = ghiChu,
-                    SoKyHan = 1,
-                    HanChotKy = DateTime.Now.AddHours(24)
-                };
-
-                _context.HopDongs.Add(hopDong);
-                await _context.SaveChangesAsync(); 
-
-                foreach (var item in cart)
-                {
-                    var dbProd = await _context.SanPhams.FindAsync(item.MaSanPham);
-                    decimal p = dbProd != null ? dbProd.GiaThueNgay : item.GiaThueNgay;
-                    
-                    var availableDevices = await _context.ThietBis
-                        .Where(t => t.MaSanPham == item.MaSanPham && t.TrangThai != 2 && !_context.ChiTietHopDongs.Any(c => 
-                            c.MaThietBi == t.MaThietBi && 
-                            c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 &&
-                            c.HopDong.NgayBatDau < NgayKetThuc && 
-                            c.HopDong.NgayKetThuc > NgayBatDau))
-                        .Take(item.SoLuong)
-                        .ToListAsync();
-
-                    foreach (var device in availableDevices)
-                    {
-                        var ct = new ChiTietHopDong
-                        {
-                            MaHopDong = hopDong.MaHopDong,
-                            MaThietBi = device.MaThietBi,
-                            GiaChotThu = p * days
-                        };
-                        _context.ChiTietHopDongs.Add(ct);
-                        
-                        // Giữ chỗ thiết bị (TrangThai = 3)
-                        device.TrangThai = 3; 
-                    }
-                }
-
-                await _context.SaveChangesAsync();
+                var (contract, _, _, _) = await RentalBooking.CreateAsync(_context, userId, order, HttpContext.RequestAborted);
                 HttpContext.Session.Remove("GioHang");
-
-                TempData["Success"] = "Khởi tạo đơn hàng thành công! Vui lòng hoàn tất thủ tục ký hợp đồng bên dưới.";
-                return RedirectToAction("SignContract", new { id = hopDong.MaHopDong });
+                TempData["Success"] = "Đã gửi yêu cầu thuê. Vui lòng hoàn tất bước ký hợp đồng.";
+                return RedirectToAction(nameof(SignContract), new { id = contract.MaHopDong });
+            }
+            catch (RentalBookingException error)
+            {
+                TempData["Error"] = error.Message;
+                return RedirectToAction(nameof(Checkout));
             }
             finally
             {
                 InventoryLock.Release();
             }
+        }
+
+        private RentalOrder CartOrder(DateTime? start, DateTime? end, string? address, string? promoCode)
+        {
+            var cart = HttpContext.Session.Get<List<CartItem>>("GioHang") ?? new List<CartItem>();
+            return new RentalOrder(start, end, address, null, promoCode,
+                cart.Select(item => new RentalLine(item.MaSanPham, item.SoLuong)).ToArray());
         }
 
         public IActionResult Success()
@@ -496,7 +342,8 @@ namespace RentalSystem.Controllers
                 .OrderBy(k => k.SoKyHan)
                 .ToListAsync();
 
-            RentalSystem.Areas.Admin.Controllers.HopDongController.CapNhatTreHanVaPhiPhat(kyHans);
+            if (!FirstContractPayment.IsPendingHandover(hopDong))
+                RentalSystem.Areas.Admin.Controllers.HopDongController.CapNhatTreHanVaPhiPhat(kyHans);
             await RentalSystem.Areas.Admin.Controllers.HopDongController.SyncTrangThaiThanhToanHopDong(hopDong, _context);
             await _context.SaveChangesAsync();
 
@@ -566,6 +413,9 @@ namespace RentalSystem.Controllers
                 .FirstOrDefaultAsync(h => h.MaHopDong == id && h.MaKhachHang == userId);
 
             if (hopDong == null) return NotFound();
+
+            if (hopDong.TrangThai != 0 || hopDong.YeuCauHuy)
+                return RedirectToAction(nameof(ContractDetail), new { id });
 
             if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang))
             {
@@ -646,10 +496,17 @@ namespace RentalSystem.Controllers
                 return RedirectToAction("MyDebt", "Account");
             }
 
+            await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
             var hopDong = await _context.HopDongs
                 .FirstOrDefaultAsync(h => h.MaHopDong == id && h.MaKhachHang == userId);
 
             if (hopDong == null) return NotFound();
+            if (hopDong.TrangThai == 0 && hopDong.YeuCauHuy)
+            {
+                TempData["Error"] = "Đơn hàng đang chờ duyệt hủy.";
+                return RedirectToAction(nameof(ContractDetail), new { id });
+            }
+            if (hopDong.TrangThai != 0) return BadRequest("Hợp đồng không còn chờ ký.");
 
             if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang))
             {
@@ -781,9 +638,17 @@ namespace RentalSystem.Controllers
             hopDong.SoKyHan = soKyHan;
             hopDong.NgayKy = DateTime.Now;
 
+            if (hopDong.YeuCauThanhToanLanDau && !await _context.KyHanThanhToans.AnyAsync(k => k.MaHopDong == id))
+            {
+                _context.KyHanThanhToans.AddRange(FirstContractPayment.CreateSchedule(hopDong));
+            }
+
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = "Đã ký hợp đồng thành công!";
-            return RedirectToAction("MyContracts");
+            return hopDong.YeuCauThanhToanLanDau
+                ? RedirectToAction(nameof(ContractDetail), new { id })
+                : RedirectToAction(nameof(MyContracts));
         }
         [Authorize]
         [HttpGet]
@@ -799,7 +664,7 @@ namespace RentalSystem.Controllers
             if (hopDong == null) return NotFound();
 
             // Chỉ cho phép sửa nếu chưa ký và đang chờ duyệt
-            if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || hopDong.TrangThai != 0)
+            if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || hopDong.TrangThai != 0 || hopDong.YeuCauHuy)
             {
                 TempData["Error"] = "Không thể chỉnh sửa hợp đồng đã ký hoặc đang xử lý!";
                 return RedirectToAction("MyContracts");
@@ -817,12 +682,13 @@ namespace RentalSystem.Controllers
             if (nameIdentifierClaim == null || !int.TryParse(nameIdentifierClaim.Value, out int userId))
                 return RedirectToAction("Login", "Account");
 
+            await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
             var hopDong = await _context.HopDongs
                 .FirstOrDefaultAsync(h => h.MaHopDong == id && h.MaKhachHang == userId);
 
             if (hopDong == null) return NotFound();
 
-            if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || hopDong.TrangThai != 0)
+            if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || hopDong.TrangThai != 0 || hopDong.YeuCauHuy)
             {
                 TempData["Error"] = "Không thể chỉnh sửa hợp đồng đã ký hoặc đang xử lý!";
                 return RedirectToAction("MyContracts");
@@ -840,7 +706,7 @@ namespace RentalSystem.Controllers
             }
 
             // Tính lại tổng tiền theo số ngày mới (thuê trong ngày tính tối thiểu 1 ngày)
-            int days = Math.Max(1, (int)(NgayKetThuc.Date - NgayBatDau.Date).TotalDays);
+            int days = RentalBooking.RentalDays(NgayBatDau, NgayKetThuc);
 
             var chiTiets = await _context.ChiTietHopDongs
                 .Include(c => c.ThietBi).ThenInclude(t => t.SanPham)
@@ -850,13 +716,8 @@ namespace RentalSystem.Controllers
             // Kiểm tra xem thiết bị có bị trùng lịch thuê với hợp đồng khác không
             foreach (var ct in chiTiets)
             {
-                bool conflict = await _context.ChiTietHopDongs
-                    .AnyAsync(other =>
-                        other.MaThietBi == ct.MaThietBi &&
-                        other.MaHopDong != id &&
-                        other.HopDong.TrangThai != 2 && other.HopDong.TrangThai != 3 &&
-                        other.HopDong.NgayBatDau < NgayKetThuc &&
-                        other.HopDong.NgayKetThuc > NgayBatDau);
+                bool conflict = await RentalBooking.OverlappingReservations(_context, NgayBatDau, NgayKetThuc)
+                    .AnyAsync(other => other.MaThietBi == ct.MaThietBi && other.MaHopDong != id);
                 if (conflict)
                 {
                     TempData["Error"] = $"Thiết bị '{ct.ThietBi?.SoSerial}' đã được đặt bởi đơn hàng khác trong khoảng thời gian bạn chọn. Vui lòng chọn ngày khác!";
@@ -872,8 +733,8 @@ namespace RentalSystem.Controllers
                 tongTienMoi += ct.GiaChotThu;
             }
 
-            hopDong.NgayBatDau = NgayBatDau;
-            hopDong.NgayKetThuc = NgayKetThuc;
+            hopDong.NgayBatDau = NgayBatDau.Date;
+            hopDong.NgayKetThuc = NgayKetThuc.Date;
             hopDong.TongTien = tongTienMoi;
             hopDong.GhiChu = GhiChu ?? "";
             
@@ -881,6 +742,7 @@ namespace RentalSystem.Controllers
             if (hopDong.SoKyHan > maxInstallments) hopDong.SoKyHan = maxInstallments;
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = $"Đã cập nhật đơn hàng #{id} thành công! Tổng tiền mới: {tongTienMoi:N0}đ.";
             return RedirectToAction("MyContracts");
         }
@@ -888,95 +750,29 @@ namespace RentalSystem.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteContract(int id)
-        {
-            var nameIdentifierClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (nameIdentifierClaim == null || !int.TryParse(nameIdentifierClaim.Value, out int userId))
-                return RedirectToAction("Login", "Account");
-
-            var hopDong = await _context.HopDongs
-                .FirstOrDefaultAsync(h => h.MaHopDong == id && h.MaKhachHang == userId);
-
-            if (hopDong == null) return NotFound();
-
-            // Chỉ cho phép xóa nếu chưa ký và đang chờ duyệt
-            if (!string.IsNullOrEmpty(hopDong.ChuKyKhachHang) || hopDong.TrangThai != 0)
-            {
-                TempData["Error"] = "Không thể xóa hợp đồng đã ký hoặc đang xử lý!";
-                return RedirectToAction("MyContracts");
-            }
-
-            if (hopDong.TienDaCoc > 0 || await _context.PhieuThus.AnyAsync(p => p.MaHopDong == id))
-            {
-                TempData["Error"] = "Không thể tự xóa đơn hàng đã có lịch sử nộp tiền/cọc. Vui lòng liên hệ Admin để hủy!";
-                return RedirectToAction("MyContracts");
-            }
-
-            // Trả thiết bị về kho (trạng thái 0 = Sẵn sàng)
-            var chiTiets = await _context.ChiTietHopDongs
-                .Include(c => c.ThietBi)
-                .Where(c => c.MaHopDong == id)
-                .ToListAsync();
-
-            foreach (var ct in chiTiets)
-            {
-                if (ct.ThietBi != null)
-                    ct.ThietBi.TrangThai = 0; // Trả về kho
-            }
-
-            // Xóa phiếu thu liên quan (tiền cọc nếu có)
-            var phieuThus = await _context.PhieuThus.Where(p => p.MaHopDong == id).ToListAsync();
-            _context.PhieuThus.RemoveRange(phieuThus);
-
-            var phieuBaoTris = await _context.PhieuBaoTris.Where(p => p.MaHopDong == id).ToListAsync();
-            _context.PhieuBaoTris.RemoveRange(phieuBaoTris);
-
-            var kyHans = await _context.KyHanThanhToans.Where(k => k.MaHopDong == id).ToListAsync();
-            _context.KyHanThanhToans.RemoveRange(kyHans);
-
-            // Xóa chi tiết hợp đồng
-            _context.ChiTietHopDongs.RemoveRange(chiTiets);
-
-            // Xóa hợp đồng
-            _context.HopDongs.Remove(hopDong);
-
-            await _context.SaveChangesAsync();
-            TempData["Success"] = $"Đã xóa đơn hàng #{id} thành công. Thiết bị đã được trả về kho.";
-            return RedirectToAction("MyContracts");
-        }
+        public Task<IActionResult> DeleteContract(int id, string? lyDo = null) => YeuCauHuy(id, lyDo);
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Khách hàng gửi yêu cầu hủy đơn hàng khi đang chờ duyệt
-        public async Task<IActionResult> YeuCauHuy(int id, string lyDo)
+        public async Task<IActionResult> YeuCauHuy(int id, string? lyDo)
         {
-            var nameIdentifierClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (nameIdentifierClaim == null || !int.TryParse(nameIdentifierClaim.Value, out int userId))
+            if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
                 return RedirectToAction("Login", "Account");
 
-            var hd = await _context.HopDongs.FirstOrDefaultAsync(h => h.MaHopDong == id && h.MaKhachHang == userId);
-            if (hd == null) return NotFound();
-
-            if (hd.TrangThai != 0)
+            try
             {
-                TempData["Error"] = "Chỉ có thể gửi yêu cầu hủy cho đơn hàng đang chờ duyệt!";
-                return RedirectToAction("ContractDetail", new { id = id });
+                var contract = await ContractLifecycle.RequestCancellationAsync(_context, userId, id, lyDo,
+                    HttpContext.RequestAborted);
+                if (contract == null) return NotFound();
+                TempData["Success"] = "Đã gửi yêu cầu hủy. Vui lòng chờ duyệt.";
             }
-
-            if (string.IsNullOrWhiteSpace(lyDo))
+            catch (RentalBookingException error)
             {
-                TempData["Error"] = "Vui lòng nhập lý do yêu cầu hủy đơn!";
-                return RedirectToAction("ContractDetail", new { id = id });
+                TempData["Error"] = error.Message;
             }
-
-            hd.YeuCauHuy = true;
-            hd.LyDoHuy = lyDo.Trim();
-            hd.NgayYeuCauHuy = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Đã gửi yêu cầu hủy hợp đồng tới quản trị viên xét duyệt!";
-            return RedirectToAction("ContractDetail", new { id = id });
+            return RedirectToAction(nameof(ContractDetail), new { id });
         }
 
         [Authorize]
@@ -1068,6 +864,9 @@ namespace RentalSystem.Controllers
                 .FirstOrDefaultAsync(k => k.MaKyHan == maKyHan && k.HopDong.MaKhachHang == userId);
 
             if (kyHan == null) return NotFound();
+            if (FirstContractPayment.IsPendingHandover(kyHan.HopDong))
+                return RedirectToAction(nameof(ContractDetail), new { id = kyHan.MaHopDong });
+
 
             if (kyHan.TrangThai == 1)
             {
@@ -1119,6 +918,9 @@ namespace RentalSystem.Controllers
                 .FirstOrDefaultAsync(h => h.MaHopDong == maHopDong && h.MaKhachHang == userId);
 
             if (hopDong == null) return NotFound();
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+                return RedirectToAction(nameof(ContractDetail), new { id = maHopDong });
+
 
             if (fileMinhChung == null || fileMinhChung.Length == 0)
             {
@@ -1177,6 +979,9 @@ namespace RentalSystem.Controllers
                 .FirstOrDefaultAsync(h => h.MaHopDong == maHopDong && h.MaKhachHang == userId);
 
             if (hopDong == null) return NotFound();
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+                return RedirectToAction(nameof(ContractDetail), new { id = maHopDong });
+
 
             var openKyHans = hopDong.KyHanThanhToans
                 .Where(k => k.TrangThai != 1 && k.TrangThai != 3)

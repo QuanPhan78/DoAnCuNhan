@@ -7,7 +7,7 @@ namespace RentalSystem.Database;
 
 public static class DatabaseSchema
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 3;
     public const string TargetDatabase = "RentalSystemDB_V2";
     public const string RehearsalMarker = "RentalSystem.Rehearsal";
 

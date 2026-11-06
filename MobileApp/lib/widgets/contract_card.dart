@@ -19,6 +19,8 @@ class ContractCard extends StatelessWidget {
       case 'đang hiệu lực':
         return BadgeStatus.success;
       case 'chờ duyệt':
+      case 'yêu cầu hủy':
+      case 'đã trả máy (chờ quyết toán)':
         return BadgeStatus.warning;
       case 'đã thanh lý':
       case 'hoàn thành':
@@ -61,9 +63,11 @@ class ContractCard extends StatelessWidget {
                       contract.contractCode ?? 'N/A', 
                       style: AppTextStyles.subtitle.copyWith(fontSize: 16),
                     ),
-                    StatusBadge(
-                      text: contract.status ?? 'Không rõ',
-                      status: _getBadgeStatus(contract.status),
+                    Flexible(
+                      child: StatusBadge(
+                        text: contract.status ?? 'Không rõ',
+                        status: _getBadgeStatus(contract.status),
+                      ),
                     ),
                   ],
                 ),

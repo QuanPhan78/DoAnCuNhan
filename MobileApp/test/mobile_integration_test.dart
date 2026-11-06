@@ -7,6 +7,27 @@ import 'package:quan_ly_cho_thue_thiet_bi/models/rental_status.dart';
 
 void main() {
   group('Mobile End-to-End Model & Data Contract Tests', () {
+    test('ContractModel reads the canonical payment label for supported codes', () {
+      const labels = ['Chưa thanh toán', 'Đã đặt cọc', 'Còn nợ', 'Đã tất toán'];
+      for (var code = 0; code < labels.length; code++) {
+        final contract = ContractModel.fromJson({
+          'id': '14',
+          'status': 'Đang thuê',
+          'paymentStatusCode': code,
+          'paymentStatus': labels[code],
+        });
+        expect(contract.paymentStatus, labels[code]);
+        expect(contract.status, 'Đang thuê');
+      }
+      for (final payload in <Map<String, dynamic>>[
+        {'id': '14'},
+        {'id': '14', 'paymentStatusCode': 2},
+        {'id': '14', 'paymentStatusCode': 99, 'paymentStatus': 'Còn nợ'},
+      ]) {
+        expect(ContractModel.fromJson(payload).paymentStatus, 'Chưa xác định');
+      }
+    });
+
     test('ContractModel deserializes complete contract with item and timeline', () {
       final contractJson = {
         'id': '14',

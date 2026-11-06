@@ -376,9 +376,11 @@ namespace RentalSystem.Areas.Admin.Controllers
                         command.Transaction = transaction;
                         command.CommandText = DatabaseSchema.ReadSql("UpgradeContractIdentityImages.sql");
                         await command.ExecuteNonQueryAsync();
-                        await DatabaseSchema.VerifyModelAsync(_context.Model, connection, transaction);
                         command.CommandText = DatabaseSchema.ReadSql("RegisterExisting001.sql");
                         await command.ExecuteNonQueryAsync();
+                        command.CommandText = DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql");
+                        await command.ExecuteNonQueryAsync();
+                        await DatabaseSchema.VerifyModelAsync(_context.Model, connection, transaction);
                         command.CommandText = """
                             IF EXISTS (SELECT 1 FROM sys.extended_properties WHERE class = 0 AND name = N'RentalSystem.Rehearsal')
                                 EXEC sys.sp_dropextendedproperty @name = N'RentalSystem.Rehearsal';
@@ -392,8 +394,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                     catch (SqlException ex)
                     {
                         throw new InvalidOperationException(
-                            $"Đã khôi phục tệp .bak nhưng chưa nâng cấp được các cột ảnh. " +
-                            $"Chạy UpgradeContractIdentityImages.sql trước khi sử dụng dữ liệu. {ex.Message}", ex);
+                            $"Đã khôi phục tệp .bak nhưng chưa nâng cấp được lược đồ. " +
+                            $"Kiểm tra phiên bản cơ sở dữ liệu trước khi sử dụng. {ex.Message}", ex);
                     }
                 }
                 finally
@@ -657,6 +659,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     ALTER TABLE [PhanCongCongViecs] CHECK CONSTRAINT ALL;
                 ");
 
+                await _context.Database.ExecuteSqlRawAsync(DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql"));
                 await transaction.CommitAsync();
             }
             catch

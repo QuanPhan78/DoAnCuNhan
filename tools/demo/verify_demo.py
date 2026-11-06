@@ -50,11 +50,14 @@ class Inputs(HTMLParser):
 class Session:
     def __init__(self):
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
+        self.access_token = None
 
     def request(self, path, data=None, method=None, content_type=None):
         req = urllib.request.Request(BASE + path, data=data, method=method)
         if content_type:
             req.add_header("Content-Type", content_type)
+        if self.access_token and path.startswith("/api/") and path != "/api/auth/login":
+            req.add_unredirected_header("Authorization", f"Bearer {self.access_token}")
         with self.opener.open(req, timeout=30) as response:
             return response.read(), response.url, response.headers
 
@@ -73,6 +76,11 @@ class Session:
     def login(self, email):
         _, url, _ = self.form("/Account/Login", {"email": email, "matKhau": "Demo@123"})
         require("/Account/Login" not in url, f"Web login: {email}")
+
+    def api_login(self, email, password="Demo@123"):
+        result = self.send_json("/api/auth/login", {"email": email, "password": password})
+        self.access_token = result["token"]["accessToken"]
+        return result
 
 
 def require(condition, name):
@@ -179,7 +187,7 @@ def main():
         # Authenticate every synthetic role through both API and Web entry points.
         for role, email in [("Admin", "admin@demo.invalid"), ("KinhDoanh", "sale@demo.invalid"),
                             ("KyThuat", "tech@demo.invalid"), ("KhachHang", "customer@demo.invalid")]:
-            response = api.send_json("/api/auth/login", {"email": email, "password": "Demo@123"})
+            response = api.api_login(email)
             require(response["user"]["roleCode"] == role, f"API login role: {role}")
         admin.login("admin@demo.invalid")
         sale.login("sale@demo.invalid")
@@ -214,19 +222,22 @@ def main():
         today = date.today()
         rental_request = {
             "customerId": "4", "deviceId": "1", "quantity": 1, "rentalType": "Theo ngày",
-            "startDate": today.isoformat(), "endDate": (today + timedelta(days=6)).isoformat(),
+            "startDate": today.isoformat(), "endDate": (today + timedelta(days=7)).isoformat(),
             "deliveryAddress": "Phòng demo, 123 Đường Minh Họa, TP.HCM",
             "note": "DEMO LIVE", "estimatedAmount": 1190000, "installmentCount": 1,
             "items": [{"deviceId": "1", "quantity": 1, "rentalPrice": 170000, "subtotal": 1190000}],
         }
-        created = api.send_json("/api/contracts", rental_request)
+        signer = Session()
+        signer.login("other@demo.invalid")
+        signer.api_login("other@demo.invalid")
+        created = signer.send_json("/api/contracts", rental_request)
         new_id = int(created["contractId"])
         require(created["success"] and created["totalAmount"] == 1190000 and created["depositAmount"] == 0,
                 "Mobile-shaped rental request creates pending contract with matching amount, no deposit collected")
         body = html.unescape(sale.request(f"/Admin/HopDong/Details/{new_id}")[0].decode())
-        require("Khách hàng Demo An" in body and "Laptop Demo Dell" in body
+        require("Khách hàng Demo Bình" in body and "Laptop Demo Dell" in body
                 and re.search(r"1[.,]190[.,]000", body), "Sales Web shows the new customer's rental and matching money")
-        contracts = api.get_json("/api/contracts?userId=4&role=KhachHang")
+        contracts = signer.get_json("/api/contracts")
         require(any(int(c["id"]) == new_id and c["statusCode"] == 0 for c in contracts), "New contract persists in customer API list")
 
         ticket = api.send_json("/api/maintenance", {
@@ -271,10 +282,7 @@ def main():
         require(payload["DatabaseName"] == DB and len(payload["HopDongs"]) == 8, "Downloaded JSON backup contains the new rental")
         (evidence / "BackupSauDienTap.json").write_bytes(exported)
 
-        signer = Session()
-        signer.login("other@demo.invalid")
-        # The presentation customer deliberately has an overdue installment.
-        sign_id = int(api.send_json("/api/contracts", {**rental_request, "customerId": "5"})["contractId"])
+        sign_id = int(signer.send_json("/api/contracts", rental_request)["contractId"])
         sign_page = f"/Cart/SignContract/{sign_id}"
         signature_png = (
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/n2cAAAAASUVORK5CYII="
@@ -309,7 +317,8 @@ def main():
                 all("AnhCMND" not in h for h in normalized),
                 "Legacy JSON restore fills missing front, preserves existing sides and exports only current columns")
         sale.form("/Admin/HopDong/UpdateStatus", {"id": 3, "status": 1}, "/Admin/HopDong/Details/3")
-        require(api.get_json("/api/contracts/3")["statusCode"] == 1,
+        admin.api_login("admin@demo.invalid")
+        require(admin.get_json("/api/contracts/3")["statusCode"] == 1,
                 "Migrated one-photo contract can be handed over")
 
         details = "/Admin/HopDong/Details/3"

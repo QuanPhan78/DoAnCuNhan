@@ -1,14 +1,20 @@
+import 'dart:typed_data';
+
 class AttachmentModel {
   final String id;
   final String? localPath;
   final String? url;
   final String type; // 'image', 'document', etc.
+  final String? fileName;
+  final Uint8List? bytes;
 
   AttachmentModel({
     required this.id,
     this.localPath,
     this.url,
     this.type = 'image',
+    this.fileName,
+    this.bytes,
   });
 
   factory AttachmentModel.fromJson(Map<String, dynamic> json) {

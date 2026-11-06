@@ -167,11 +167,38 @@ namespace RentalSystem.Controllers
         // Xử lý đăng ký tài khoản khách hàng mới
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(string hoTen, string soDienThoai, string email, string matKhau, string nhapLaiMatKhau)
+        public async Task<IActionResult> Register(string hoTen, string soDienThoai, string email, string matKhau, string nhapLaiMatKhau, string? cccd)
         {
+            cccd = cccd?.Trim() ?? "";
+            if (!AccountCredentials.IsValidIdentity(cccd))
+            {
+                ViewBag.Error = AccountCredentials.InvalidIdentity;
+                return View();
+            }
+
+            if (string.IsNullOrWhiteSpace(hoTen) || string.IsNullOrWhiteSpace(soDienThoai) || string.IsNullOrWhiteSpace(email))
+            {
+                ViewBag.Error = "Nhập họ tên, số điện thoại và email.";
+                return View();
+            }
+
+            if (string.IsNullOrWhiteSpace(matKhau) || matKhau.Length < 6)
+            {
+                ViewBag.Error = "Mật khẩu cần ít nhất 6 ký tự.";
+                return View();
+            }
+
             if (matKhau != nhapLaiMatKhau)
             {
                 ViewBag.Error = "Mật khẩu nhập lại không khớp.";
+                return View();
+            }
+
+            email = email.Trim();
+            await using var transaction = await AccountCredentials.LockIdentityAsync(_context, cccd);
+            if (await AccountCredentials.IdentityExistsAsync(_context, cccd))
+            {
+                ViewBag.Error = AccountCredentials.DuplicateIdentity;
                 return View();
             }
 
@@ -191,18 +218,19 @@ namespace RentalSystem.Controllers
 
             var newUser = new NguoiDung
             {
-                HoTen = hoTen,
-                SoDienThoai = soDienThoai,
+                HoTen = hoTen.Trim(),
+                SoDienThoai = soDienThoai.Trim(),
                 Email = email,
                 MatKhau = matKhau,
                 MaVaiTro = vaiTroKhachHang.MaVaiTro,
                 TrangThai = true,
                 DiaChi = "",
-                CCCD = ""
+                CCCD = cccd
             };
 
             _context.NguoiDungs.Add(newUser);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             TempData["Success"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập.";
             return RedirectToAction(nameof(Login));
@@ -227,7 +255,7 @@ namespace RentalSystem.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(NguoiDung model, string? currentPassword = null, string? matKhauHienTai = null)
+        public async Task<IActionResult> Profile(string hoTen, string soDienThoai, string? diaChi, string? cccd)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId)) return RedirectToAction(nameof(Login));
@@ -236,32 +264,30 @@ namespace RentalSystem.Controllers
             var user = await _context.NguoiDungs.FindAsync(userId);
             if (user == null) return NotFound();
 
-            user.HoTen = model.HoTen;
-            user.SoDienThoai = model.SoDienThoai;
-            user.DiaChi = model.DiaChi;
-            user.CCCD = model.CCCD;
-
-            if (!string.IsNullOrEmpty(model.MatKhau))
+            // MVC binds an empty input to null. The visible CCCD field is included
+            // whenever the user submits this form, even when they clear it.
+            bool submittedIdentity = cccd != null || (Request.HasFormContentType && Request.Form.ContainsKey("CCCD"));
+            string candidate = cccd?.Trim() ?? "";
+            bool identityChanged = submittedIdentity && candidate != (user.CCCD?.Trim() ?? "");
+            if (identityChanged && !AccountCredentials.IsValidIdentity(candidate))
             {
-                string? enteredCurrentPassword = !string.IsNullOrWhiteSpace(currentPassword) ? currentPassword : matKhauHienTai;
-
-                if (string.IsNullOrEmpty(enteredCurrentPassword))
-                {
-                    TempData["Error"] = "Vui lòng nhập mật khẩu hiện tại để xác nhận đổi mật khẩu!";
-                    return RedirectToAction(nameof(Profile));
-                }
-
-                if (user.MatKhau != enteredCurrentPassword)
-                {
-                    TempData["Error"] = "Mật khẩu hiện tại không chính xác!";
-                    return RedirectToAction(nameof(Profile));
-                }
-
-                user.MatKhau = model.MatKhau;
+                TempData["Error"] = AccountCredentials.InvalidIdentity;
+                return RedirectToAction(nameof(Profile));
             }
 
-            _context.Update(user);
+            await using var transaction = identityChanged ? await AccountCredentials.LockIdentityAsync(_context, candidate) : null;
+            if (identityChanged && await AccountCredentials.IdentityExistsAsync(_context, candidate, userId))
+            {
+                TempData["Error"] = AccountCredentials.DuplicateIdentity;
+                return RedirectToAction(nameof(Profile));
+            }
+
+            if (!string.IsNullOrWhiteSpace(hoTen)) user.HoTen = hoTen.Trim();
+            if (!string.IsNullOrWhiteSpace(soDienThoai)) user.SoDienThoai = soDienThoai.Trim();
+            user.DiaChi = diaChi?.Trim() ?? "";
+            if (identityChanged) user.CCCD = candidate;
             await _context.SaveChangesAsync();
+            if (transaction != null) await transaction.CommitAsync();
 
             TempData["Success"] = "Cập nhật thông tin hồ sơ thành công!";
             return RedirectToAction(nameof(Profile));
@@ -271,11 +297,8 @@ namespace RentalSystem.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DoiMatKhau(string? matKhauHienTai = null, string? currentPassword = null, string? matKhauMoi = null, string? newPassword = null)
+        public async Task<IActionResult> DoiMatKhau(string? currentPassword, string? newPassword, string? confirmPassword)
         {
-            var currentPwd = !string.IsNullOrWhiteSpace(currentPassword) ? currentPassword : matKhauHienTai;
-            var newPwd = !string.IsNullOrWhiteSpace(newPassword) ? newPassword : matKhauMoi;
-
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId)) 
                 return RedirectToAction(nameof(Login));
@@ -283,26 +306,14 @@ namespace RentalSystem.Controllers
             var user = await _context.NguoiDungs.FindAsync(userId);
             if (user == null) return NotFound();
 
-            if (string.IsNullOrEmpty(currentPwd))
+            var error = AccountCredentials.PasswordError(user.MatKhau, currentPassword, newPassword, confirmPassword);
+            if (error != null)
             {
-                TempData["Error"] = "Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu!";
+                TempData["Error"] = error;
                 return RedirectToAction(nameof(Profile));
             }
 
-            if (user.MatKhau != currentPwd)
-            {
-                TempData["Error"] = "Mật khẩu hiện tại không chính xác!";
-                return RedirectToAction(nameof(Profile));
-            }
-
-            if (string.IsNullOrEmpty(newPwd))
-            {
-                TempData["Error"] = "Mật khẩu mới không được để trống!";
-                return RedirectToAction(nameof(Profile));
-            }
-
-            user.MatKhau = newPwd;
-            _context.Update(user);
+            user.MatKhau = newPassword!;
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Đổi mật khẩu thành công!";
@@ -353,24 +364,25 @@ namespace RentalSystem.Controllers
                 totalDebt += Math.Max(0m, remaining);
             }
 
-            // Các kỳ hạn chưa thanh toán
+            var today = DateTime.Today;
+            // Các kỳ thu thông thường. Hợp đồng chờ bàn giao dùng luồng thanh toán lần đầu.
             var unpaidKyHans = allKyHans
-                .Where(k => k.TrangThai == 0 || k.TrangThai == 2)
+                .Where(k => DebtCalculationHelper.IsPayableInstallment(k) &&
+                    Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat > 0m)
                 .OrderBy(k => k.NgayDenHan)
                 .ToList();
 
             // Kỳ hạn sắp đến hạn trong 7 ngày tới
-            var today = DateTime.Now.Date;
             var upcomingLimit = today.AddDays(7);
             var upcomingInstallments = unpaidKyHans
-                .Where(k => k.TrangThai == 0 && k.NgayDenHan.Date <= upcomingLimit && k.NgayDenHan.Date >= today)
+                .Where(k => k.NgayDenHan.Date >= today && k.NgayDenHan.Date <= upcomingLimit)
                 .OrderBy(k => k.NgayDenHan)
                 .ToList();
             decimal upcomingRentAmount = upcomingInstallments.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra));
 
             // Kỳ hạn đã quá hạn thanh toán
             var overdueInstallments = unpaidKyHans
-                .Where(k => k.TrangThai == 2 || (k.TrangThai == 0 && k.NgayDenHan.Date < today))
+                .Where(k => DebtCalculationHelper.DaysPastDue(k, today) > 0)
                 .OrderBy(k => k.NgayDenHan)
                 .ToList();
             decimal totalOverdueDebt = overdueInstallments.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra + k.TienPhat));
@@ -399,6 +411,7 @@ namespace RentalSystem.Controllers
             ViewBag.HopDongs = hopDongs;
             ViewBag.AllKyHans = allKyHans;
             ViewBag.UnpaidKyHans = unpaidKyHans;
+            ViewBag.Today = today;
             ViewBag.UpcomingInstallments = upcomingInstallments;
             ViewBag.UpcomingRentAmount = upcomingRentAmount;
             ViewBag.OverdueInstallments = overdueInstallments;

@@ -20,6 +20,7 @@ class ContractPdfViewerScreen extends StatefulWidget {
 }
 
 class _ContractPdfViewerScreenState extends State<ContractPdfViewerScreen> {
+  ContractModel? _loadedContract;
   bool _isLoading = true;
   String? _errorMessage;
   bool _isSecurityError = false;
@@ -50,10 +51,8 @@ class _ContractPdfViewerScreenState extends State<ContractPdfViewerScreen> {
     }
 
     try {
-      // Xác thực phân quyền bảo mật trực tiếp với Backend API SQL Server:
-      // Nếu khách hàng cố tình xem hợp đồng không phải của mình, API sẽ trả về 403 Forbidden
       final contractProvider = context.read<ContractProvider>();
-      await contractProvider.getContractHtml(
+      final contract = await contractProvider.getContract(
         widget.contract.id,
         user.id,
         user.role,
@@ -61,6 +60,7 @@ class _ContractPdfViewerScreenState extends State<ContractPdfViewerScreen> {
 
       if (mounted) {
         setState(() {
+          _loadedContract = contract;
           _isLoading = false;
         });
       }
@@ -99,7 +99,7 @@ class _ContractPdfViewerScreenState extends State<ContractPdfViewerScreen> {
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
             Text(
-              'Đang xác thực bảo mật & chuẩn bị hợp đồng PDF...',
+              'Đang tải hợp đồng...',
               style: AppTextStyles.bodySecondary.copyWith(fontSize: 14),
             ),
           ],
@@ -154,12 +154,15 @@ class _ContractPdfViewerScreenState extends State<ContractPdfViewerScreen> {
       );
     }
 
+    final contract = _loadedContract;
+    if (contract == null) return const Center(child: Text('Không tải được hợp đồng.'));
+
     return PdfPreview(
-      build: (format) => ContractPdfGenerator.generateContractPdf(widget.contract),
+      build: (format) => ContractPdfGenerator.generateContractPdf(contract),
       canChangeOrientation: false,
       canChangePageFormat: false,
       canDebug: false,
-      pdfFileName: '${widget.contract.contractCode ?? "HopDong"}.pdf',
+      pdfFileName: '${contract.contractCode ?? "HopDong"}.pdf',
       previewPageMargin: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
       padding: EdgeInsets.zero,
       loadingWidget: const Center(

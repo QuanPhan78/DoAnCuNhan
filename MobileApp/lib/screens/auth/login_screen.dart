@@ -91,18 +91,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: AppTextStyles.h1.copyWith(fontSize: 28),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.',
-                  style: AppTextStyles.bodySecondary,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
                 
                 // Inputs
                 CustomTextField(
                   label: 'Email hoặc Số điện thoại',
-                  hint: 'Nhập email hoặc số điện thoại',
                   prefixIcon: Icons.email_outlined,
                   controller: _emailController,
                   enabled: !isLoading,
@@ -111,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 CustomTextField(
                   label: 'Mật khẩu',
-                  hint: 'Nhập mật khẩu',
                   prefixIcon: Icons.lock_outline_rounded,
                   controller: _passwordController,
                   enabled: !isLoading,
@@ -130,42 +122,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Actions (Remember me & Forgot pass)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: _rememberMe,
-                            activeColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                            onChanged: isLoading ? null : (value) {
-                              setState(() {
-                                _rememberMe = value ?? false;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('Ghi nhớ', style: AppTextStyles.bodySecondary),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: isLoading ? null : () {},
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Quên mật khẩu?',
-                        style: AppTextStyles.button.copyWith(color: AppColors.primary),
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: _rememberMe,
+                        activeColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        onChanged: isLoading ? null : (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    Text('Ghi nhớ', style: AppTextStyles.bodySecondary),
                   ],
                 ),
                 const SizedBox(height: 48),

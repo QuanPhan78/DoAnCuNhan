@@ -1,9 +1,14 @@
 @model RentalSystem.Models.HopDong
+@using RentalSystem.Common
 @{
     ViewData["Title"] = "Chi tiết Hợp đồng #" + Model.MaHopDong;
     var chiTiets = ViewBag.ChiTiets as IEnumerable<RentalSystem.Models.ChiTietHopDong>;
     var kyHans = (ViewBag.KyHans as IEnumerable<RentalSystem.Models.KyHanThanhToan>) ?? Model.KyHanThanhToans;
     var phieuThus = ViewBag.PhieuThus as IEnumerable<RentalSystem.Models.PhieuThu>;
+    bool pendingFirstPayment = FirstContractPayment.IsPendingHandover(Model);
+    var firstInstallment = kyHans?.FirstOrDefault(k => k.SoKyHan == 1 && k.TrangThai != 3);
+    var firstBalance = FirstContractPayment.Balance(Model, phieuThus, firstInstallment);
+    bool canTransferFirstPayment = pendingFirstPayment && firstInstallment != null && !Model.YeuCauHuy;
     int soNgay = (int)(Model.NgayKetThuc.Date - Model.NgayBatDau.Date).TotalDays;
     if (soNgay <= 0) soNgay = 1;
 }
@@ -60,15 +65,33 @@
         </a>
     </div>
 
+    @if (canTransferFirstPayment)
+    {
+        <section class="alert @(firstBalance.Total > 0 ? "alert-primary" : "alert-success")">
+            <h5>Thanh toán lần đầu</h5>
+            @if (firstBalance.Total > 0)
+            {
+                <div>Cọc bảo đảm còn thiếu <strong>@firstBalance.Deposit.ToString("N0") đ</strong></div>
+                <div>Tiền thuê kỳ đầu còn thiếu <strong>@firstBalance.Rent.ToString("N0") đ</strong></div>
+                <a class="btn btn-primary mt-2" href="#bankTransferInstructions">Chuyển khoản @Math.Ceiling(firstBalance.Total).ToString("N0") đ</a>
+            }
+            else
+            {
+                <div>Đã xác nhận đủ tiền. Vui lòng chờ bàn giao thiết bị.</div>
+            }
+        </section>
+    }
+
     @* Trạng thái tổng quan *@
     <div class="card border-0 shadow-sm mb-4" style="border-left: 4px solid #1b98e0 !important;">
         <div class="card-body py-3 px-4 d-flex flex-wrap gap-4 align-items-center">
             <div>
                 <small class="text-muted d-block">Trạng thái đơn</small>
-                @if (Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
+                @if (Model.TrangThai == 0 && Model.YeuCauHuy) { <span class="status-pill"><span class="status-dot dot-danger"></span> Yêu cầu hủy</span> }
+                else if (Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
                 else if (Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
                 else if (Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span> }
-                else if (Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span> }
+                else if (Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span> }
                 else if (Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
             </div>
             <div>
@@ -81,11 +104,7 @@
             </div>
             <div>
                 <small class="text-muted d-block">Thanh toán</small>
-                @if (Model.TrangThaiThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa thanh toán</span> }
-                else if (Model.TrangThaiThanhToan == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đã đặt cọc</span> }
-                else if (Model.TrangThaiThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Còn nợ</span> }
-                else if (Model.TrangThaiThanhToan == 3) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã tất toán đủ</span> }
-                else { <span class="status-pill"><span class="status-dot dot-success"></span> Đã thanh toán</span> }
+                <span class="status-pill"><span class="status-dot dot-@ContractPaymentStatus.BadgeTone(Model.TrangThaiThanhToan)"></span> @ContractPaymentStatus.Label(Model.TrangThaiThanhToan)</span>
                 @if (Model.TienTraThua > 0)
                 {
                     <span class="status-pill ms-1"><span class="status-dot dot-success"></span> Dư: @Model.TienTraThua.ToString("N0") đ</span>
@@ -131,6 +150,10 @@
                         <tr><td class="text-muted">Ngày trả máy</td><td class="fw-bold text-danger">@Model.NgayKetThuc.ToString("dd/MM/yyyy")</td></tr>
                         <tr><td class="text-muted">Thời gian thuê</td><td>@soNgay ngày</td></tr>
                         <tr class="border-top"><td class="text-muted">Tổng tiền thuê</td><td class="fw-bold text-danger">@Model.TongTien.ToString("N0") đ</td></tr>
+                        @if (Model.YeuCauThanhToanLanDau)
+                        {
+                            <tr><td class="text-muted">Cọc theo hợp đồng</td><td class="fw-bold">@Model.TienCocBaoDamMay.ToString("N0") đ</td></tr>
+                        }
                         <tr><td class="text-muted">Tiền đã đặt cọc</td><td class="fw-bold text-success">@Model.TienDaCoc.ToString("N0") đ</td></tr>
                         <tr class="border-top"><td class="text-muted">Số kỳ trả góp</td><td><span class="badge-soft-neutral font-monospace">@Model.SoKyHan kỳ</span></td></tr>
                         <tr><td class="text-muted">Ghi chú</td><td class="text-muted small">@(string.IsNullOrEmpty(Model.GhiChu) ? "Không có" : Model.GhiChu)</td></tr>
@@ -153,7 +176,10 @@
                             <th>Dòng máy</th>
                             <th>Số Serial</th>
                             <th class="text-end">Giá/ngày</th>
-                            <th class="text-end">Tiền cọc yêu cầu</th>
+                            @if (!Model.YeuCauThanhToanLanDau)
+                            {
+                                <th class="text-end">Tiền cọc yêu cầu</th>
+                            }
                             <th class="text-end">Thành tiền (@soNgay ngày)</th>
                         </tr>
                     </thead>
@@ -169,19 +195,25 @@
                                     <td class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</td>
                                     <td><span class="badge-soft-neutral font-monospace">@item.ThietBi?.SoSerial</span></td>
                                     <td class="text-end">@((item.ThietBi?.SanPham?.GiaThueNgay ?? 0).ToString("N0")) đ</td>
-                                    <td class="text-end text-warning fw-bold">@coc.ToString("N0") đ</td>
+                                    @if (!Model.YeuCauThanhToanLanDau)
+                                    {
+                                        <td class="text-end text-warning fw-bold">@coc.ToString("N0") đ</td>
+                                    }
                                     <td class="text-end fw-bold text-brand">@item.GiaChotThu.ToString("N0") đ</td>
                                 </tr>
                             }
                             <tr class="bg-light fw-bold">
-                                <td colspan="3" class="text-end">Tổng cọc yêu cầu:</td>
-                                <td class="text-end text-warning">@tongCoc.ToString("N0") đ</td>
+                                <td colspan="3" class="text-end">@(Model.YeuCauThanhToanLanDau ? "Tổng tiền thuê" : "Tổng cọc yêu cầu")</td>
+                                @if (!Model.YeuCauThanhToanLanDau)
+                                {
+                                    <td class="text-end text-warning">@tongCoc.ToString("N0") đ</td>
+                                }
                                 <td class="text-end text-brand">@Model.TongTien.ToString("N0") đ</td>
                             </tr>
                         }
                         else
                         {
-                            <tr><td colspan="5" class="text-center text-muted py-3">Không có dữ liệu thiết bị</td></tr>
+                            <tr><td colspan="@(Model.YeuCauThanhToanLanDau ? 4 : 5)" class="text-center text-muted py-3">Không có dữ liệu thiết bị</td></tr>
                         }
                     </tbody>
                 </table>
@@ -253,7 +285,11 @@
                                         else { <span class="status-pill"><span class="status-dot dot-warning"></span> Chưa trả</span> }
                                     </td>
                                     <td>
-                                        @if (k.TrangThai != 1)
+                                        @if (pendingFirstPayment && k.TrangThai != 1)
+                                        {
+                                            <span class="text-muted">@(k.SoKyHan == 1 ? "Thu cùng khoản lần đầu" : "Thu sau khi giao máy")</span>
+                                        }
+                                        else if (k.TrangThai != 1)
                                         {
                                             @if (k.TrangThaiXacNhan == 1)
                                             {
@@ -320,18 +356,23 @@
 
         bool hasUnpaidInstallments = kyHans != null && kyHans.Any(k => k.TrangThai == 0 || k.TrangThai == 2);
         decimal vietQrAmount = unpaidRent + unpaidDamages;
-        long vietQrAmountLong = (long)vietQrAmount;
-        string vietQrMessage = $"HD{Model.MaHopDong}";
-        bool shouldShowVietQr = hasUnpaidInstallments || unpaidDamages > 0 || vietQrAmountLong > 0;
+        long vietQrAmountLong = pendingFirstPayment ? (long)Math.Ceiling(firstBalance.Total) : (long)vietQrAmount;
+        string vietQrMessage = pendingFirstPayment ? FirstContractPayment.TransferReference(Model.MaHopDong) : $"HD{Model.MaHopDong}";
+        bool shouldShowVietQr = pendingFirstPayment
+            ? canTransferFirstPayment && firstBalance.Total > 0
+            : (!Model.YeuCauThanhToanLanDau || Model.TrangThai != 3) && (hasUnpaidInstallments || unpaidDamages > 0 || vietQrAmountLong > 0);
     }
     @if (shouldShowVietQr)
     {
         <div class="card border border-primary shadow-sm mb-4" id="bankTransferInstructions">
             <div class="card-header bg-light text-primary fw-bold d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold"><i class="fas fa-university me-2 text-brand"></i>Thông tin chuyển khoản VietQR &amp; Cổng thanh toán VNPay</h6>
+                <h6 class="mb-0 fw-bold"><i class="fas fa-university me-2 text-brand"></i>@(pendingFirstPayment ? "Chuyển khoản lần đầu qua VietQR" : "Chuyển khoản và VNPay")</h6>
+                @if (!pendingFirstPayment)
+                {
                 <a href="/Payment/CreatePaymentUrl?maHopDong=@Model.MaHopDong" class="btn btn-sm btn-primary fw-bold">
                     <i class="fas fa-credit-card me-1"></i> Thanh toán qua VNPay
                 </a>
+                }
             </div>
             <div class="card-body">
                 <div class="row align-items-center">
@@ -340,15 +381,10 @@
                              alt="QR Code Chuyển khoản VietQR" class="img-fluid border rounded p-2 bg-white shadow-sm" style="max-height: 180px;" 
                              onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=@(vietQrMessage)';" />
                         <small class="d-block text-muted mt-1"><i class="fas fa-qrcode me-1"></i>Quét mã QR MBBank (VietQR)</small>
-                        <div class="mt-2">
-                            <a href="/Payment/CreatePaymentUrl?maHopDong=@Model.MaHopDong" class="btn btn-outline-primary btn-sm w-100 fw-bold">
-                                <i class="fas fa-bolt me-1"></i> Thanh toán qua VNPay
-                            </a>
-                        </div>
                     </div>
                     <div class="col-md-9">
                         <div class="alert alert-info py-2 mb-3">
-                            <i class="fas fa-info-circle me-1"></i> Quý khách quét mã VietQR để chuyển khoản (Admin duyệt thủ công) hoặc bấm <strong>Thanh toán qua VNPay</strong> để thanh toán tự động gạch nợ tức thì:
+                            <i class="fas fa-info-circle me-1"></i> @(pendingFirstPayment ? "Chuyển đúng số tiền và nội dung bên dưới. Nhân viên sẽ đối chiếu tiền thực nhận trước khi giao máy." : "Quét VietQR để chuyển khoản hoặc chọn VNPay.")
                         </div>
                         <table class="table table-borderless table-sm mb-0">
                             <tr>
@@ -363,7 +399,7 @@
                                 <td class="text-muted">Chủ tài khoản / Account Name:</td>
                                 <td class="fw-bold text-dark text-uppercase">PHAN MINH QUAN</td>
                             </tr>
-                            @if (unpaidDamages > 0)
+                            @if (!pendingFirstPayment && unpaidDamages > 0)
                             {
                                 <tr>
                                     <td class="text-muted">Tiền thuê / Kỳ hạn:</td>
@@ -381,8 +417,7 @@
                             <tr>
                                 <td class="text-muted">Nội dung / Transfer Content:</td>
                                 <td>
-                                    <span class="badge-soft-navy fs-6 px-3 py-1 font-monospace fw-bold">HD@(Model.MaHopDong)</span>
-                                    <small class="text-muted ms-2">(Cú pháp chuẩn: HD[MaHopDong])</small>
+                                    <span class="badge-soft-navy fs-6 px-3 py-1 font-monospace fw-bold">@vietQrMessage</span>
                                 </td>
                             </tr>
                         </table>
@@ -438,6 +473,7 @@
                                     <td>
                                         @if (p.LoaiPhieu == 1) { <span class="badge-soft-navy">Thu cọc</span> }
                                         else if (p.LoaiPhieu == 0) { <span class="badge-soft-neutral">Thu kỳ hạn</span> }
+                                        else if (p.LoaiPhieu == FirstContractPayment.ExcessReceipt) { <span class="badge-soft-neutral">Tiền chuyển thừa</span> }
                                         else if (p.LoaiPhieu == 2) { <span class="badge-soft-warning">Thu phí BT</span> }
                                         else { <span class="badge-soft-neutral">Khác</span> }
                                     </td>
@@ -765,17 +801,14 @@
     @* Các thao tác *@
     @{
         bool chuaKy = string.IsNullOrEmpty(Model.ChuKyKhachHang);
-        bool coTheChinhSua = chuaKy && Model.TrangThai == 0;
+        bool coTheChinhSua = chuaKy && Model.TrangThai == 0 && !Model.YeuCauHuy;
     }
     <div class="d-flex flex-wrap gap-2 mb-4">
-        @if (chuaKy)
+        @if (coTheChinhSua)
         {
             <a asp-action="SignContract" asp-route-id="@Model.MaHopDong" class="btn btn-brand fw-bold shadow-sm">
                 <i class="fas fa-pen-nib me-1"></i> Ký Hợp đồng ngay
             </a>
-        }
-        @if (coTheChinhSua)
-        {
             <a asp-action="EditContract" asp-route-id="@Model.MaHopDong" class="btn btn-outline-dark fw-bold">
                 <i class="fas fa-edit me-1"></i> Sửa ngày thuê
             </a>
@@ -802,7 +835,7 @@
                 <i class="fas fa-exclamation-triangle me-1"></i> Báo lỗi thiết bị
             </a>
         }
-        @if (Model.TrangThai != 3 && Model.TrangThaiThanhToan != 3)
+        @if (!pendingFirstPayment && Model.TrangThai != 3 && Model.TrangThaiThanhToan != 3)
         {
             <button type="button" class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalUploadMinhChung">
                 <i class="fas fa-file-upload me-1"></i> Tải minh chứng thanh toán
@@ -900,10 +933,10 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Lý do hủy đơn <span class="text-danger">*</span></label>
-                        <textarea name="lyDo" class="form-control" rows="3" placeholder="VD: Thay đổi kế hoạch công tác..." required></textarea>
+                        <textarea maxlength="500" name="lyDo" class="form-control" rows="3" placeholder="VD: Thay đổi kế hoạch công tác..." required></textarea>
                     </div>
                     <p class="text-muted small">
-                        Yêu cầu hủy sẽ được gửi đến nhân viên phụ trách để duyệt. Thiết bị sẽ được giải phóng khỏi trạng thái giữ chỗ.
+                        Thiết bị được giải phóng sau khi nhân viên duyệt hủy.
                     </p>
                 </div>
                 <div class="modal-footer">

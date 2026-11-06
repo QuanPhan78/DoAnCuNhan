@@ -42,12 +42,13 @@ import '../screens/requests/rental_form_screen.dart';
 import '../screens/requests/rental_confirm_screen.dart';
 import '../screens/requests/requests_screen.dart';
 import '../screens/requests/rental_detail_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     return MaterialPageRoute(
       builder: (context) {
-        final authProvider = context.read<AuthProvider>();
+        final authProvider = context.watch<AuthProvider>();
         final user = authProvider.currentUser;
 
         // Nếu truy cập các route không yêu cầu đăng nhập
@@ -84,6 +85,11 @@ class AppRouter {
             return const Scaffold(
               appBar: CustomAppBar(title: 'Công việc'),
               body: TasksScreen(),
+            );
+          case '/notifications':
+            return const Scaffold(
+              appBar: CustomAppBar(title: 'Thông báo'),
+              body: NotificationsScreen(),
             );
           
           case '/contract_detail':

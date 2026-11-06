@@ -22,7 +22,7 @@ class AuthRepository {
     required String email,
     required String password,
     String? address,
-    String? cccd,
+    required String cccd,
   }) async {
     final result = await _dataSource.register(
       name: name,
@@ -41,6 +41,10 @@ class AuthRepository {
 
   Future<UserModel> updateProfile(String userId, {String? name, String? phone, String? address, String? cccd}) async {
     return await _dataSource.updateProfile(userId, name: name, phone: phone, address: address, cccd: cccd);
+  }
+
+  Future<void> changePassword(String userId, String current, String next, String confirmation) {
+    return _dataSource.changePassword(userId, current, next, confirmation);
   }
 
   Future<void> logout() async {

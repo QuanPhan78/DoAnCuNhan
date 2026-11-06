@@ -1,5 +1,5 @@
-import '../../models/user_model.dart';
-import '../../models/token_model.dart';
+import '../models/user_model.dart';
+import '../models/token_model.dart';
 
 abstract class AuthDataSource {
   Future<Map<String, dynamic>> login(String email, String password);
@@ -9,9 +9,10 @@ abstract class AuthDataSource {
     required String email,
     required String password,
     String? address,
-    String? cccd,
+    required String cccd,
   });
   Future<UserModel> updateProfile(String userId, {String? name, String? phone, String? address, String? cccd});
+  Future<void> changePassword(String userId, String current, String next, String confirmation);
   Future<void> logout();
   Future<UserModel?> getCurrentUser();
   Future<TokenModel?> getToken();

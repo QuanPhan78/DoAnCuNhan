@@ -181,6 +181,8 @@ def main():
         sql_file(SQL / "001_Baseline.sql", V2)
         mark()
         expected = schema(V2)
+        sql_file(SQL / "002_MaintenanceAssignments.sql", V2)
+        sql_file(SQL / "003_FirstContractPayment.sql", V2)
         if len({row.split("|")[1] for row in expected if row.startswith("C|")}) != 18:
             raise RuntimeError("Expected all 18 business tables.")
         (OUT / "baseline-schema.json").write_text(json.dumps(expected, indent=2), encoding="utf-8")
@@ -190,6 +192,8 @@ def main():
         restore_legacy(backup(OLD, "rehearsal-source"))
     elif args.action == "upgrade":
         upgrade()
+        sql_file(SQL / "002_MaintenanceAssignments.sql", V2)
+        sql_file(SQL / "003_FirstContractPayment.sql", V2)
     elif args.action == "refresh":
         require_rehearsal()
         if sql(f"SELECT COUNT(*) FROM sys.dm_exec_sessions WHERE database_id=DB_ID(N'{OLD}') AND is_user_process=1 AND (status<>N'sleeping' OR open_transaction_count>0);") != "0":
@@ -198,6 +202,8 @@ def main():
         try:
             restore_legacy(backup(OLD, "cutover-source"))
             counts = verify_copy(upgrade())
+            sql_file(SQL / "002_MaintenanceAssignments.sql", V2)
+            sql_file(SQL / "003_FirstContractPayment.sql", V2)
             (OUT / "cutover-data-verification.json").write_text(json.dumps(counts, indent=2), encoding="utf-8")
             print(f"Verified every row in {len(counts)} business tables.", flush=True)
         except BaseException:

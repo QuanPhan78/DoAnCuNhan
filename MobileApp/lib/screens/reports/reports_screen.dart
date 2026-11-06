@@ -21,6 +21,7 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
+  static const _filters = {'all': 'Tất cả', 'week': 'Tuần này', 'month': 'Tháng này', 'year': 'Năm nay'};
   @override
   void initState() {
     super.initState();
@@ -62,18 +63,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: ['Tuần này', 'Tháng này', 'Năm nay'].contains(provider.currentTimeFilter)
-                    ? provider.currentTimeFilter
-                    : 'Tháng này',
+                value: provider.currentTimeFilter,
                 icon: const Icon(Icons.filter_list_rounded, color: AppColors.primary, size: 20),
                 style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
                 dropdownColor: AppColors.surface,
-                items: ['Tuần này', 'Tháng này', 'Năm nay'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items: _filters.entries.map((filter) => DropdownMenuItem(
+                  value: filter.key,
+                  child: Text(filter.value),
+                )).toList(),
                 onChanged: (val) {
                   if (val != null) provider.fetchReports(timeFilter: val);
                 },
@@ -87,7 +84,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildContent(ReportProvider provider) {
-    if (provider.isLoading && provider.reportData == null) {
+    if (provider.isLoading) {
       return const LoadingState(message: 'Đang tải báo cáo...');
     }
     if (provider.errorMessage != null) {
@@ -101,22 +98,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
       color: AppColors.primary,
       onRefresh: () => provider.fetchReports(),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
-          _buildMockWarning(),
-          const SizedBox(height: 24),
           _buildRevenueSection(provider),
           const SizedBox(height: 24),
           _buildOverviewCards(provider),
           const SizedBox(height: 32),
-          Text('Cơ cấu Thiết bị', style: AppTextStyles.h2.copyWith(fontSize: 18)),
+          Text('Cơ cấu thiết bị hiện tại', style: AppTextStyles.h2.copyWith(fontSize: 18)),
           const SizedBox(height: 16),
           _buildChartContainer(
             height: 280,
             child: _buildDevicePieChart(provider),
           ),
           const SizedBox(height: 32),
-          Text('Biểu đồ Doanh thu (VND)', style: AppTextStyles.h2.copyWith(fontSize: 18)),
+          Text(provider.currentTimeFilter == 'all' ? 'Doanh thu 6 tháng gần nhất' : 'Biểu đồ doanh thu', style: AppTextStyles.h2.copyWith(fontSize: 18)),
           const SizedBox(height: 16),
           _buildChartContainer(
             height: 300,
@@ -142,31 +138,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildMockWarning() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: AppRadius.mdRadius,
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.warning),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Chú ý: Đây là dữ liệu mô phỏng (Mock Data) dùng để kiểm tra giao diện, không phải số liệu thật.',
-              style: AppTextStyles.body.copyWith(color: AppColors.warning),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildRevenueSection(ReportProvider provider) {
-    final revenue = provider.reportData?.revenue;
+    final report = provider.reportData!;
+    final revenue = report.revenue;
+    final start = report.fromDate;
+    final end = report.throughDate;
+    final dates = DateFormat('dd/MM/yyyy');
     final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     
     return Container(
@@ -191,10 +168,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 12),
-              Text('TỔNG DOANH THU', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white70, fontWeight: FontWeight.bold)),
+              Expanded(child: Text('DOANH THU HỢP ĐỒNG HOÀN THÀNH', style: AppTextStyles.bodySecondary.copyWith(color: Colors.white70, fontWeight: FontWeight.bold))),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          if (start != null && end != null)
+            Text('${dates.format(start)} – ${dates.format(end)}', style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 8),
           Text(
             revenue == null ? 'Chưa có dữ liệu' : formatter.format(revenue),
             style: AppTextStyles.h1.copyWith(fontSize: 32, color: Colors.white),
@@ -259,6 +239,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   PieChartSectionData(color: Colors.blue, value: data.rentedDevices.toDouble(), title: '', radius: 25),
                 if (data.maintenanceDevices > 0)
                   PieChartSectionData(color: AppColors.warning, value: data.maintenanceDevices.toDouble(), title: '', radius: 25),
+                if (data.reservedDevices > 0)
+                  PieChartSectionData(color: Colors.purple, value: data.reservedDevices.toDouble(), title: '', radius: 25),
                 if (data.brokenDevices > 0)
                   PieChartSectionData(color: AppColors.error, value: data.brokenDevices.toDouble(), title: '', radius: 25),
               ],
@@ -274,6 +256,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               _buildLegend('Sẵn sàng', data.availableDevices, AppColors.success),
               _buildLegend('Đang thuê', data.rentedDevices, Colors.blue),
               _buildLegend('Bảo trì', data.maintenanceDevices, AppColors.warning),
+              _buildLegend('Giữ chỗ', data.reservedDevices, Colors.purple),
               _buildLegend('Hỏng', data.brokenDevices, AppColors.error),
             ],
           ),
@@ -317,7 +300,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
                 return BarTooltipItem(
-                  formatter.format(rod.toY),
+                  '${chartData[group.x].label}\n${formatter.format(rod.toY)}',
                   AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
                 );
               },
@@ -329,7 +312,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (double value, TitleMeta meta) {
-                  if (value.toInt() >= 0 && value.toInt() < chartData.length) {
+                  if (value.toInt() >= 0 && value.toInt() < chartData.length &&
+                      (chartData.length <= 7 || value.toInt().isEven)) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 12),
                       child: Text(
@@ -372,7 +356,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 BarChartRodData(
                   toY: e.value.value,
                   color: AppColors.primary,
-                  width: 20,
+                  width: chartData.length > 7 ? 12 : 20,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                 )
               ],
@@ -389,7 +373,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     for (var d in chartData) {
       if (d.value > max) max = d.value;
     }
-    return max * 1.2; // 20% padding top
+    return max == 0 ? 100 : max * 1.2; // 20% padding top
   }
 }
 

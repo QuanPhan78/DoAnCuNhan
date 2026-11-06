@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/contract_provider.dart';
 import '../../providers/incident_provider.dart';
 import '../../models/permission_enum.dart';
 import '../../utils/permission_manager.dart';
@@ -28,13 +27,13 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
     });
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
+    if (!mounted) return;
     final auth = context.read<AuthProvider>();
     if (auth.currentUser != null) {
-      context.read<IncidentProvider>().fetchIncidents(
+      await context.read<IncidentProvider>().fetchIncidents(
         auth.currentUser!.id, 
-        auth.currentUser!.role, 
-        context.read<ContractProvider>()
+        auth.currentUser!.role,
       );
     }
   }
@@ -42,8 +41,10 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
   BadgeStatus _getBadgeStatus(String status) {
     switch (status.toLowerCase()) {
       case 'đã hoàn thành':
+      case 'đã nghiệm thu':
         return BadgeStatus.success;
       case 'đang xử lý':
+      case 'chờ nghiệm thu':
         return BadgeStatus.processing;
       case 'chờ xử lý':
         return BadgeStatus.warning;
@@ -104,7 +105,7 @@ class _IncidentListScreenState extends State<IncidentListScreen> {
 
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () async => _loadData(),
+      onRefresh: _loadData,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         physics: const AlwaysScrollableScrollPhysics(),

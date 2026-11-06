@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using RentalSystem.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
@@ -8,6 +10,7 @@ namespace RentalSystem.Controllers
 {
     [Route("api/promotions")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = ApiTokens.Scheme)]
     public class ApiPromotionsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -66,22 +69,22 @@ namespace RentalSystem.Controllers
                 return BadRequest(new { message = "Vui lòng nhập mã khuyến mãi." });
             }
 
-            var promo = await _context.KhuyenMais
-                .FirstOrDefaultAsync(k => k.Code.ToLower() == code.Trim().ToLower() && k.KichHoat);
-
-            if (promo == null)
+            try
             {
-                return NotFound(new { message = "Mã khuyến mãi không tồn tại hoặc đã hết hiệu lực." });
+                var promo = await RentalBooking.FindPromotionAsync(_context, code, DateTime.Now, HttpContext.RequestAborted);
+                return Ok(new
+                {
+                    success = true,
+                    promoId = promo!.MaKM,
+                    code = promo.Code,
+                    discountPercent = promo.PhanTramGiam,
+                    message = $"Áp dụng mã {promo.Code}, giảm {promo.PhanTramGiam}%."
+                });
             }
-
-            return Ok(new
+            catch (RentalBookingException error)
             {
-                success = true,
-                promoId = promo.MaKhuyenMai,
-                code = promo.MaCode,
-                discountPercent = promo.PhanTramGiam,
-                message = $"Áp dụng thành công mã {promo.MaCode}, giảm {promo.PhanTramGiam}%!"
-            });
+                return StatusCode(error.StatusCode, new { message = error.Message });
+            }
         }
     }
 }

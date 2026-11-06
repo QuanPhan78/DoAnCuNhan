@@ -23,10 +23,10 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
     });
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
     final user = context.read<AuthProvider>().currentUser;
     if (user != null) {
-      context.read<MaintenanceProvider>().fetchMaintenances(user.id, user.role, user.name);
+      await context.read<MaintenanceProvider>().fetchMaintenances(user.id, user.role, user.name);
     }
   }
 
@@ -48,13 +48,16 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
     if (provider.errorMessage != null) {
       return ErrorState(message: 'Lỗi: ${provider.errorMessage}', onRetry: _loadData);
     }
-    if (provider.maintenances.isEmpty) {
-      return const EmptyState(message: 'Không có yêu cầu bảo trì nào.', icon: Icons.build_circle_outlined);
-    }
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () async => _loadData(),
-      child: ListView.builder(
+      onRefresh: _loadData,
+      child: provider.maintenances.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [EmptyState(message: 'Không có yêu cầu bảo trì nào.', icon: Icons.build_circle_outlined)],
+            )
+          : ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         itemCount: provider.maintenances.length,
         itemBuilder: (context, index) {

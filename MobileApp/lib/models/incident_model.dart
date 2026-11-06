@@ -1,5 +1,7 @@
 import 'attachment_model.dart';
 
+typedef IncidentReview = ({String status, int statusCode, int? rating, String? feedback});
+
 class IncidentModel {
   final String id;
   final String code;
@@ -9,7 +11,12 @@ class IncidentModel {
   final String description;
   final String severity;
   final String occurrenceTime;
-  final String status; // Chờ xử lý, Đang xử lý, Đã hoàn thành
+  final String status;
+  final int? statusCode;
+  final int? rating;
+  final String? feedback;
+  final String? deviceName;
+  final String? result;
   final String? assignedStaff;
   final String createdAt;
   final List<AttachmentModel> attachments;
@@ -24,6 +31,11 @@ class IncidentModel {
     required this.severity,
     required this.occurrenceTime,
     required this.status,
+    this.statusCode,
+    this.rating,
+    this.feedback,
+    this.deviceName,
+    this.result,
     this.assignedStaff,
     required this.createdAt,
     this.attachments = const [],
@@ -40,6 +52,11 @@ class IncidentModel {
       severity: json['severity'],
       occurrenceTime: json['occurrenceTime'],
       status: json['status'],
+      statusCode: json['statusCode'],
+      rating: json['rating'],
+      feedback: json['feedback'],
+      deviceName: json['deviceName'],
+      result: json['result'],
       assignedStaff: json['assignedStaff'],
       createdAt: json['createdAt'],
       attachments: (json['attachments'] as List?)
@@ -48,6 +65,14 @@ class IncidentModel {
           [],
     );
   }
+
+  IncidentModel withReview(IncidentReview review) => IncidentModel(
+    id: id, code: code, contractId: contractId, deviceId: deviceId,
+    deviceName: deviceName, issueType: issueType, description: description, result: result,
+    severity: severity, occurrenceTime: occurrenceTime, status: review.status,
+    statusCode: review.statusCode, rating: review.rating, feedback: review.feedback,
+    assignedStaff: assignedStaff, createdAt: createdAt, attachments: attachments,
+  );
 
   Map<String, dynamic> toJson() {
     return {
@@ -60,6 +85,11 @@ class IncidentModel {
       'severity': severity,
       'occurrenceTime': occurrenceTime,
       'status': status,
+      'statusCode': statusCode,
+      'rating': rating,
+      'feedback': feedback,
+      'deviceName': deviceName,
+      'result': result,
       'assignedStaff': assignedStaff,
       'createdAt': createdAt,
       'attachments': attachments.map((e) => e.toJson()).toList(),

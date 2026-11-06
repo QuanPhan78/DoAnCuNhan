@@ -4,7 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../models/device_model.dart';
 import '../../models/rental_request_model.dart';
 import '../../models/rental_status.dart';
-import '../../services/rental_service.dart';
+import '../../providers/rental_provider.dart';
 import '../../widgets/core/custom_app_bar.dart';
 import '../../widgets/core/custom_button.dart';
 import '../../widgets/custom_image_widget.dart';
@@ -25,16 +25,23 @@ class RentalFormScreen extends StatefulWidget {
 class _RentalFormScreenState extends State<RentalFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  String _rentalType = 'Theo ngày';
-  final List<String> _rentalTypes = ['Theo ngày', 'Theo tuần', 'Theo tháng', 'Dài hạn'];
-  
   int _quantity = 1;
-  
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 1));
-  
+  bool _quoting = false;
+
+  DateTime _startDate = DateUtils.dateOnly(DateTime.now());
+  DateTime _endDate = DateUtils.addDaysToDate(DateTime.now(), 1);
+
   final _addressCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
+  final _promoCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _addressCtrl.dispose();
+    _noteCtrl.dispose();
+    _promoCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -53,12 +60,12 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
 
   void _selectDate(bool isStart) async {
     final initialDate = isStart ? _startDate : _endDate;
-    final firstDate = isStart ? DateTime.now() : _startDate;
+    final firstDate = isStart ? DateUtils.dateOnly(DateTime.now()) : _startDate;
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: firstDate,
-      lastDate: DateTime(2030),
+      lastDate: DateTime(DateTime.now().year + 5, 12, 31),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -73,12 +80,12 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
       },
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         if (isStart) {
           _startDate = picked;
           if (_endDate.isBefore(_startDate)) {
-            _endDate = _startDate.add(const Duration(days: 1));
+            _endDate = DateUtils.addDaysToDate(_startDate, 1);
           }
         } else {
           _endDate = picked;
@@ -87,31 +94,17 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
     }
   }
 
-  void _onConfirm() {
-    if (!_formKey.currentState!.validate()) return;
-    
-    if (_endDate.isBefore(_startDate)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Ngày kết thúc không được trước ngày bắt đầu'),
-        backgroundColor: AppColors.error,
-      ));
-      return;
-    }
+  Future<void> _onConfirm() async {
+    if (_quoting || !_formKey.currentState!.validate()) return;
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
 
-    final estimatedCost = RentalService.calculateEstimatedCost(
-      devicePrice: widget.device.rentalPrice ?? 0,
-      rentalType: _rentalType,
-      quantity: _quantity,
-      startDate: _startDate,
-      endDate: _endDate,
-    );
-
-    final authProvider = context.read<AuthProvider>();
-    final currentUserId = authProvider.currentUser?.id ?? '1';
-
+    FocusScope.of(context).unfocus();
+    final now = DateTime.now();
+    final promo = _promoCtrl.text.trim();
     final request = RentalRequestModel(
-      id: 'REQ-${DateTime.now().millisecondsSinceEpoch}',
-      customerId: currentUserId,
+      id: 'REQ-${now.millisecondsSinceEpoch}',
+      customerId: user.id,
       items: [
         RentalRequestItem(
           deviceId: widget.device.id,
@@ -119,20 +112,34 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
           imageUrl: widget.device.imageUrl,
           quantity: _quantity,
           rentalPrice: widget.device.rentalPrice ?? 0,
-          subtotal: estimatedCost,
+          subtotal: 0,
         ),
       ],
-      rentalType: _rentalType,
+      rentalType: 'Theo ngày',
       startDate: _startDate,
       endDate: _endDate,
-      deliveryAddress: _addressCtrl.text,
-      note: _noteCtrl.text,
-      estimatedAmount: estimatedCost,
+      deliveryAddress: _addressCtrl.text.trim(),
+      note: _noteCtrl.text.trim(),
+      promoCode: promo.isEmpty ? null : promo,
+      estimatedAmount: 0,
       status: RentalStatus.pending,
-      createdAt: DateTime.now(),
+      createdAt: now,
     );
 
-    Navigator.pushNamed(context, '/rental_confirm', arguments: request);
+    setState(() => _quoting = true);
+    try {
+      final quoted = await context.read<RentalProvider>().quoteRental(request);
+      if (!mounted) return;
+      Navigator.pushNamed(context, '/rental_confirm', arguments: quoted);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error.toString().replaceFirst('Exception: ', '')),
+        backgroundColor: AppColors.error,
+      ));
+    } finally {
+      if (mounted) setState(() => _quoting = false);
+    }
   }
 
   @override
@@ -189,15 +196,7 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
                 ),
                 const SizedBox(height: 32),
                 
-                _buildLabel('1. Hình thức thuê'),
-                _buildDropdown(
-                  value: _rentalType,
-                  items: _rentalTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                  onChanged: (v) => setState(() => _rentalType = v!),
-                ),
-                
-                const SizedBox(height: 24),
-                _buildLabel('2. Số lượng'),
+                _buildLabel('Số lượng'),
                 Row(
                   children: [
                     IconButton(
@@ -223,7 +222,7 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
                 ),
 
                 const SizedBox(height: 24),
-                _buildLabel('3. Thời gian thuê'),
+                _buildLabel('Thời gian thuê'),
                 Row(
                   children: [
                     Expanded(
@@ -243,25 +242,34 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
                 ),
 
                 const SizedBox(height: 24),
-                _buildLabel('4. Địa chỉ giao/lắp đặt'),
+                _buildLabel('Địa chỉ giao thiết bị'),
                 TextFormField(
                   controller: _addressCtrl,
                   decoration: _inputDecoration('Nhập địa chỉ chi tiết...'),
-                  validator: (v) => v == null || v.isEmpty ? 'Vui lòng nhập địa chỉ' : null,
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập địa chỉ' : null,
                 ),
 
                 const SizedBox(height: 24),
-                _buildLabel('5. Ghi chú thêm'),
+                _buildLabel('Ghi chú'),
                 TextFormField(
                   controller: _noteCtrl,
                   maxLines: 3,
                   decoration: _inputDecoration('Nhập yêu cầu đặc biệt (không bắt buộc)...'),
                 ),
 
+                const SizedBox(height: 24),
+                _buildLabel('Mã khuyến mãi'),
+                TextFormField(
+                  controller: _promoCtrl,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: _inputDecoration('Không bắt buộc'),
+                ),
+
                 const SizedBox(height: 40),
                 CustomButton(
                   text: 'TIẾP TỤC',
-                  onPressed: _onConfirm,
+                  onPressed: _quoting ? null : _onConfirm,
+                  isLoading: _quoting,
                   isFullWidth: true,
                   type: ButtonType.primary,
                 ),
@@ -319,18 +327,4 @@ class _RentalFormScreenState extends State<RentalFormScreen> {
     );
   }
 
-  Widget _buildDropdown({
-    required String value,
-    required List<DropdownMenuItem<String>> items,
-    required void Function(String?) onChanged,
-  }) {
-    final bool hasValue = items.any((item) => item.value == value);
-    return DropdownButtonFormField<String>(
-      initialValue: hasValue ? value : (items.isNotEmpty ? items.first.value : null),
-      items: items,
-      onChanged: onChanged,
-      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-      decoration: _inputDecoration(''),
-    );
-  }
 }

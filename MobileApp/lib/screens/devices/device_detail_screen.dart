@@ -43,6 +43,9 @@ class DeviceDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final d = _resolveDevice(context);
+    final canChooseDates = d.rentableQuantity != null
+        ? d.rentableQuantity! > 0
+        : d.rentalStatus?.toLowerCase() == 'sẵn sàng';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -153,10 +156,10 @@ class DeviceDetailScreen extends StatelessWidget {
             border: const Border(top: BorderSide(color: AppColors.divider)),
           ),
           child: CustomButton(
-            text: d.rentalStatus?.toLowerCase() == 'sẵn sàng' ? 'Thuê ngay' : 'Không khả dụng',
+            text: canChooseDates ? 'Chọn ngày thuê' : 'Không khả dụng',
             type: ButtonType.primary,
             isFullWidth: true,
-            onPressed: d.rentalStatus?.toLowerCase() == 'sẵn sàng'
+            onPressed: canChooseDates
                 ? () {
                     Navigator.pushNamed(context, '/rental_form', arguments: d);
                   }

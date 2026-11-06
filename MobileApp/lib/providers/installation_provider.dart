@@ -1,45 +1,40 @@
 import 'package:flutter/material.dart';
 import '../models/installation_model.dart';
 import '../repositories/installation_repository.dart';
+import '../services/staff_task_service.dart';
 
 class InstallationProvider with ChangeNotifier {
   final InstallationRepository _repository;
 
   InstallationProvider(this._repository);
 
-  InstallationModel? _currentInstallation;
-  bool _isLoading = false;
-
-  InstallationModel? get currentInstallation => _currentInstallation;
-  bool get isLoading => _isLoading;
+  InstallationModel? currentInstallation;
+  bool isLoading = false;
+  String? errorMessage;
+  int _request = 0;
 
   Future<void> fetchInstallation(String contractId) async {
-    _isLoading = true;
+    final request = ++_request;
+    isLoading = true;
+    errorMessage = null;
+    currentInstallation = null;
     notifyListeners();
 
-    _currentInstallation = await _repository.getInstallationByContractId(contractId);
-    
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Future<bool> confirmInstallation(String contractId) async {
-    final success = await _repository.confirmInstallation(contractId);
-    if (success) {
-      await fetchInstallation(contractId);
+    try {
+      final installation = await _repository.getInstallationByContractId(contractId);
+      if (request == _request) currentInstallation = installation;
+    } catch (error) {
+      if (request == _request) errorMessage = error.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (request == _request) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
-    return success;
   }
 
-  Future<bool> completeInstallation(String contractId) async {
-    final success = await _repository.completeInstallation(contractId);
-    if (success) {
-      await fetchInstallation(contractId);
-    }
-    return success;
-  }
-
-  Future<bool> completeContract(String contractId) async {
-    return await _repository.completeContract(contractId);
+  Future<void> updateInstallation(InstallationModel task, int status) async {
+    await StaffTaskService.update(task.taskId!, status);
+    if (currentInstallation?.taskId == task.taskId) await fetchInstallation(task.contractId);
   }
 }

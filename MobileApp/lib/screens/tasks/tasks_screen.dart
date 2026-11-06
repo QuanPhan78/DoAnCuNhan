@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/contract_model.dart';
-import '../../models/installation_model.dart';
+import 'package:intl/intl.dart';
+import '../../services/staff_task_service.dart';
 import '../../models/maintenance_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/contract_provider.dart';
 import '../../providers/maintenance_provider.dart';
-import '../../datasources/installation/local_installation_datasource.dart';
-import '../../repositories/installation_repository.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_radius.dart';
@@ -15,53 +12,52 @@ import '../../theme/app_shadows.dart';
 import '../../widgets/dashboard_widgets.dart';
 import '../../widgets/core/state_widgets.dart';
 
-enum TaskFilter { all, pending, processing, completed }
+enum TaskFilter { all, pending, processing, completed, cancelled }
 
 class StaffTaskItem {
-  final String id;
   final String title;
   final String code;
   final String description;
   final String customer;
   final String date;
   final String status;
-  final bool isInstallation;
-  final ContractModel? contract;
-  final InstallationModel? installation;
+  final ManualTask? manual;
   final MaintenanceModel? maintenance;
 
   StaffTaskItem({
-    required this.id,
     required this.title,
     required this.code,
     required this.description,
     required this.customer,
     required this.date,
     required this.status,
-    required this.isInstallation,
-    this.contract,
-    this.installation,
+    this.manual,
     this.maintenance,
   });
 
   TaskFilter get category {
-    final s = status.toLowerCase();
-    if (s.contains('hoàn thành')) return TaskFilter.completed;
-    if (s.contains('đang thực hiện') || s.contains('đang xử lý')) return TaskFilter.processing;
-    return TaskFilter.pending;
+    final code = maintenance?.statusCode;
+    if (code == 4 || code == 5) return TaskFilter.completed;
+    if (code == 2 || code == 3) return TaskFilter.processing;
+    return switch (manual?.statusCode) {
+      1 => TaskFilter.processing,
+      2 => TaskFilter.completed,
+      3 => TaskFilter.cancelled,
+      _ => TaskFilter.pending,
+    };
   }
 }
 
 class TasksScreen extends StatefulWidget {
   final TaskFilter initialFilter;
-  const TasksScreen({super.key, this.initialFilter = TaskFilter.all});
+  final bool isActive;
+  const TasksScreen({super.key, this.initialFilter = TaskFilter.all, this.isActive = true});
 
   @override
   State<TasksScreen> createState() => TasksScreenState();
 }
 
 class TasksScreenState extends State<TasksScreen> {
-  final InstallationRepository _installationRepo = InstallationRepository(LocalInstallationDataSource());
   final TextEditingController _searchController = TextEditingController();
 
   late TaskFilter _selectedFilter;
@@ -75,7 +71,7 @@ class TasksScreenState extends State<TasksScreen> {
     super.initState();
     _selectedFilter = widget.initialFilter;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      loadTasks();
+      if (widget.isActive) loadTasks();
     });
   }
 
@@ -87,6 +83,9 @@ class TasksScreenState extends State<TasksScreen> {
         _selectedFilter = widget.initialFilter;
       });
     }
+    if (widget.isActive && !oldWidget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => loadTasks());
+    }
   }
 
   void setFilter(TaskFilter filter) {
@@ -96,6 +95,7 @@ class TasksScreenState extends State<TasksScreen> {
   }
 
   Future<void> loadTasks() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -103,48 +103,37 @@ class TasksScreenState extends State<TasksScreen> {
 
     try {
       final user = context.read<AuthProvider>().currentUser;
-      if (user == null) return;
+      if (user == null) throw Exception('Vui lòng đăng nhập lại.');
 
-      final contractProvider = context.read<ContractProvider>();
       final maintenanceProvider = context.read<MaintenanceProvider>();
-
-      await Future.wait([
-        contractProvider.fetchContracts(user.role, user.id),
+      final (manual, _) = await (
+        StaffTaskService.list(),
         maintenanceProvider.fetchMaintenances(user.id, user.role, user.name),
-      ]);
-
-      final List<StaffTaskItem> items = [];
-
-      // 1. Công việc Lắp đặt từ hợp đồng
-      for (final contract in contractProvider.contracts) {
-        final install = await _installationRepo.getInstallationByContractId(contract.id);
-        if (install != null) {
-          items.add(StaffTaskItem(
-            id: 'INST_${contract.id}',
-            title: 'Lắp đặt thiết bị',
-            code: contract.contractCode ?? contract.id,
-            description: install.notes?.isNotEmpty == true ? install.notes! : (contract.installationDetails ?? 'Lắp đặt bàn giao thiết bị'),
-            customer: contract.customerName ?? 'Khách hàng',
-            date: install.expectedDate ?? contract.rentalStart ?? '---',
-            status: install.status,
-            isInstallation: true,
-            contract: contract,
-            installation: install,
-          ));
-        }
+      ).wait;
+      if (maintenanceProvider.errorMessage != null) {
+        throw Exception(maintenanceProvider.errorMessage);
       }
 
+      final dateFormat = DateFormat('dd/MM/yyyy');
+      final items = manual.map((task) => StaffTaskItem(
+        title: task.title,
+        code: '#${task.id}',
+        description: task.description,
+        customer: task.customer ?? 'Công việc nội bộ',
+        date: dateFormat.format(task.dueAt ?? task.assignedAt),
+        status: task.status,
+        manual: task,
+      )).toList();
+
       // 2. Công việc Bảo trì
-      for (final m in maintenanceProvider.maintenances) {
+      for (final m in maintenanceProvider.maintenances.where((ticket) => ticket.assignedStaffId == user.id)) {
         items.add(StaffTaskItem(
-          id: 'MAINT_${m.id}',
           title: 'Bảo trì & Sửa chữa',
           code: m.requestCode ?? m.id,
           description: m.description ?? 'Kiểm tra và sửa chữa thiết bị',
           customer: m.customer ?? 'Khách hàng',
           date: m.createdAt ?? '---',
-          status: m.status ?? 'Chờ tiếp nhận',
-          isInstallation: false,
+          status: m.statusCode == 1 ? 'Mới giao' : m.status ?? 'Chờ tiếp nhận',
           maintenance: m,
         ));
       }
@@ -158,7 +147,7 @@ class TasksScreenState extends State<TasksScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
           _isLoading = false;
         });
       }
@@ -184,8 +173,8 @@ class TasksScreenState extends State<TasksScreen> {
 
   BadgeStatus _getBadgeStatus(String status) {
     final s = status.toLowerCase();
-    if (s.contains('hoàn thành')) return BadgeStatus.success;
-    if (s.contains('đang thực hiện') || s.contains('đang xử lý')) return BadgeStatus.processing;
+    if (s.contains('hoàn thành') || s.contains('đã nghiệm thu')) return BadgeStatus.success;
+    if (s.contains('đang thực hiện') || s.contains('đang xử lý') || s.contains('chờ nghiệm thu')) return BadgeStatus.processing;
     if (s.contains('tiếp nhận') || s.contains('bắt đầu')) return BadgeStatus.warning;
     return BadgeStatus.neutral;
   }
@@ -251,6 +240,8 @@ class TasksScreenState extends State<TasksScreen> {
               _buildFilterChip('Đang xử lý', TaskFilter.processing),
               const SizedBox(width: 8),
               _buildFilterChip('Hoàn thành', TaskFilter.completed),
+              const SizedBox(width: 8),
+              _buildFilterChip('Đã hủy', TaskFilter.cancelled),
             ],
           ),
         ),
@@ -296,17 +287,19 @@ class TasksScreenState extends State<TasksScreen> {
     }
 
     final tasks = _filteredTasks;
-    if (tasks.isEmpty) {
-      return const EmptyState(
-        message: 'Không tìm thấy công việc nào phù hợp.',
-        icon: Icons.task_alt_rounded,
-      );
-    }
-
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: loadTasks,
-      child: ListView.builder(
+      child: tasks.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [EmptyState(
+                message: 'Không tìm thấy công việc nào phù hợp.',
+                icon: Icons.task_alt_rounded,
+              )],
+            )
+          : ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         itemCount: tasks.length,
         itemBuilder: (context, index) {
@@ -331,12 +324,14 @@ class TasksScreenState extends State<TasksScreen> {
         child: InkWell(
           borderRadius: AppRadius.lgRadius,
           onTap: () async {
-            if (item.isInstallation && item.contract != null) {
-              await Navigator.pushNamed(context, '/contract_detail', arguments: item.contract);
-              loadTasks();
-            } else if (!item.isInstallation && item.maintenance != null) {
+            if (item.manual case final task?) {
+              final updated = await showDialog<bool>(
+                context: context, builder: (_) => _ManualTaskDialog(task: task),
+              );
+              if (updated == true) await loadTasks();
+            } else if (item.maintenance != null) {
               await Navigator.pushNamed(context, '/maintenance_detail', arguments: item.maintenance);
-              loadTasks();
+              await loadTasks();
             }
           },
           child: Padding(
@@ -351,12 +346,12 @@ class TasksScreenState extends State<TasksScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (item.isInstallation ? AppColors.primary : AppColors.warning).withValues(alpha: 0.12),
+                        color: (item.manual != null ? AppColors.primary : AppColors.warning).withValues(alpha: 0.12),
                         borderRadius: AppRadius.smRadius,
                       ),
                       child: Icon(
-                        item.isInstallation ? Icons.build_rounded : Icons.handyman_rounded,
-                        color: item.isInstallation ? AppColors.primary : AppColors.warning,
+                        item.manual != null ? Icons.assignment_outlined : Icons.handyman_rounded,
+                        color: item.manual != null ? AppColors.primary : AppColors.warning,
                         size: 20,
                       ),
                     ),
@@ -422,6 +417,83 @@ class TasksScreenState extends State<TasksScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+class _ManualTaskDialog extends StatefulWidget {
+  const _ManualTaskDialog({required this.task});
+  final ManualTask task;
+
+  @override
+  State<_ManualTaskDialog> createState() => _ManualTaskDialogState();
+}
+
+class _ManualTaskDialogState extends State<_ManualTaskDialog> {
+  late int _status = widget.task.statusCode;
+  late final _notes = TextEditingController(text: widget.task.notes);
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _notes.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await StaffTaskService.update(widget.task.id, _status, notes: _notes.text);
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString().replaceFirst('Exception: ', '');
+        _saving = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final task = widget.task;
+    return AlertDialog(
+      title: Text(task.title),
+      scrollable: true,
+      content: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text(task.description),
+        if (task.contractId != null) Text('Hợp đồng #${task.contractId}'),
+        if (task.ticketId != null) Text('Phiếu bảo trì #${task.ticketId}'),
+        if (task.dueAt != null) Text('Hạn ${DateFormat('dd/MM/yyyy HH:mm').format(task.dueAt!)}'),
+        if (task.completedAt != null)
+          Text('Hoàn thành ${DateFormat('dd/MM/yyyy HH:mm').format(task.completedAt!)}'),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<int>(
+          initialValue: _status >= 0 && _status <= 3 ? _status : null,
+          decoration: const InputDecoration(labelText: 'Trạng thái'),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Mới')),
+            DropdownMenuItem(value: 1, child: Text('Đang thực hiện')),
+            DropdownMenuItem(value: 2, child: Text('Hoàn thành')),
+            DropdownMenuItem(value: 3, child: Text('Đã hủy')),
+          ],
+          onChanged: _saving ? null : (value) => setState(() => _status = value!),
+        ),
+        const SizedBox(height: 12),
+        TextField(controller: _notes, enabled: !_saving, maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Ghi chú tiến độ')),
+        if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.error)),
+      ]),
+      actions: [
+        TextButton(onPressed: _saving ? null : () => Navigator.pop(context), child: const Text('Đóng')),
+        FilledButton(onPressed: _saving || _status < 0 || _status > 3 ? null : _save,
+          child: Text(_saving ? 'Đang lưu' : 'Lưu')),
+      ],
     );
   }
 }

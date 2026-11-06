@@ -9,7 +9,8 @@ class ReportProvider with ChangeNotifier {
   ReportModel? _reportData;
   bool _isLoading = false;
   String? _errorMessage;
-  String _currentTimeFilter = 'Tháng này';
+  String _currentTimeFilter = 'all';
+  int _request = 0;
 
   ReportModel? get reportData => _reportData;
   bool get isLoading => _isLoading;
@@ -17,6 +18,7 @@ class ReportProvider with ChangeNotifier {
   String get currentTimeFilter => _currentTimeFilter;
 
   Future<void> fetchReports({String? timeFilter}) async {
+    final request = ++_request;
     if (timeFilter != null) {
       _currentTimeFilter = timeFilter;
     }
@@ -26,12 +28,15 @@ class ReportProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _reportData = await _repository.getReports(_currentTimeFilter);
+      final report = await _repository.getReports(_currentTimeFilter);
+      if (request == _request) _reportData = report;
     } catch (e) {
-      _errorMessage = e.toString();
+      if (request == _request) _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (request == _request) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 }

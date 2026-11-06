@@ -24,8 +24,8 @@ BEGIN
     );
     INSERT dbo.SchemaVersions (Version) VALUES (1);
 END
-ELSE IF (SELECT ISNULL(MAX(Version), 0) FROM dbo.SchemaVersions) <> 1
-    THROW 51003, N'This release expects schema version 001.', 1;
+ELSE IF (SELECT ISNULL(MAX(Version), 0) FROM dbo.SchemaVersions) NOT IN (1, 2)
+    THROW 51003, N'This release expects schema version 001 or 002.', 1;
 
 IF OBJECT_ID(N'dbo.__EFMigrationsHistory', N'U') IS NOT NULL
     DROP TABLE dbo.__EFMigrationsHistory;

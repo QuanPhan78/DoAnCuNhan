@@ -29,4 +29,36 @@ class LocalIncidentDataSource implements IncidentDataSource {
     _inMemoryData!.insert(0, incident); // Thêm vào đầu
     return incident;
   }
+
+  @override
+  Future<IncidentModel> getIncident(String id) async {
+    await _initData();
+    return _inMemoryData!.firstWhere((incident) => incident.id == id);
+  }
+
+  @override
+  Future<IncidentReview> acceptIncident(String id, bool accepted, String feedback) async {
+    final incident = await getIncident(id);
+    if (incident.statusCode != 3) throw StateError('Phiếu chưa chờ nghiệm thu.');
+    if (!accepted && feedback.trim().isEmpty) throw ArgumentError('Nhập lý do từ chối.');
+    return _replace(incident, (
+      statusCode: accepted ? 5 : 2,
+      status: accepted ? 'Đã nghiệm thu' : 'Đang xử lý',
+      rating: incident.rating, feedback: incident.feedback,
+    ));
+  }
+
+  @override
+  Future<IncidentReview> rateIncident(String id, int rating, String feedback) async {
+    final incident = await getIncident(id);
+    if (incident.statusCode != 3 && incident.statusCode != 5) throw StateError('Phiếu chưa sửa xong.');
+    if (rating < 1 || rating > 5) throw ArgumentError('Điểm đánh giá từ 1 đến 5 sao.');
+    return _replace(incident, (statusCode: incident.statusCode!, status: incident.status,
+      rating: rating, feedback: feedback.trim().isEmpty ? incident.feedback : feedback));
+  }
+
+  IncidentReview _replace(IncidentModel incident, IncidentReview review) {
+    _inMemoryData![_inMemoryData!.indexOf(incident)] = incident.withReview(review);
+    return review;
+  }
 }

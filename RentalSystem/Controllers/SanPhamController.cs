@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Common;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,9 +24,9 @@ namespace RentalSystem.Controllers
             var sanPhams = await _context.SanPhams.Include(s => s.LoaiThietBi).ToListAsync();
             ViewBag.Categories = await _context.LoaiThietBis.ToListAsync();
             
-            // Tính số lượng máy sẵn sàng cho thuê của từng sản phẩm
+            // Đếm máy có thể nhận đặt thuê theo lịch.
             var stockCounts = await _context.ThietBis
-                .Where(t => !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now))
+                .Where(t => RentalBooking.RentableStatuses.Contains(t.TrangThai))
                 .GroupBy(t => t.MaSanPham)
                 .Select(g => new { MaSanPham = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.MaSanPham, x => x.Count);
@@ -44,9 +45,9 @@ namespace RentalSystem.Controllers
 
             if (sp == null) return NotFound();
 
-            // Đếm số lượng máy vật lý đang sẵn sàng cho thuê trong kho
+            // Đếm máy có thể nhận đặt thuê theo lịch.
             ViewBag.InStock = await _context.ThietBis
-                .CountAsync(t => t.MaSanPham == id && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayKetThuc > DateTime.Now));
+                .CountAsync(t => t.MaSanPham == id && RentalBooking.RentableStatuses.Contains(t.TrangThai));
 
             // Gợi ý danh sách sản phẩm cùng nhóm phân loại
             ViewBag.RelatedProducts = await _context.SanPhams

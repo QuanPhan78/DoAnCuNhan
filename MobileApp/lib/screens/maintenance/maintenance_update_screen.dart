@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/maintenance_model.dart';
+import '../../models/role_enum.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/maintenance_provider.dart';
 import '../../widgets/core/custom_app_bar.dart';
@@ -19,25 +20,33 @@ class MaintenanceUpdateScreen extends StatefulWidget {
 
 class _MaintenanceUpdateScreenState extends State<MaintenanceUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
-  late String _status;
+  late int _status;
   final _noteCtrl = TextEditingController();
   final _resultCtrl = TextEditingController();
 
-  final List<String> _statuses = ['Đã gửi', 'Tiếp nhận', 'Phân công', 'Đang xử lý', 'Hoàn thành'];
+  static const _statuses = {2: 'Đang xử lý', 3: 'Chờ nghiệm thu'};
 
   @override
   void initState() {
     super.initState();
-    _status = widget.maintenance.status ?? 'Đã gửi';
-    if (!_statuses.contains(_status)) {
-      _statuses.insert(0, _status);
-    }
+    _status = widget.maintenance.statusCode == 2 ? 3 : 2;
+  }
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    _resultCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final user = context.read<AuthProvider>().currentUser;
-    if (user == null) return;
+    if (user == null || user.role != Role.staff ||
+        user.id != widget.maintenance.assignedStaffId ||
+        widget.maintenance.isClosed || widget.maintenance.statusCode == 3) {
+      return;
+    }
 
     final updated = MaintenanceModel(
       id: widget.maintenance.id,
@@ -46,18 +55,21 @@ class _MaintenanceUpdateScreenState extends State<MaintenanceUpdateScreen> {
       deviceId: widget.maintenance.deviceId,
       customer: widget.maintenance.customer,
       description: widget.maintenance.description,
-      status: _status,
-      assignedEmployee: user.name,
+      status: _statuses[_status],
+      statusCode: _status,
+      assignedStaffId: widget.maintenance.assignedStaffId,
+      assignedEmployee: widget.maintenance.assignedEmployee,
+      updateNote: _noteCtrl.text.trim(),
       createdAt: widget.maintenance.createdAt,
-      completedAt: _status == 'Hoàn thành' ? DateTime.now().toString().substring(0, 16) : widget.maintenance.completedAt,
-      result: _status == 'Hoàn thành' ? _resultCtrl.text : widget.maintenance.result,
+      completedAt: _status == 3 ? DateTime.now().toString().substring(0, 16) : null,
+      result: _status == 3 ? _resultCtrl.text.trim() : null,
       notes: List.from(widget.maintenance.notes),
     );
 
-    if (_noteCtrl.text.isNotEmpty || _status == 'Hoàn thành') {
+    if (_noteCtrl.text.trim().isNotEmpty) {
       updated.notes.add(MaintenanceNote(
         time: DateTime.now().toString().substring(0, 16),
-        content: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : 'Đã cập nhật trạng thái bảo trì',
+        content: _noteCtrl.text.trim(),
         author: user.name,
       ));
     }
@@ -86,9 +98,11 @@ class _MaintenanceUpdateScreenState extends State<MaintenanceUpdateScreen> {
             children: [
               Text('Trạng thái mới', style: AppTextStyles.h2.copyWith(fontSize: 16)),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
+              DropdownButtonFormField<int>(
                 initialValue: _status,
-                items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: _statuses.entries.where((entry) =>
+                  widget.maintenance.statusCode == 2 || entry.key == 2).map((entry) => DropdownMenuItem(
+                  value: entry.key, child: Text(entry.value))).toList(),
                 onChanged: (v) => setState(() => _status = v!),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
                 decoration: _buildInputDecoration('Chọn trạng thái'),
@@ -101,7 +115,7 @@ class _MaintenanceUpdateScreenState extends State<MaintenanceUpdateScreen> {
                 maxLines: 4,
                 decoration: _buildInputDecoration('Nhập thông tin cập nhật...'),
               ),
-              if (_status == 'Hoàn thành') ...[
+              if (_status == 3) ...[
                 const SizedBox(height: 24),
                 Text('Kết quả xử lý', style: AppTextStyles.h2.copyWith(fontSize: 16)),
                 const SizedBox(height: 8),
@@ -109,7 +123,7 @@ class _MaintenanceUpdateScreenState extends State<MaintenanceUpdateScreen> {
                   controller: _resultCtrl,
                   maxLines: 3,
                   decoration: _buildInputDecoration('Nhập kết quả bảo trì (bắt buộc)...'),
-                  validator: (v) => v == null || v.isEmpty ? 'Vui lòng nhập kết quả' : null,
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập kết quả' : null,
                 ),
               ],
               const SizedBox(height: 40),

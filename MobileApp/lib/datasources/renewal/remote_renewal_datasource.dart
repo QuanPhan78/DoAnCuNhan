@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/renewal_model.dart';
 import '../../services/api_config.dart';
 import 'renewal_datasource.dart';
@@ -14,13 +14,12 @@ class RemoteRenewalDataSource implements RenewalDataSource {
   Future<bool> submitRenewalRequest(RenewalModel request) async {
     try {
       final url = Uri.parse('$baseUrl/contracts/${request.contractId}/renew');
-      final response = await http.post(
+      final response = await ApiSession.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'duration': request.duration,
           'notes': request.notes,
-          'customerId': request.customerId,
         }),
       );
       return response.statusCode >= 200 && response.statusCode < 300;

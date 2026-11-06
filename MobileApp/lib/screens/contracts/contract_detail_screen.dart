@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/contract_model.dart';
+import '../../models/role_enum.dart';
+import '../../models/installation_model.dart';
 import '../../providers/installation_provider.dart';
 import '../../providers/renewal_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/contract_provider.dart';
+import '../../providers/rental_provider.dart';
 import '../../models/permission_enum.dart';
 import '../../utils/permission_manager.dart';
 import '../../widgets/core/custom_app_bar.dart';
 import '../../widgets/core/custom_button.dart';
+import '../../widgets/cancellation_reason_dialog.dart';
 import '../../widgets/dashboard_widgets.dart'; // StatusBadge, BadgeStatus
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -27,19 +31,55 @@ class ContractDetailScreen extends StatefulWidget {
 }
 
 class _ContractDetailScreenState extends State<ContractDetailScreen> {
+  late ContractModel _contract;
+  bool _updatingInstallation = false;
+
   @override
   void initState() {
     super.initState();
+    _contract = widget.contract;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<InstallationProvider>().fetchInstallation(widget.contract.id);
+      _refreshContract();
     });
+  }
+
+  Future<void> _refreshContract() async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
+    try {
+      final contract = await context.read<ContractProvider>().getContract(
+        _contract.id, user.id, user.role,
+      );
+      if (mounted) setState(() => _contract = contract);
+    } catch (error) {
+      if (mounted) _showMsg(context, error.toString().replaceFirst('Exception: ', ''), false);
+    }
+  }
+
+  Future<void> _requestCancellation() async {
+    final reason = await showCancellationReasonDialog(context);
+    if (reason == null || !mounted) return;
+    final rentals = context.read<RentalProvider>();
+    final contracts = context.read<ContractProvider>();
+    final user = context.read<AuthProvider>().currentUser;
+    if (rentals.isLoading || user == null) return;
+    try {
+      await rentals.requestCancellation(_contract.id, reason);
+      if (!mounted) return;
+      _showMsg(context, 'Đã gửi yêu cầu hủy. Vui lòng chờ duyệt.', true);
+      await Future.wait([_refreshContract(), contracts.fetchContracts(user.role, user.id)]);
+    } catch (error) {
+      if (mounted) _showMsg(context, error.toString().replaceFirst('Exception: ', ''), false);
+    }
   }
 
   void _openPdfViewer(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ContractPdfViewerScreen(contract: widget.contract),
+        builder: (_) => ContractPdfViewerScreen(contract: _contract),
       ),
     );
   }
@@ -50,6 +90,8 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
       case 'đang hiệu lực':
         return BadgeStatus.success;
       case 'chờ duyệt':
+      case 'yêu cầu hủy':
+      case 'đã trả máy (chờ quyết toán)':
         return BadgeStatus.warning;
       case 'đã thanh lý':
       case 'hoàn thành':
@@ -67,17 +109,30 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final contract = widget.contract;
+    final contract = _contract;
     final installProvider = context.watch<InstallationProvider>();
-    final installation = installProvider.currentInstallation;
+    final currentInstallation = installProvider.currentInstallation;
+    final installation = currentInstallation?.contractId == contract.id ? currentInstallation : null;
     final authProvider = context.read<AuthProvider>();
-    final userRole = authProvider.currentUser?.role;
+    final user = authProvider.currentUser;
+    final canRequestCancellation = user?.role == Role.customer &&
+        user?.id == contract.customerId && contract.statusCode == 0 &&
+        !contract.cancellationRequested;
+    final rentalLoading = context.watch<RentalProvider>().isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: CustomAppBar(
         title: 'Chi tiết Hợp đồng',
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Tải lại hợp đồng',
+            onPressed: () {
+              installProvider.fetchInstallation(contract.id);
+              _refreshContract();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
             tooltip: 'Xem file PDF',
@@ -100,9 +155,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                     style: AppTextStyles.h1.copyWith(fontSize: 24),
                   ),
                 ),
-                StatusBadge(
-                  text: contract.status ?? 'Không rõ',
-                  status: _getBadgeStatus(contract.status),
+                Flexible(
+                  child: StatusBadge(
+                    text: contract.status ?? 'Không rõ',
+                    status: _getBadgeStatus(contract.status),
+                  ),
                 ),
               ],
             ),
@@ -134,6 +191,12 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                   _buildInfoRow('Hình thức', contract.rentalType ?? 'N/A'),
                   _buildDivider(),
                   _buildInfoRow('Tổng tiền', _formatCurrency(contract.totalAmount), isHighlight: true),
+                  const Divider(),
+                  _buildInfoRow('Trạng thái thanh toán', contract.paymentStatus ?? 'Chưa xác định'),
+                  if (contract.cancellationReason?.isNotEmpty == true) ...[
+                    _buildDivider(),
+                    _buildInfoRow('Lý do hủy', contract.cancellationReason!),
+                  ],
                 ],
               ),
             ),
@@ -170,7 +233,10 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                 (contract.extensionDetails != null && contract.extensionDetails!.isNotEmpty))
               const SizedBox(height: 16),
 
-            // Installation Details (from Provider)
+            if (installProvider.errorMessage case final message?) ...[
+              Text(message, style: const TextStyle(color: AppColors.error)),
+              const SizedBox(height: 16),
+            ],
             if (installation != null) ...[
               _buildSectionCard(
                 title: 'Tiến độ lắp đặt',
@@ -224,10 +290,19 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
             const SizedBox(height: 32),
 
             // Actions
+            if (canRequestCancellation) ...[
+              CustomButton(
+                text: 'Yêu cầu hủy',
+                type: ButtonType.destructive,
+                onPressed: rentalLoading ? null : _requestCancellation,
+                isLoading: rentalLoading,
+              ),
+              const SizedBox(height: 12),
+            ],
             if (installProvider.isLoading)
               const Center(child: CircularProgressIndicator(color: AppColors.primary))
             else
-              _buildActions(context, installation?.status, contract.id, userRole),
+              _buildActions(context, installation, contract.id, user?.role),
               
             const SizedBox(height: 40),
           ],
@@ -339,28 +414,22 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     );
   }
 
-  // LOGIC ACTIONS (Unchanged in logic, only UI updated)
-  Widget _buildActions(BuildContext context, String? installStatus, String contractId, dynamic userRole) {
+  Widget _buildActions(BuildContext context, InstallationModel? installation, String contractId, Role? userRole) {
     if (userRole == null) return const SizedBox();
-    final canUpdateTask = PermissionManager.hasPermission(userRole, AppPermission.updateTaskStatus);
-    final canManageContract = PermissionManager.hasPermission(userRole, AppPermission.manageContracts);
     final canRequestExtension = PermissionManager.hasPermission(userRole, AppPermission.requestExtension);
 
     List<Widget> buttons = [];
 
-    if (canUpdateTask && installStatus != null) {
-      if (installStatus == 'Chưa bắt đầu') {
-        buttons.add(CustomButton(text: 'Xác nhận lắp đặt', onPressed: () => _confirmInstall(context, contractId), type: ButtonType.primary, isFullWidth: true));
-      } else if (installStatus == 'Đang thực hiện') {
-        buttons.add(CustomButton(text: 'Hoàn thành lắp đặt', onPressed: () => _completeInstall(context, contractId), type: ButtonType.primary, isFullWidth: true));
-      }
+    if (installation != null && installation.canUpdate && installation.taskId != null &&
+        (installation.statusCode == 0 || installation.statusCode == 1)) {
+      final starting = installation.statusCode == 0;
+      buttons.add(CustomButton(
+        text: starting ? 'Bắt đầu lắp đặt' : 'Hoàn thành lắp đặt',
+        onPressed: _updatingInstallation ? null : () => _updateInstallation(installation, starting ? 1 : 2),
+      ));
     }
 
-    if (canManageContract && widget.contract.status != 'Đã thanh lý') {
-      buttons.add(CustomButton(text: 'Hoàn thành hợp đồng', onPressed: () => _completeContract(context, contractId, userRole), type: ButtonType.secondary, isFullWidth: true));
-    }
-
-    if (canRequestExtension && widget.contract.status != 'Đã thanh lý') {
+    if (canRequestExtension && _contract.statusCode == 1) {
       buttons.add(CustomButton(text: 'Gia hạn hợp đồng', onPressed: () => _showRenewalDialog(context, contractId), type: ButtonType.outline, isFullWidth: true));
     }
 
@@ -430,44 +499,18 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     );
   }
 
-  Future<void> _confirmInstall(BuildContext context, String contractId) async {
-    final confirm = await _showConfirmDialog(context, 'Bạn có chắc muốn xác nhận bắt đầu lắp đặt?');
-    if (confirm == true) {
-      if (!context.mounted) return;
-      final success = await context.read<InstallationProvider>().confirmInstallation(contractId);
-      if (!context.mounted) return;
-      _showMsg(context, success ? 'Cập nhật thành công' : 'Cập nhật thất bại', success);
-    }
-  }
-
-  Future<void> _completeInstall(BuildContext context, String contractId) async {
-    final confirm = await _showConfirmDialog(context, 'Xác nhận hoàn thành quá trình lắp đặt?');
-    if (confirm == true) {
-      if (!context.mounted) return;
-      final success = await context.read<InstallationProvider>().completeInstallation(contractId);
-      if (!context.mounted) return;
-      _showMsg(context, success ? 'Hoàn thành lắp đặt' : 'Cập nhật thất bại', success);
-    }
-  }
-
-  Future<void> _completeContract(BuildContext context, String contractId, dynamic userRole) async {
-    final confirm = await _showConfirmDialog(context, 'Xác nhận hợp đồng này đã hoàn thành/thanh lý?');
-    if (confirm == true) {
-      if (!context.mounted) return;
-      final success = await context.read<ContractProvider>().updateContractStatus(
-        contractId, 'Đã thanh lý', userRole, context.read<AuthProvider>().currentUser!.id
-      );
-      if (success) {
-        if (!context.mounted) return;
-        await context.read<InstallationProvider>().completeContract(contractId);
-        
-        if (!context.mounted) return;
-        _showMsg(context, 'Đã hoàn thành hợp đồng', true);
-        Navigator.pop(context); 
-      } else {
-        if (!context.mounted) return;
-        _showMsg(context, 'Lỗi cập nhật hợp đồng', false);
-      }
+  Future<void> _updateInstallation(InstallationModel installation, int status) async {
+    final confirm = await _showConfirmDialog(context,
+      status == 1 ? 'Xác nhận bắt đầu lắp đặt?' : 'Xác nhận đã lắp đặt xong?');
+    if (confirm != true || !mounted || _updatingInstallation) return;
+    setState(() => _updatingInstallation = true);
+    try {
+      await context.read<InstallationProvider>().updateInstallation(installation, status);
+      if (mounted) _showMsg(context, 'Đã cập nhật tiến độ lắp đặt.', true);
+    } catch (error) {
+      if (mounted) _showMsg(context, error.toString().replaceFirst('Exception: ', ''), false);
+    } finally {
+      if (mounted) setState(() => _updatingInstallation = false);
     }
   }
 

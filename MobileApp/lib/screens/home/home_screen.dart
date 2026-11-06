@@ -171,15 +171,17 @@ class _HomeScreenState extends State<HomeScreen> {
             QuickActionCard(title: config.tr('Báo sự cố'), icon: Icons.warning_rounded, onTap: () => Navigator.pushNamed(context, '/create_incident')),
             QuickActionCard(title: config.tr('Phản hồi'), icon: Icons.feedback_rounded, onTap: () => Navigator.pushNamed(context, '/feedbacks')),
             QuickActionCard(title: config.tr('Khuyến mãi'), icon: Icons.local_offer_rounded, onTap: () => Navigator.pushNamed(context, '/promotions')),
+            QuickActionCard(title: config.tr('Thông báo'), icon: Icons.notifications_outlined,
+              onTap: () => Navigator.pushNamed(context, '/notifications')),
           ],
         ),
 
         const SizedBox(height: 8),
-        SectionTitle(title: config.tr('Khuyến mãi & Thông báo')),
+        SectionTitle(title: config.tr('Khuyến mãi')),
         if (stats.promotions.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16),
-            child: Text(config.tr('Chưa có thông báo nào mới.'), style: AppTextStyles.bodySecondary),
+            child: Text(config.tr('Chưa có khuyến mãi.'), style: AppTextStyles.bodySecondary),
           ),
         ...stats.promotions.map((p) => Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -396,6 +398,10 @@ class _HomeScreenState extends State<HomeScreen> {
           runSpacing: 16,
           alignment: WrapAlignment.start,
           children: [
+            QuickActionCard(title: config.tr('Việc của tôi'), icon: Icons.assignment_outlined,
+              onTap: () => Navigator.pushNamed(context, '/tasks')),
+            QuickActionCard(title: config.tr('Thông báo'), icon: Icons.notifications_outlined,
+              onTap: () => Navigator.pushNamed(context, '/notifications')),
             QuickActionCard(title: config.tr('Sự cố'), icon: Icons.report_problem_rounded, onTap: () => Navigator.pushNamed(context, '/incidents')),
             QuickActionCard(title: config.tr('Bảo trì'), icon: Icons.build_rounded, onTap: () => Navigator.pushNamed(context, '/maintenances')),
             QuickActionCard(title: config.tr('Phản hồi'), icon: Icons.feedback_rounded, onTap: () => Navigator.pushNamed(context, '/feedbacks')),

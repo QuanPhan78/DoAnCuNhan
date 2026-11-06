@@ -5,6 +5,16 @@
 
 <div class="page-header">
     <h3 class="page-title"><i class="fas fa-chart-pie"></i> Tổng Quan Kinh Doanh</h3>
+    <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+        <label for="timeFilter">Kỳ báo cáo</label>
+        <select id="timeFilter" name="timeFilter" class="form-select w-auto" onchange="this.form.submit()">
+            <option value="all" selected="@(ViewBag.TimeFilter == "all")">Tất cả</option>
+            <option value="week" selected="@(ViewBag.TimeFilter == "week")">Tuần này</option>
+            <option value="month" selected="@(ViewBag.TimeFilter == "month")">Tháng này</option>
+            <option value="year" selected="@(ViewBag.TimeFilter == "year")">Năm nay</option>
+        </select>
+        <noscript><button type="submit" class="btn btn-outline-primary">Áp dụng</button></noscript>
+    </form>
 </div>
 
 <!-- 4 Thẻ Thống Kê (Stat Cards) -->
@@ -13,7 +23,7 @@
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-wallet"></i></div>
             <div>
-                <div class="stat-label">Doanh thu (Đã thu)</div>
+                <div class="stat-label">Doanh thu hợp đồng hoàn thành</div>
                 <div class="stat-value">@((ViewBag.TotalRevenue ?? 0).ToString("N0")) đ</div>
             </div>
         </div>
@@ -106,7 +116,7 @@
     <div class="col-xl-8 col-lg-7 mb-4">
         <div class="admin-card h-100">
             <div class="admin-card-header">
-                <h6 class="m-0 fw-bold text-brand">Biểu Đồ Doanh Thu (6 Tháng)</h6>
+                <h6 class="m-0 fw-bold text-brand">Biểu đồ doanh thu @(ViewBag.TimeFilter == "all" ? "(6 tháng gần nhất)" : "")</h6>
             </div>
             <div class="card-body">
                 <div class="chart-area" style="height: 300px;">

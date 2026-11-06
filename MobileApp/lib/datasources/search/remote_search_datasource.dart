@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/search/search_result_model.dart';
 import '../../models/device_model.dart';
 import '../../models/contract_model.dart';
@@ -18,9 +18,8 @@ class RemoteSearchDataSource implements SearchDataSource {
   @override
   Future<List<SearchResultModel>> search(String query, {String filterType = 'all', String? userId, Role? role}) async {
     try {
-      final roleStr = role == Role.admin ? 'Admin' : (role == Role.staff ? 'Staff' : 'KhachHang');
-      final url = Uri.parse('$baseUrl/search?q=${Uri.encodeComponent(query)}&type=$filterType&userId=${userId ?? ""}&role=$roleStr');
-      final response = await http.get(url);
+      final url = Uri.parse('$baseUrl/search?q=${Uri.encodeComponent(query)}&type=$filterType');
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
@@ -54,17 +53,7 @@ class RemoteSearchDataSource implements SearchDataSource {
               imageAsset: orig['imageAsset'],
             );
           } else if (type == 'contract') {
-            originalModel = ContractModel(
-              id: orig['id']?.toString() ?? '',
-              contractCode: orig['contractCode'],
-              customerId: orig['customerId'],
-              customerName: orig['customerName'],
-              rentalStart: orig['rentalStart'],
-              rentalEnd: orig['rentalEnd'],
-              rentalType: orig['rentalType'],
-              status: orig['status'],
-              totalAmount: (orig['totalAmount'] as num?)?.toDouble(),
-            );
+            originalModel = ContractModel.fromJson(orig);
           } else if (type == 'incident') {
             originalModel = IncidentModel(
               id: orig['id']?.toString() ?? '',
@@ -76,6 +65,7 @@ class RemoteSearchDataSource implements SearchDataSource {
               severity: orig['severity'] ?? 'Trung bình',
               occurrenceTime: orig['occurrenceTime'] ?? '',
               status: orig['status'] ?? 'Chờ xử lý',
+              statusCode: orig['statusCode'],
               createdAt: orig['createdAt'] ?? '',
             );
           } else if (type == 'maintenance') {
@@ -86,6 +76,7 @@ class RemoteSearchDataSource implements SearchDataSource {
               deviceId: orig['deviceId'] ?? '',
               description: orig['description'] ?? '',
               status: orig['status'] ?? 'Chờ xử lý',
+              statusCode: orig['statusCode'],
               createdAt: orig['createdAt'] ?? '',
             );
           }

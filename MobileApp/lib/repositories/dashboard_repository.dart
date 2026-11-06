@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../services/api_session.dart';
 import '../../models/dashboard_model.dart';
 import '../../models/role_enum.dart';
 import '../services/api_config.dart';
@@ -17,9 +17,8 @@ class RemoteDashboardDataSource implements DashboardDataSource {
   @override
   Future<DashboardData> getDashboardData(Role role, {String? userId}) async {
     try {
-      final roleStr = role == Role.admin ? 'Admin' : (role == Role.staff ? 'Staff' : 'KhachHang');
-      final url = Uri.parse('$baseUrl/dashboard/stats?userId=${userId ?? ""}&role=$roleStr');
-      final response = await http.get(url);
+      final url = Uri.parse('$baseUrl/dashboard/stats');
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));

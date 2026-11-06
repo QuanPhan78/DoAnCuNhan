@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/feedback_model.dart';
 import '../../services/api_config.dart';
 import 'feedback_datasource.dart';
@@ -14,7 +14,7 @@ class RemoteFeedbackDataSource implements FeedbackDataSource {
   Future<List<FeedbackModel>> getFeedbacks() async {
     try {
       final url = Uri.parse('$baseUrl/maintenance');
-      final response = await http.get(url);
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
@@ -23,7 +23,7 @@ class RemoteFeedbackDataSource implements FeedbackDataSource {
           feedbackCode: 'FB-${item['id']}',
           contractId: item['contractCode'] ?? 'HD-${item['contractId']}',
           maintenanceId: item['code'] ?? 'SC-${item['id']}',
-          content: item['result']?.toString().isNotEmpty == true ? item['result'] : 'Đánh giá dịch vụ thiết bị',
+          content: item['feedback']?.toString().isNotEmpty == true ? item['feedback'] : 'Đánh giá dịch vụ thiết bị',
           rating: item['rating'] as int?,
           status: 'Đã phản hồi',
           createdAt: item['createdAt'],
@@ -46,7 +46,7 @@ class RemoteFeedbackDataSource implements FeedbackDataSource {
         'feedback': feedback.content,
       };
 
-      final response = await http.put(
+      final response = await ApiSession.put(
         url,
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),

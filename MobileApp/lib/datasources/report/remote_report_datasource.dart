@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/report_model.dart';
 import '../../services/api_config.dart';
 import 'report_datasource.dart';
@@ -13,8 +13,8 @@ class RemoteReportDataSource implements ReportDataSource {
   @override
   Future<ReportModel> getReports(String timeFilter) async {
     try {
-      final url = Uri.parse('$baseUrl/reports?timeFilter=$timeFilter');
-      final response = await http.get(url);
+      final url = Uri.parse('$baseUrl/reports').replace(queryParameters: {'timeFilter': timeFilter});
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(utf8.decode(response.bodyBytes));

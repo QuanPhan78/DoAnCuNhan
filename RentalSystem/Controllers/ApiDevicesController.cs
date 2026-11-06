@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RentalSystem.Common;
 using RentalSystem.Models;
 using System;
 using System.Linq;
@@ -62,6 +63,7 @@ namespace RentalSystem.Controllers
                     description = s.MoTa ?? "",
                     imageUrl = s.HinhAnh ?? "",
                     readyQuantity = readyCount,
+                    rentableQuantity = relatedTbs.Count(t => RentalBooking.RentableStatuses.Contains(t.TrangThai)),
                     totalQuantity = totalCount
                 };
             });
@@ -113,6 +115,7 @@ namespace RentalSystem.Controllers
                 description = s.MoTa ?? "",
                 imageUrl = s.HinhAnh ?? "",
                 readyQuantity = readyCount,
+                rentableQuantity = relatedTbs.Count(t => RentalBooking.RentableStatuses.Contains(t.TrangThai)),
                 totalQuantity = totalCount
             });
         }

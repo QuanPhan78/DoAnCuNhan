@@ -27,6 +27,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             var today = DateTime.Now.Date;
             foreach (var k in kyHans)
             {
+                if (k.HopDong != null && FirstContractPayment.IsPendingHandover(k.HopDong)) continue;
                 if (k.TrangThai == 1 || k.TrangThai == 3) continue; // paid or cancelled
                 if (today > k.NgayDenHan.Date)
                 {
@@ -39,6 +40,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                 }
             }
         }
+
+        private const string EarlyReturnNote = "Thanh lý sớm ngày ";
 
         // Đồng bộ trạng thái thanh toán hợp đồng bao gồm cả chi phí đền bù hư hại
         public static async Task SyncTrangThaiThanhToanHopDong(HopDong hopDong, ApplicationDbContext context)
@@ -65,21 +68,33 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .SumAsync(p => (decimal?)p.SoTien) ?? 0m;
             decimal remainingDebt = totalReceivable - totalCollected;
 
+            if (hopDong.TrangThai == 2 && await context.BienBanBanGiaos.AnyAsync(b =>
+                b.MaHopDong == hopDong.MaHopDong && b.LoaiBienBan == 1 && b.GhiChu.StartsWith(EarlyReturnNote)))
+            {
+                decimal unpaidDamages = Math.Max(0m, damages - paidDamages);
+                decimal netDeposit = hopDong.TienDaCoc - (hopDong.TienCocThucHoan ?? 0m);
+                decimal rentCollected = totalCollected - paidDamages;
+                hopDong.TrangThaiThanhToan = rentCollected + netDeposit >= hopDong.TongTien + unpaidDamages
+                    ? ContractPaymentStatus.Settled
+                    : ContractPaymentStatus.Outstanding;
+                return;
+            }
+
             if ((allInstallmentsPaid && damagesCleared) || remainingDebt <= 0)
             {
-                hopDong.TrangThaiThanhToan = 3; // 3: Đã tất toán đủ
+                hopDong.TrangThaiThanhToan = ContractPaymentStatus.Settled;
             }
             else if (hasAnyInstallmentPaid || (damages > paidDamages) || totalCollected > 0)
             {
-                hopDong.TrangThaiThanhToan = 2; // 2: Còn nợ
+                hopDong.TrangThaiThanhToan = ContractPaymentStatus.Outstanding;
             }
-            else if (hopDong.TienDaCoc > 0 || hopDong.TienCocBaoDamMay > 0)
+            else if (hopDong.YeuCauThanhToanLanDau ? hopDong.TienDaCoc > 0 : hopDong.TienDaCoc > 0 || hopDong.TienCocBaoDamMay > 0)
             {
-                hopDong.TrangThaiThanhToan = 1; // 1: Đã đặt cọc
+                hopDong.TrangThaiThanhToan = ContractPaymentStatus.DepositPaid;
             }
             else
             {
-                hopDong.TrangThaiThanhToan = 0; // 0: Chưa thanh toán
+                hopDong.TrangThaiThanhToan = ContractPaymentStatus.Unpaid;
             }
         }
 
@@ -118,7 +133,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
             else if (filter == "pending")
             {
-                query = query.Where(h => h.TrangThai == 0);
+                query = query.Where(h => h.TrangThai == 0 && !h.YeuCauHuy);
             }
             else if (filter == "completed")
             {
@@ -136,6 +151,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             // Tự động đồng bộ trạng thái trễ hạn vào CSDL
             var overdueToUpdate = await _context.KyHanThanhToans
                 .Where(k => (k.TrangThai == 0 || k.TrangThai == 2) && DateTime.Now.Date > k.NgayDenHan.Date)
+                .Where(k => !k.HopDong.YeuCauThanhToanLanDau || k.HopDong.TrangThai != 0)
                 .ToListAsync();
             if (overdueToUpdate.Any())
             {
@@ -195,7 +211,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .OrderBy(k => k.SoKyHan)
                 .ToListAsync();
 
-            CapNhatTreHanVaPhiPhat(kyHans);
+            if (!FirstContractPayment.IsPendingHandover(hd)) CapNhatTreHanVaPhiPhat(kyHans);
             await SyncTrangThaiThanhToanHopDong(hd, _context);
             await _context.SaveChangesAsync();
 
@@ -271,34 +287,16 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         // Giao diện dành cho Admin/Nhân viên tạo đơn trực tiếp tại quầy. 
-        // Hỗ trợ tìm hoặc tạo mới khách hàng, thiết lập số kỳ hạn trả góp và thu cọc tức thời.
+        // Lưu mức cọc phải nộp và chỉ ghi nhận tiền thuê thực tế đã nhận.
         [Authorize(Roles = "Admin,KinhDoanh")]
-        public async Task<IActionResult> Create(string KhachHang_HoTen, string KhachHang_SoDienThoai, string KhachHang_Email, string KhachHang_DiaChi, DateTime NgayBatDau, DateTime NgayKetThuc, decimal TienDaCoc, int HinhThucCoc, int SoKyHan, int[] SanPhamIds, int[] SoLuongs, string GhiChu)
+        public async Task<IActionResult> Create(string KhachHang_HoTen, string KhachHang_SoDienThoai, string? KhachHang_Email, string KhachHang_DiaChi, DateTime NgayBatDau, DateTime NgayKetThuc, decimal TienCocBaoDamMay, decimal TienThueTraTruoc, int HinhThucCoc, int SoKyHan, int[] SanPhamIds, int[] SoLuongs, string? GhiChu)
         {
-            // Đọc tiền cọc bảo đảm máy và tiền thuê trả trước từ Request.Form nếu có
-            decimal depositBaoDam = 0m;
-            decimal rentTraTruoc = 0m;
-            try
+            decimal depositBaoDam = TienCocBaoDamMay;
+            decimal rentTraTruoc = TienThueTraTruoc;
+            if (!ModelState.IsValid || depositBaoDam < 0 || rentTraTruoc < 0 ||
+                depositBaoDam != decimal.Truncate(depositBaoDam) || rentTraTruoc != decimal.Truncate(rentTraTruoc))
             {
-                if (Request?.HasFormContentType == true)
-                {
-                    if (Request.Form.ContainsKey("TienCocBaoDamMay") && decimal.TryParse(Request.Form["TienCocBaoDamMay"], out decimal parsedCoc))
-                        depositBaoDam = parsedCoc;
-                    if (Request.Form.ContainsKey("TienThueTraTruoc") && decimal.TryParse(Request.Form["TienThueTraTruoc"], out decimal parsedRent))
-                        rentTraTruoc = parsedRent;
-                }
-            }
-            catch { }
-
-            if (depositBaoDam == 0 && rentTraTruoc == 0 && TienDaCoc > 0)
-            {
-                depositBaoDam = TienDaCoc;
-            }
-
-            // Kiểm tra tiền cọc và tiền thuê trả trước hợp lệ
-            if (depositBaoDam < 0 || rentTraTruoc < 0 || TienDaCoc < 0)
-            {
-                TempData["Error"] = "Tiền đặt cọc và tiền thuê trả trước không thể là số âm!";
+                TempData["Error"] = "Vui lòng nhập tiền cọc và tiền thuê đã nhận theo đơn vị đồng, từ 0 trở lên.";
                 return RedirectToAction(nameof(Create));
             }
 
@@ -326,17 +324,31 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Create));
             }
 
+            var groupedLines = SanPhamIds.Zip(SoLuongs)
+                .Where(line => line.Second > 0)
+                .GroupBy(line => line.First)
+                .Select(group => (Product: group.Key, Quantity: group.Sum(line => (long)line.Second)))
+                .ToArray();
+            if (groupedLines.Any(line => line.Quantity > int.MaxValue))
+            {
+                TempData["Error"] = "Số lượng thiết bị vượt quá giới hạn.";
+                return RedirectToAction(nameof(Create));
+            }
+            SanPhamIds = groupedLines.Select(line => line.Product).ToArray();
+            SoLuongs = groupedLines.Select(line => (int)line.Quantity).ToArray();
+
             // Đồng bộ hóa kiểm tra tồn kho và cấp phát thiết bị
             await CartController.InventoryLock.WaitAsync();
             try
             {
+                await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
                 for (int i = 0; i < SanPhamIds.Length; i++)
                 {
                     if (SoLuongs[i] > 0)
                     {
                         int spId = SanPhamIds[i];
                         int slNeed = SoLuongs[i];
-                        int slKho = await _context.ThietBis.CountAsync(t => t.MaSanPham == spId && t.TrangThai != 2 && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayBatDau < NgayKetThuc && c.HopDong.NgayKetThuc > NgayBatDau));
+                        int slKho = await RentalBooking.AvailableDevices(_context, spId, NgayBatDau, NgayKetThuc).CountAsync();
                         
                         if (slKho < slNeed)
                         {
@@ -347,8 +359,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     }
                 }
 
-                var days = (NgayKetThuc.Date - NgayBatDau.Date).TotalDays;
-                if (days <= 0) days = 1;
+                int days = RentalBooking.RentalDays(NgayBatDau, NgayKetThuc);
                 decimal totalMoney = 0;
 
                 for (int i = 0; i < SanPhamIds.Length; i++)
@@ -360,21 +371,6 @@ namespace RentalSystem.Areas.Admin.Controllers
                         {
                             totalMoney += spInfo.GiaThueNgay * (decimal)days * SoLuongs[i];
                         }
-                    }
-                }
-
-                // Kiểm tra giới hạn tiền đặt cọc
-                if (TienDaCoc < 0)
-                {
-                    TempData["Error"] = "Tiền đặt cọc không thể âm!";
-                    return RedirectToAction(nameof(Create));
-                }
-                if (TienDaCoc > totalMoney)
-                {
-                    if (depositBaoDam <= 0)
-                    {
-                        TempData["Error"] = "Tiền đặt cọc không thể lớn hơn tổng giá trị hợp đồng!";
-                        return RedirectToAction(nameof(Create));
                     }
                 }
 
@@ -468,17 +464,15 @@ namespace RentalSystem.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Create));
                 }
 
-                decimal finalTotalDeposit = (depositBaoDam + rentTraTruoc) > 0 ? (depositBaoDam + rentTraTruoc) : TienDaCoc;
-
                 var hd = new HopDong
                 {
                     MaKhachHang = khachHang.MaNguoiDung,
                     MaNhanVien = adminId,
-                    NgayBatDau = NgayBatDau,
-                    NgayKetThuc = NgayKetThuc,
+                    NgayBatDau = NgayBatDau.Date,
+                    NgayKetThuc = NgayKetThuc.Date,
                     TienCocBaoDamMay = depositBaoDam,
                     TienThueTraTruoc = rentTraTruoc,
-                    TienDaCoc = finalTotalDeposit,
+                    YeuCauThanhToanLanDau = true,
                     TrangThai = 0, // Chờ duyệt
                     NgayKy = null,
                     ChuKyKhachHang = "",
@@ -504,8 +498,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                         
                         decimal giaThue = spInfo.GiaThueNgay * (decimal)days;
                         
-                        var devices = await _context.ThietBis
-                            .Where(t => t.MaSanPham == spId && t.TrangThai != 2 && !_context.ChiTietHopDongs.Any(c => c.MaThietBi == t.MaThietBi && c.HopDong.TrangThai != 2 && c.HopDong.TrangThai != 3 && c.HopDong.NgayBatDau < NgayKetThuc && c.HopDong.NgayKetThuc > NgayBatDau))
+                        var devices = await RentalBooking.AvailableDevices(_context, spId, NgayBatDau, NgayKetThuc)
+                            .OrderBy(t => t.MaThietBi)
                             .Take(slNeed)
                             .ToListAsync();
 
@@ -526,29 +520,11 @@ namespace RentalSystem.Areas.Admin.Controllers
                             _context.ChiTietHopDongs.Add(ct);
                             
                             // Đánh dấu thiết bị đang được giữ chỗ (3)
-                            dev.TrangThai = 3;
+                            if (dev.TrangThai == 0) dev.TrangThai = 3;
                         }
                     }
                 }
                 
-                // Tự động tạo Phiếu Thu cho Tiền Cọc bảo đảm máy và Tiền thuê trả trước (nếu có)
-                if (hd.TienCocBaoDamMay > 0)
-                {
-                    var phieuCoc = new PhieuThu
-                    {
-                        MaHopDong = hd.MaHopDong,
-                        LoaiPhieu = 1, // Thu cọc
-                        SoTien = hd.TienCocBaoDamMay,
-                        NgayGiaoDich = DateTime.Now,
-                        HinhThucThanhToan = HinhThucCoc,
-                        GhiChu = "Thu tiền cọc bảo đảm máy khi tạo đơn",
-                        MaNhanVienThu = adminId,
-                        DaHuy = false
-                    };
-                    _context.PhieuThus.Add(phieuCoc);
-                    hd.TrangThaiThanhToan = 1; // 1: Đã đặt cọc
-                }
-
                 if (hd.TienThueTraTruoc > 0)
                 {
                     var phieuRent = new PhieuThu
@@ -565,32 +541,28 @@ namespace RentalSystem.Areas.Admin.Controllers
                     _context.PhieuThus.Add(phieuRent);
                     hd.TrangThaiThanhToan = 2; // Còn nợ
                 }
-                else if (hd.TienCocBaoDamMay == 0 && hd.TienDaCoc > 0)
-                {
-                    var phieuCoc = new PhieuThu
-                    {
-                        MaHopDong = hd.MaHopDong,
-                        LoaiPhieu = 1, // Thu cọc
-                        SoTien = hd.TienDaCoc,
-                        NgayGiaoDich = DateTime.Now,
-                        HinhThucThanhToan = HinhThucCoc,
-                        GhiChu = "Thu tiền cọc khi tạo đơn",
-                        MaNhanVienThu = adminId,
-                        DaHuy = false
-                    };
-                    _context.PhieuThus.Add(phieuCoc);
-                    hd.TrangThaiThanhToan = 1; // 1: Đã đặt cọc
-                }
-
                 int maxInstallments = Math.Max(1, (int)Math.Floor(days / 7.0));
                 if (SoKyHan < 1) SoKyHan = 1;
                 if (SoKyHan > maxInstallments) SoKyHan = maxInstallments;
                 hd.SoKyHan = SoKyHan;
-
+                _context.ThongBaos.Add(new ThongBao
+                {
+                    MaNguoiDung = hd.MaKhachHang,
+                    TieuDe = $"Hợp đồng #{hd.MaHopDong} chờ ký",
+                    NoiDung = "Sau khi ký, bạn có thể xem và chuyển khoản thanh toán lần đầu.",
+                    LoaiThongBao = "ThanhToan",
+                    LienKet = $"/Cart/ContractDetail/{hd.MaHopDong}"
+                });
                 await _context.SaveChangesAsync();
-                
-                TempData["Success"] = "Đã tạo hợp đồng mới thành công (Đang chờ duyệt)!";
+                await transaction.CommitAsync();
+
+                TempData["Success"] = "Đã tạo hợp đồng. Khách hàng có thể ký và thanh toán lần đầu.";
                 return RedirectToAction(nameof(Index));
+            }
+            catch (RentalBookingException error)
+            {
+                TempData["Error"] = error.Message;
+                return RedirectToAction(nameof(Create));
             }
             finally
             {
@@ -611,6 +583,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
             var hopDong = await _context.HopDongs
                 .Include(h => h.KyHanThanhToans)
                 .Include(h => h.PhieuBaoTris)
@@ -618,25 +591,19 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(h => h.MaHopDong == id);
             if (hopDong == null) return NotFound();
 
-            // Không cho đổi trạng thái khi hợp đồng đã hoàn tất hoặc đã hủy
-            if ((hopDong.TrangThai == 2 || hopDong.TrangThai == 3) && (status != hopDong.TrangThai))
+            if (status == hopDong.TrangThai)
+                return RedirectToAction(nameof(Details), new { id, returnUrl });
+
+            if (!ContractLifecycle.CanTransition(hopDong.TrangThai, status))
             {
-                TempData["Error"] = "Hợp đồng đã đóng (Hoàn tất/Hủy) không thể chuyển đổi trạng thái!";
-                return RedirectToAction(nameof(Details), new { id = id });
+                TempData["Error"] = "Thao tác không phù hợp với trạng thái hợp đồng.";
+                return RedirectToAction(nameof(Details), new { id, returnUrl });
             }
 
-            // Không cho chuyển ngược về Chờ duyệt
-            if ((hopDong.TrangThai == 1 || hopDong.TrangThai == 4) && status == 0)
+            if (status == 1 && hopDong.YeuCauHuy)
             {
-                TempData["Error"] = "Hợp đồng đã bàn giao máy không thể chuyển ngược về trạng thái Chờ duyệt!";
-                return RedirectToAction(nameof(Details), new { id = id });
-            }
-
-            // Không cho hủy hợp đồng khi máy đang cho thuê
-            if (hopDong.TrangThai == 1 && status == 3)
-            {
-                TempData["Error"] = "Không thể hủy hợp đồng khi thiết bị đang trong quá trình cho thuê! Vui lòng thực hiện quy trình thu hồi máy.";
-                return RedirectToAction(nameof(Details), new { id = id });
+                TempData["Error"] = "Đơn hàng đang chờ duyệt hủy.";
+                return RedirectToAction(nameof(Details), new { id, returnUrl });
             }
 
             // Chặn kết thúc hoặc hủy hợp đồng khi còn phiếu bảo trì chưa đóng
@@ -668,6 +635,19 @@ namespace RentalSystem.Areas.Admin.Controllers
                 {
                     TempData["Error"] = "Vui lòng hoàn tất Chữ ký nhân viên đối chiếu trước khi thực hiện bàn giao máy!";
                     return RedirectToAction(nameof(Details), new { id = id });
+                }
+
+                if (FirstContractPayment.IsPendingHandover(hopDong))
+                {
+                    var first = hopDong.KyHanThanhToans.FirstOrDefault(k => k.SoKyHan == 1 && k.TrangThai != 3);
+                    var balance = FirstContractPayment.Balance(hopDong, hopDong.PhieuThus, first);
+                    if (first == null || balance.Total > 0)
+                    {
+                        TempData["Error"] = first == null
+                            ? "Chưa có lịch thanh toán lần đầu."
+                            : $"Còn thiếu {balance.Total:N0} đ trong khoản thanh toán lần đầu.";
+                        return RedirectToAction(nameof(Details), new { id, returnUrl });
+                    }
                 }
 
                 foreach (var ct in chiTiets)
@@ -755,17 +735,6 @@ namespace RentalSystem.Areas.Admin.Controllers
                     await SyncTrangThaiThanhToanHopDong(hopDong, _context);
                 }
             }
-            else if (status == 0) // Chờ duyệt -> Máy đang giữ chỗ
-            {
-                foreach (var ct in chiTiets)
-                {
-                    var tb = await _context.ThietBis.FindAsync(ct.MaThietBi);
-                    if (tb != null && (tb.TrangThai == 1 || tb.TrangThai == 0))
-                    {
-                        tb.TrangThai = 3; // Giữ chỗ (Pending)
-                    }
-                }
-            }
             else if (status == 4) // Đã trả máy (Chờ quyết toán công nợ)
             {
                 // Giải phóng toàn bộ thiết bị về kho (0: Ready) TRỪ thiết bị hỏng (4: Broken)
@@ -790,11 +759,11 @@ namespace RentalSystem.Areas.Admin.Controllers
                         }
                         else
                         {
-                            tb.TrangThai = 0; // Sẵn sàng cho thuê
+                            tb.TrangThai = await ContractLifecycle.ReleasedDeviceStatusAsync(_context, tb, id);
                             _context.LichSuThietBis.Add(new LichSuThietBi
                             {
                                 MaThietBi = tb.MaThietBi,
-                                HanhDong = $"Thu hồi nhập kho sẵn sàng cho thuê (TrangThai = 0) từ HĐ #{id}",
+                                HanhDong = $"Thu hồi nhập kho (TrangThai = {tb.TrangThai}) từ HĐ #{id}",
                                 ThoiGian = DateTime.Now,
                                 MaNguoiThucHien = adminId,
                                 GhiChu = $"Hợp đồng #{id} đã trả máy (Chờ quyết toán công nợ)"
@@ -823,13 +792,15 @@ namespace RentalSystem.Areas.Admin.Controllers
                 hopDong.TrangThai = 4;
                 await SyncTrangThaiThanhToanHopDong(hopDong, _context);
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 TempData["Success"] = "Đã tiếp nhận thu hồi thiết bị về kho thành công! Hợp đồng chuyển sang trạng thái 'Đã trả máy (Chờ quyết toán công nợ)'.";
                 return RedirectToAction(nameof(Details), new { id = id });
             }
             else if (status == 2) // Hoàn tất / Thu hồi máy & Quyết toán cọc
             {
-                decimal tienCoc = hopDong.TienCocBaoDamMay > 0 ? hopDong.TienCocBaoDamMay : hopDong.TienDaCoc;
+                decimal tienCoc = hopDong.YeuCauThanhToanLanDau ? hopDong.TienDaCoc
+                    : hopDong.TienCocBaoDamMay > 0 ? hopDong.TienCocBaoDamMay : hopDong.TienDaCoc;
                 var unpaidKyHans = hopDong.KyHanThanhToans?
                     .Where(k => k.TrangThai != 1 && k.TrangThai != 3)
                     .OrderBy(k => k.SoKyHan)
@@ -859,12 +830,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                             if (tb != null)
                             {
                                 bool isBroken = tb.TrangThai == 4 || await _context.PhieuBaoTris.AnyAsync(p => p.MaThietBi == tb.MaThietBi && p.TrangThai == 4);
-                                tb.TrangThai = isBroken ? 4 : 0;
+                                tb.TrangThai = isBroken ? 4 : await ContractLifecycle.ReleasedDeviceStatusAsync(_context, tb, id);
                                 if (isBroken) tb.TinhTrangMay = "Hỏng không thể khắc phục (Thanh lý)";
                                 _context.LichSuThietBis.Add(new LichSuThietBi
                                 {
                                     MaThietBi = tb.MaThietBi,
-                                    HanhDong = isBroken ? $"Thu hồi HĐ #{id}: Thiết bị hỏng không thể khắc phục (TrangThai = 4)" : $"Thu hồi nhập kho (TrangThai = 0) từ HĐ #{id}",
+                                    HanhDong = isBroken ? $"Thu hồi HĐ #{id}: Thiết bị hỏng không thể khắc phục (TrangThai = 4)" : $"Thu hồi nhập kho (TrangThai = {tb.TrangThai}) từ HĐ #{id}",
                                     ThoiGian = DateTime.Now,
                                     MaNguoiThucHien = adminId,
                                     GhiChu = $"Hợp đồng #{id} chuyển sang trạng thái 4 chờ quyết toán nợ"
@@ -890,6 +861,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                         hopDong.TrangThai = 4;
                         await SyncTrangThaiThanhToanHopDong(hopDong, _context);
                         await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
 
                         TempData["Warning"] = $"Khách hàng còn nợ {remainingDebt:N0} đ (Nợ thuê: {unpaidRent:N0} đ, phí đền bù: {unpaidDamages:N0} đ). Đã giải phóng thiết bị về kho và chuyển hợp đồng sang trạng thái 'Đã trả máy (Chờ quyết toán công nợ)'!";
                         return RedirectToAction(nameof(Details), new { id = id });
@@ -961,53 +933,59 @@ namespace RentalSystem.Areas.Admin.Controllers
                     hopDong.GhiChuHoanCoc = "Cọc đã được cấn trừ toàn bộ cho công nợ thuê và phí đền bù.";
                 }
 
-                // Giải phóng thiết bị về kho (giữ nguyên thiết bị hỏng ở trạng thái thanh lý)
-                foreach (var ct in chiTiets)
+                if (hopDong.TrangThai == 1)
                 {
-                    var tb = await _context.ThietBis.FindAsync(ct.MaThietBi);
-                    if (tb != null)
+                    // Giải phóng thiết bị về kho (giữ nguyên thiết bị hỏng ở trạng thái thanh lý)
+                    foreach (var ct in chiTiets)
                     {
-                        bool isBroken = tb.TrangThai == 4 || await _context.PhieuBaoTris.AnyAsync(p => p.MaThietBi == tb.MaThietBi && p.TrangThai == 4);
-                        if (isBroken)
+                        var tb = await _context.ThietBis.FindAsync(ct.MaThietBi);
+                        if (tb != null)
                         {
-                            tb.TrangThai = 4;
-                            tb.TinhTrangMay = "Hỏng không thể khắc phục (Thanh lý)";
-                            _context.LichSuThietBis.Add(new LichSuThietBi
+                            bool isBroken = tb.TrangThai == 4 || await _context.PhieuBaoTris.AnyAsync(p => p.MaThietBi == tb.MaThietBi && p.TrangThai == 4);
+                            if (isBroken)
                             {
-                                MaThietBi = tb.MaThietBi,
-                                HanhDong = $"Thu hồi từ HĐ #{id}: Thiết bị hỏng không thể khắc phục, giữ nguyên trạng thái thanh lý (TrangThai = 4)",
-                                ThoiGian = DateTime.Now,
-                                MaNguoiThucHien = adminId,
-                                GhiChu = $"Hợp đồng #{id} hoàn tất nhưng thiết bị đã hỏng hoàn toàn"
-                            });
-                        }
-                        else
-                        {
-                            tb.TrangThai = 0;
-                            _context.LichSuThietBis.Add(new LichSuThietBi
+                                tb.TrangThai = 4;
+                                tb.TinhTrangMay = "Hỏng không thể khắc phục (Thanh lý)";
+                                _context.LichSuThietBis.Add(new LichSuThietBi
+                                {
+                                    MaThietBi = tb.MaThietBi,
+                                    HanhDong = $"Thu hồi từ HĐ #{id}: Thiết bị hỏng không thể khắc phục, giữ nguyên trạng thái thanh lý (TrangThai = 4)",
+                                    ThoiGian = DateTime.Now,
+                                    MaNguoiThucHien = adminId,
+                                    GhiChu = $"Hợp đồng #{id} hoàn tất nhưng thiết bị đã hỏng hoàn toàn"
+                                });
+                            }
+                            else
                             {
-                                MaThietBi = tb.MaThietBi,
-                                HanhDong = $"Thu hồi nhập kho sẵn sàng cho thuê (TrangThai = 0) từ HĐ #{id}",
-                                ThoiGian = DateTime.Now,
-                                MaNguoiThucHien = adminId,
-                                GhiChu = $"Hoàn tất hợp đồng #{id}"
-                            });
+                                tb.TrangThai = await ContractLifecycle.ReleasedDeviceStatusAsync(_context, tb, id);
+                                _context.LichSuThietBis.Add(new LichSuThietBi
+                                {
+                                    MaThietBi = tb.MaThietBi,
+                                    HanhDong = $"Thu hồi nhập kho (TrangThai = {tb.TrangThai}) từ HĐ #{id}",
+                                    ThoiGian = DateTime.Now,
+                                    MaNguoiThucHien = adminId,
+                                    GhiChu = $"Hoàn tất hợp đồng #{id}"
+                                });
+                            }
                         }
                     }
-                }
 
-                // Tự động tạo Biên bản thu hồi nhập kho
-                var bbThuHoi = new BienBanBanGiao
-                {
-                    MaHopDong = id,
-                    LoaiBienBan = 1, // Thu hồi nhập kho
-                    NgayLap = DateTime.Now,
-                    MaNhanVienLap = adminId,
-                    PhuKienKemTheo = "Đầy đủ phụ kiện theo hợp đồng",
-                    TinhTrangNgoaiQuan = "Đã kiểm tra thu hồi máy về kho an toàn",
-                    GhiChu = "Biên bản thu hồi tự động khi hoàn tất hợp đồng"
-                };
-                _context.BienBanBanGiaos.Add(bbThuHoi);
+                    if (!await _context.BienBanBanGiaos.AnyAsync(b => b.MaHopDong == id && b.LoaiBienBan == 1))
+                    {
+                        // Tự động tạo Biên bản thu hồi nhập kho
+                        var bbThuHoi = new BienBanBanGiao
+                        {
+                            MaHopDong = id,
+                            LoaiBienBan = 1, // Thu hồi nhập kho
+                            NgayLap = DateTime.Now,
+                            MaNhanVienLap = adminId,
+                            PhuKienKemTheo = "Đầy đủ phụ kiện theo hợp đồng",
+                            TinhTrangNgoaiQuan = "Đã kiểm tra thu hồi máy về kho an toàn",
+                            GhiChu = "Biên bản thu hồi tự động khi hoàn tất hợp đồng"
+                        };
+                        _context.BienBanBanGiaos.Add(bbThuHoi);
+                    }
+                }
             }
             else if (status == 3) // Hủy hợp đồng (chỉ cho phép khi ở trạng thái 0)
             {
@@ -1017,10 +995,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                     if (k.TrangThai != 1) k.TrangThai = 3; // 3 = Đã hủy
                 }
 
-                decimal totalCollected = await _context.PhieuThus.Where(p => p.MaHopDong == id).SumAsync(p => (decimal?)p.SoTien) ?? 0;
-                if (hopDong.TienDaCoc > 0 || totalCollected > 0)
+                decimal totalCollected = await _context.PhieuThus.Where(p => p.MaHopDong == id && !p.DaHuy).SumAsync(p => (decimal?)p.SoTien) ?? 0;
+                if (hopDong.YeuCauThanhToanLanDau ? hopDong.PhieuThus!.Any(p => !p.DaHuy) : hopDong.TienDaCoc > 0 || totalCollected > 0)
                 {
-                    decimal refundAmount = hopDong.TienDaCoc > 0 ? hopDong.TienDaCoc : totalCollected;
+                    decimal refundAmount = hopDong.YeuCauThanhToanLanDau
+                        ? hopDong.PhieuThus!.Where(p => !p.DaHuy).Sum(p => p.SoTien)
+                        : hopDong.TienDaCoc > 0 ? hopDong.TienDaCoc : totalCollected;
                     var phieuChiHuy = new PhieuChi
                     {
                         MaHopDong = id,
@@ -1061,11 +1041,11 @@ namespace RentalSystem.Areas.Admin.Controllers
                         }
                         else
                         {
-                            tb.TrangThai = 0;
+                            tb.TrangThai = await ContractLifecycle.ReleasedDeviceStatusAsync(_context, tb, id);
                             _context.LichSuThietBis.Add(new LichSuThietBi
                             {
                                 MaThietBi = tb.MaThietBi,
-                                HanhDong = $"Hủy HĐ #{id}: Giải phóng thiết bị về kho (TrangThai = 0)",
+                                HanhDong = $"Hủy HĐ #{id}: Giải phóng giữ chỗ (TrangThai = {tb.TrangThai})",
                                 ThoiGian = DateTime.Now,
                                 MaNguoiThucHien = adminId,
                                 GhiChu = $"Hủy hợp đồng #{id}"
@@ -1077,6 +1057,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
             hopDong.TrangThai = status;
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             TempData["Success"] = "Đã cập nhật trạng thái đơn hàng và Hệ thống Kho thành công!";
             return RedirectToAction(nameof(Details), new { id = id });
@@ -1163,7 +1144,6 @@ namespace RentalSystem.Areas.Admin.Controllers
             await System.IO.File.WriteAllBytesAsync(sigPath, imageBytes);
             
             hopDong.ChuKyNhanVien = $"/uploads/signatures/{sigFileName}";
-            hopDong.NgayKy = DateTime.Now;
             
             var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             if (claim != null && int.TryParse(claim.Value, out int adminId))
@@ -1211,6 +1191,12 @@ namespace RentalSystem.Areas.Admin.Controllers
 
                     if (kyHan == null) return NotFound();
 
+                    if (FirstContractPayment.IsPendingHandover(kyHan.HopDong))
+                    {
+                        TempData["Error"] = "Hãy dùng mục Xác nhận chuyển khoản lần đầu.";
+                        return RedirectToAction(nameof(Details), new { id = kyHan.MaHopDong, returnUrl });
+                    }
+
                     if (soTienThucThu <= 0)
                     {
                         TempData["Error"] = "Số tiền thu phải lớn hơn 0!";
@@ -1245,8 +1231,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     };
                     _context.PhieuThus.Add(phieuThu);
 
-                    decimal penalty = Math.Max(kyHan.TienPhat, kyHan.PhiPhatTreHan);
-                    decimal conThieu = Math.Max(0m, (kyHan.SoTienPhai - kyHan.SoTienDaTra) + penalty);
+                    decimal conThieu = DebtCalculationHelper.GetInstallmentBalance(kyHan);
 
                     if (soTienThucThu >= conThieu)
                     {
@@ -1269,8 +1254,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                             foreach (var nextKy in futureKyHans)
                             {
                                 if (tienDu <= 0) break;
-                                decimal nextPenalty = Math.Max(nextKy.TienPhat, nextKy.PhiPhatTreHan);
-                                decimal nextUnpaid = Math.Max(0m, (nextKy.SoTienPhai - nextKy.SoTienDaTra) + nextPenalty);
+                                decimal nextUnpaid = DebtCalculationHelper.GetInstallmentBalance(nextKy);
                                 if (nextUnpaid <= 0)
                                 {
                                     nextKy.TrangThai = 1;
@@ -1377,7 +1361,94 @@ namespace RentalSystem.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        // Hủy phiếu thu, hoàn tác công nợ kỳ hạn và đồng bộ trạng thái hợp đồng
+        [Authorize(Roles = "Admin,KinhDoanh")]
+        public async Task<IActionResult> XacNhanThanhToanLanDau(int id, decimal soTien, string maGiaoDich, string? returnUrl = null)
+        {
+            var redirect = RedirectToAction(nameof(Details), new { id, returnUrl });
+            maGiaoDich = maGiaoDich?.Trim() ?? "";
+            if (!ModelState.IsValid || soTien <= 0 || soTien != decimal.Truncate(soTien) || maGiaoDich.Length is 0 or > 100)
+            {
+                TempData["Error"] = "Nhập số tiền thực nhận và mã giao dịch ngân hàng hợp lệ.";
+                return redirect;
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var contract = await _context.HopDongs.Include(h => h.KyHanThanhToans).Include(h => h.PhieuThus)
+                .FirstOrDefaultAsync(h => h.MaHopDong == id);
+            if (contract == null) return NotFound();
+
+            var first = contract.KyHanThanhToans.FirstOrDefault(k => k.SoKyHan == 1 && k.TrangThai != 3);
+            if (!FirstContractPayment.IsPendingHandover(contract) || contract.YeuCauHuy ||
+                first == null || string.IsNullOrWhiteSpace(contract.ChuKyKhachHang))
+            {
+                TempData["Error"] = "Hợp đồng chưa sẵn sàng nhận thanh toán lần đầu.";
+                return redirect;
+            }
+            if (await _context.PhieuThus.AnyAsync(p => !p.DaHuy && p.MaGiaoDichNganHang == maGiaoDich))
+            {
+                TempData["Error"] = "Mã giao dịch này đã được ghi nhận.";
+                return redirect;
+            }
+
+            var balance = FirstContractPayment.Balance(contract, contract.PhieuThus, first);
+            if (balance.Total == 0)
+            {
+                TempData["Error"] = "Khoản thanh toán lần đầu đã đủ.";
+                return redirect;
+            }
+
+            decimal deposit = Math.Min(soTien, balance.Deposit);
+            decimal rent = Math.Min(soTien - deposit, balance.Rent);
+            decimal excess = soTien - deposit - rent;
+            DateTime now = DateTime.Now;
+            int? employee = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var employeeId)
+                ? employeeId : null;
+
+            void AddReceipt(int type, decimal amount, int? installmentId = null)
+            {
+                if (amount <= 0) return;
+                _context.PhieuThus.Add(new PhieuThu
+                {
+                    MaHopDong = id, LoaiPhieu = type, SoTien = amount, MaKyHan = installmentId,
+                    NgayGiaoDich = now, HinhThucThanhToan = 1, MaNhanVienThu = employee,
+                    MaGiaoDichNganHang = maGiaoDich, GhiChu = FirstContractPayment.ReceiptNote
+                });
+            }
+
+            AddReceipt(1, deposit);
+            AddReceipt(0, rent, first.MaKyHan);
+            AddReceipt(FirstContractPayment.ExcessReceipt, excess);
+            contract.TienDaCoc += deposit;
+            contract.TienTraThua += excess;
+            first.SoTienDaTra += rent;
+            if (rent > 0 && first.SoTienDaTra >= first.SoTienPhai)
+            {
+                first.TrangThai = 1;
+                first.NgayThanhToan = now;
+            }
+
+            decimal remaining = balance.Total - deposit - rent;
+            string result = remaining > 0 ? $"Đã ghi nhận {soTien:N0} đ. Còn thiếu {remaining:N0} đ."
+                : excess > 0 ? $"Đã nhận đủ khoản đầu. Tiền chuyển thừa: {excess:N0} đ."
+                : "Đã nhận đủ khoản thanh toán lần đầu.";
+            _context.ThongBaos.Add(new ThongBao
+            {
+                MaNguoiDung = contract.MaKhachHang,
+                TieuDe = $"Đã nhận chuyển khoản hợp đồng #{id}",
+                NoiDung = result,
+                LoaiThongBao = "ThanhToan",
+                LienKet = $"/Cart/ContractDetail/{id}"
+            });
+            await _context.SaveChangesAsync();
+            await SyncTrangThaiThanhToanHopDong(contract, _context);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            TempData["Success"] = result;
+            return redirect;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> HuyPhieuThu(int maPhieuThu, string lyDoHuy, string returnUrl = null)
         {
@@ -1387,6 +1458,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             var pt = await _context.PhieuThus
                 .Include(p => p.HopDong)
                 .Include(p => p.KyHanThanhToan)
@@ -1400,6 +1472,47 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Details), new { id = pt.MaHopDong, returnUrl = returnUrl });
             }
 
+            if (pt.HopDong.YeuCauThanhToanLanDau && pt.GhiChu == FirstContractPayment.ReceiptNote)
+            {
+                if (!FirstContractPayment.IsPendingHandover(pt.HopDong))
+                {
+                    TempData["Error"] = "Chỉ có thể hủy ghi nhận khoản đầu trước khi giao máy.";
+                    return RedirectToAction(nameof(Details), new { id = pt.MaHopDong, returnUrl });
+                }
+
+                var receipts = await _context.PhieuThus.Include(p => p.KyHanThanhToan)
+                    .Where(p => p.MaHopDong == pt.MaHopDong && !p.DaHuy &&
+                        p.GhiChu == FirstContractPayment.ReceiptNote && p.MaGiaoDichNganHang == pt.MaGiaoDichNganHang)
+                    .ToListAsync();
+                foreach (var receipt in receipts)
+                {
+                    receipt.DaHuy = true;
+                    receipt.LyDoHuy = lyDoHuy.Trim();
+                    receipt.NgayHuy = DateTime.Now;
+                    if (receipt.LoaiPhieu == 1) pt.HopDong.TienDaCoc = Math.Max(0m, pt.HopDong.TienDaCoc - receipt.SoTien);
+                    else if (receipt.LoaiPhieu == FirstContractPayment.ExcessReceipt)
+                        pt.HopDong.TienTraThua = Math.Max(0m, pt.HopDong.TienTraThua - receipt.SoTien);
+                    else if (receipt.KyHanThanhToan is { } first)
+                    {
+                        first.SoTienDaTra = Math.Max(0m, first.SoTienDaTra - receipt.SoTien);
+                        first.TrangThai = 0;
+                        first.NgayThanhToan = null;
+                    }
+                }
+                await _context.SaveChangesAsync();
+                await SyncTrangThaiThanhToanHopDong(pt.HopDong, _context);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                TempData["Success"] = "Đã hủy ghi nhận toàn bộ giao dịch thanh toán lần đầu.";
+                return RedirectToAction(nameof(Details), new { id = pt.MaHopDong, returnUrl });
+            }
+
+            if (pt.HopDong.YeuCauThanhToanLanDau && pt.MaKyHan == null && pt.LoaiPhieu == 0 &&
+                pt.GhiChu == "Thu tiền thuê trả trước khi tạo đơn")
+            {
+                TempData["Error"] = "Khoản thuê trả trước đã được dùng để lập lịch thanh toán.";
+                return RedirectToAction(nameof(Details), new { id = pt.MaHopDong, returnUrl });
+            }
             pt.DaHuy = true;
             pt.LyDoHuy = lyDoHuy.Trim();
             pt.NgayHuy = DateTime.Now;
@@ -1436,6 +1549,7 @@ namespace RentalSystem.Areas.Admin.Controllers
 
             await SyncTrangThaiThanhToanHopDong(pt.HopDong, _context);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             TempData["Success"] = $"Đã hủy phiếu thu #{maPhieuThu} và hoàn tác công nợ thành công!";
             return RedirectToAction(nameof(Details), new { id = pt.MaHopDong, returnUrl = returnUrl });
@@ -1452,6 +1566,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(h => h.MaHopDong == maHopDong);
 
             if (hopDong == null) return NotFound();
+
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+            {
+                TempData["Error"] = "Hãy dùng mục Xác nhận chuyển khoản lần đầu.";
+                return RedirectToAction(nameof(Details), new { id = maHopDong, returnUrl });
+            }
 
             var openKyHans = hopDong.KyHanThanhToans
                 .Where(k => k.TrangThai != 1 && k.TrangThai != 3)
@@ -1593,9 +1713,15 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(h => h.MaHopDong == maHopDong);
             if (hopDong == null) return NotFound();
 
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+            {
+                TempData["Error"] = "Hãy dùng mục Xác nhận chuyển khoản lần đầu.";
+                return RedirectToAction(nameof(Details), new { id = maHopDong, returnUrl });
+            }
+
             if (soTienCoc <= 0)
             {
-                TempData["Error"] = "Số tiền cọc phải lớn hơn 0!";
+                TempData["Error"] = "Số tiền thu phải lớn hơn 0.";
                 return RedirectToAction(nameof(Details), new { id = maHopDong, returnUrl = returnUrl });
             }
 
@@ -1604,17 +1730,17 @@ namespace RentalSystem.Areas.Admin.Controllers
             decimal conLai = remainingDebt;
             if (conLai <= 0)
             {
-                TempData["Error"] = "Hợp đồng đã được thanh toán đầy đủ, không thể thu thêm cọc!";
+                TempData["Error"] = "Hợp đồng đã được thanh toán đủ.";
                 return RedirectToAction(nameof(Details), new { id = maHopDong, returnUrl = returnUrl });
             }
             if (soTienCoc > conLai)
             {
-                TempData["Error"] = $"Số tiền cọc bổ sung ({soTienCoc:N0}đ) vượt quá số tiền còn nợ ({conLai:N0}đ)!";
+                TempData["Error"] = $"Số tiền thu vượt quá số còn nợ ({conLai:N0} đ).";
                 return RedirectToAction(nameof(Details), new { id = maHopDong, returnUrl = returnUrl });
             }
 
             // Cộng tiền cọc vào hợp đồng
-            hopDong.TienDaCoc += soTienCoc;
+            if (!hopDong.YeuCauThanhToanLanDau) hopDong.TienDaCoc += soTienCoc;
 
             var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             int? adminId = (claim != null && int.TryParse(claim.Value, out int aId)) ? aId : null;
@@ -1627,7 +1753,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 SoTien = soTienCoc,
                 NgayGiaoDich = DateTime.Now,
                 HinhThucThanhToan = hinhThuc,
-                GhiChu = string.IsNullOrEmpty(ghiChu) ? "Thu tiền cọc bổ sung" : ghiChu,
+                GhiChu = string.IsNullOrEmpty(ghiChu) ? "Thu thêm tiền thuê" : ghiChu,
                 MaNhanVienThu = adminId,
                 DaHuy = false
             };
@@ -1675,7 +1801,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
 
             await _context.SaveChangesAsync();
-            TempData["Success"] = $"Đã ghi nhận thu cọc bổ sung {soTienCoc:N0}đ thành công!";
+            TempData["Success"] = $"Đã thu thêm {soTienCoc:N0} đ tiền thuê.";
             return RedirectToAction(nameof(Details), new { id = maHopDong, returnUrl = returnUrl });
         }
 
@@ -1710,6 +1836,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> DuyetGiaHan(int id, bool chapNhan, string ghiChu = null, string returnUrl = null)
         {
+            await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
             var hopDong = await _context.HopDongs.FindAsync(id);
 
             if (hopDong == null) return NotFound();
@@ -1748,12 +1875,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                 var chiTiets = await _context.ChiTietHopDongs.Where(c => c.MaHopDong == id).ToListAsync();
                 foreach (var ct in chiTiets)
                 {
-                    bool conflict = await _context.ChiTietHopDongs.AnyAsync(other =>
-                        other.MaHopDong != id &&
-                        other.MaThietBi == ct.MaThietBi &&
-                        other.HopDong.TrangThai != 2 && other.HopDong.TrangThai != 3 &&
-                        other.HopDong.NgayBatDau.Date < extEnd &&
-                        other.HopDong.NgayKetThuc.Date > extStart);
+                    bool conflict = await RentalBooking.OverlappingReservations(_context, extStart, extEnd)
+                        .AnyAsync(other => other.MaHopDong != id && other.MaThietBi == ct.MaThietBi);
 
                     if (conflict)
                     {
@@ -1785,7 +1908,6 @@ namespace RentalSystem.Areas.Admin.Controllers
                 _context.KyHanThanhToans.Add(newKyHan);
 
                 hopDong.SoKyHan = nextKy;
-                hopDong.TrangThaiThanhToan = 1; // Có công nợ mới
                 hopDong.TrangThaiGiaHan = 1; // Đã duyệt
                 hopDong.YeuCauGiaHan = false;
                 if (!string.IsNullOrEmpty(ghiChu))
@@ -1825,6 +1947,12 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
 
             await _context.SaveChangesAsync();
+            if (chapNhan)
+            {
+                await SyncTrangThaiThanhToanHopDong(hopDong, _context);
+                await _context.SaveChangesAsync();
+            }
+            await transaction.CommitAsync();
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
             return RedirectToAction(nameof(Details), new { id = id });
         }
@@ -1835,6 +1963,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> TraMayTruocHan(int id, DateTime ngayTraThucTe, decimal phiPhatTraSom, int hinhThucHoanCoc = 1, string ghiChu = null)
         {
+            await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
             var hopDong = await _context.HopDongs.FindAsync(id);
             if (hopDong == null) return NotFound();
 
@@ -1885,14 +2014,14 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
 
             decimal rentPaid = await _context.PhieuThus
-                .Where(p => p.MaHopDong == id && p.LoaiPhieu == 0)
+                .Where(p => p.MaHopDong == id && p.LoaiPhieu == 0 && !p.DaHuy)
                 .SumAsync(p => (decimal?)p.SoTien) ?? 0m;
 
             decimal damages = await _context.PhieuBaoTris
                 .Where(p => p.MaHopDong == id)
                 .SumAsync(p => (decimal?)p.PhiDenBu) ?? 0m;
             decimal paidDamages = await _context.PhieuThus
-                .Where(p => p.MaHopDong == id && p.LoaiPhieu == 2)
+                .Where(p => p.MaHopDong == id && p.LoaiPhieu == 2 && !p.DaHuy)
                 .SumAsync(p => (decimal?)p.SoTien) ?? 0m;
             decimal unpaidDamages = damages > paidDamages ? (damages - paidDamages) : 0m;
 
@@ -1931,7 +2060,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             hopDong.TongTien = totalActualObligation;
             hopDong.NgayKetThuc = ngayTraThucTe.Date;
             hopDong.TrangThai = 2; // Hoàn tất
-            hopDong.TrangThaiThanhToan = 2;
+            hopDong.TrangThaiThanhToan = netRefund >= 0 ? ContractPaymentStatus.Settled : ContractPaymentStatus.Outstanding;
 
             // Giải phóng thiết bị về kho (giữ nguyên thiết bị hỏng ở trạng thái thanh lý)
             var chiTiets = await _context.ChiTietHopDongs.Where(c => c.MaHopDong == id).ToListAsync();
@@ -1956,11 +2085,11 @@ namespace RentalSystem.Areas.Admin.Controllers
                     }
                     else
                     {
-                        tb.TrangThai = 0;
+                        tb.TrangThai = await ContractLifecycle.ReleasedDeviceStatusAsync(_context, tb, id);
                         _context.LichSuThietBis.Add(new LichSuThietBi
                         {
                             MaThietBi = tb.MaThietBi,
-                            HanhDong = $"Thanh lý sớm HĐ #{id}: Thu hồi nhập kho sẵn sàng cho thuê (TrangThai = 0)",
+                            HanhDong = $"Thanh lý sớm HĐ #{id}: Thu hồi nhập kho (TrangThai = {tb.TrangThai})",
                             ThoiGian = DateTime.Now,
                             MaNguoiThucHien = adminId,
                             GhiChu = $"Thanh lý trước hạn HĐ #{id}"
@@ -1978,11 +2107,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                 MaNhanVienLap = adminId,
                 PhuKienKemTheo = "Đầy đủ phụ kiện thu hồi trước hạn",
                 TinhTrangNgoaiQuan = "Đã kiểm tra thu hồi máy trước hạn an toàn",
-                GhiChu = $"Thanh lý sớm ngày {ngayTraThucTe:dd/MM/yyyy}. {ghiChu}"
+                GhiChu = $"{EarlyReturnNote}{ngayTraThucTe:dd/MM/yyyy}. {ghiChu}"
             };
             _context.BienBanBanGiaos.Add(bbThuHoi);
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = $"Đã thanh lý hợp đồng trước hạn thành công! Ngày thuê thực tế: {actualDays}/{originalDays} ngày. Hoàn lại cho khách: {Math.Max(0, netRefund):N0} đ.";
             return RedirectToAction(nameof(Details), new { id = id });
         }
@@ -2047,6 +2177,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(k => k.MaKyHan == maKyHan);
 
             if (kyHan == null) return NotFound();
+
+            if (FirstContractPayment.IsPendingHandover(kyHan.HopDong))
+            {
+                TempData["Error"] = "Hãy dùng mục Xác nhận chuyển khoản lần đầu.";
+                return RedirectToAction(nameof(Details), new { id = kyHan.MaHopDong, returnUrl });
+            }
 
             if (chapNhan)
             {
@@ -2139,9 +2275,10 @@ namespace RentalSystem.Areas.Admin.Controllers
         [Authorize(Roles = "Admin,KinhDoanh")]
         public async Task<IActionResult> QuetDonQuaHanGiuCho()
         {
+            await using var transaction = await RentalBooking.BeginInventoryAsync(_context, HttpContext.RequestAborted);
             var now = DateTime.Now;
             var expiredContracts = await _context.HopDongs
-                .Where(h => h.TrangThai == 0 && h.HanChotKy != null && h.HanChotKy < now && string.IsNullOrEmpty(h.ChuKyKhachHang) && h.TienDaCoc == 0)
+                .Where(h => h.TrangThai == 0 && !h.YeuCauHuy && h.HanChotKy != null && h.HanChotKy < now && string.IsNullOrEmpty(h.ChuKyKhachHang) && h.TienDaCoc == 0)
                 .ToListAsync();
 
             int count = 0;
@@ -2163,6 +2300,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             TempData["Success"] = $"Đã quét và giải phóng thành công {count} đơn hàng quá hạn giữ chỗ về kho!";
             return RedirectToAction(nameof(Index));
         }

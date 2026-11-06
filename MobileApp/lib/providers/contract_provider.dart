@@ -18,12 +18,15 @@ class ContractProvider with ChangeNotifier {
   String? _selectedStatus;
 
   List<ContractModel> get contracts => _filteredContracts;
+  List<ContractModel> get allContracts => _allContracts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
   static const List<String> _defaultStatuses = [
     'Chờ duyệt',
+    'Yêu cầu hủy',
     'Đang hiệu lực',
+    'Đã trả máy (Chờ quyết toán)',
     'Hoàn thành',
     'Đã hủy',
   ];
@@ -51,25 +54,8 @@ class ContractProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateContractStatus(String contractId, String newStatus, Role role, String userId) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final success = await _repository.updateContractStatus(contractId, newStatus);
-      if (success) {
-        await fetchContracts(role, userId);
-      }
-      return success;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<String> getContractHtml(String contractId, String userId, Role role) {
-    return _repository.getContractHtml(contractId, userId, role);
+  Future<ContractModel> getContract(String contractId, String userId, Role role) {
+    return _repository.getContract(contractId, userId, role);
   }
 
   void search(String query) {

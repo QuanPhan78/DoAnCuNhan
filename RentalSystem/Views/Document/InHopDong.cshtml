@@ -110,7 +110,7 @@
     <div class="fw-bold" style="margin-top:15px;">ĐIỀU 2: PHƯƠNG THỨC VÀ THỜI HẠN THANH TOÁN</div>
     <ol>
         <li><strong>Hình thức thanh toán:</strong> Tiền mặt hoặc chuyển khoản (theo kỳ hạn hoặc thanh toán 1 lần).</li>
-        <li><strong>Tiền đặt cọc:</strong> Bên A thanh toán trước cho Bên B số tiền cọc là <strong>@Model.TienDaCoc.ToString("N0") VNĐ</strong> ngay khi ký hợp đồng.</li>
+        <li><strong>Tiền đặt cọc:</strong> Bên A thanh toán cho Bên B <strong>@((Model.YeuCauThanhToanLanDau ? Model.TienCocBaoDamMay : Model.TienDaCoc).ToString("N0")) VNĐ</strong> @(Model.YeuCauThanhToanLanDau ? "cùng tiền thuê kỳ đầu sau khi ký và trước khi nhận thiết bị." : "ngay khi ký hợp đồng.")</li>
         <li><strong>Thanh toán phần còn lại:</strong> Bên A thanh toán cho Bên B số tiền còn lại căn cứ theo Lịch trả góp/kỳ hạn thanh toán đính kèm (nếu có) hoặc thanh toán 1 lần khi kết thúc hợp đồng.</li>
     </ol>
 

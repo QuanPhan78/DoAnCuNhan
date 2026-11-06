@@ -24,26 +24,4 @@ class LocalInstallationDataSource implements InstallationDataSource {
       return null;
     }
   }
-
-  @override
-  Future<bool> updateInstallationStatus(String contractId, String status) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    await _initData();
-    final index = _inMemoryData!.indexWhere((i) => i.contractId == contractId);
-    if (index >= 0) {
-      _inMemoryData![index].status = status;
-      if (status == 'Đã hoàn thành') {
-        _inMemoryData![index].actualDate = DateTime.now().toString().split(' ')[0];
-      }
-      return true;
-    }
-    return false;
-  }
-
-  @override
-  Future<bool> completeContract(String contractId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Ở mock này chúng ta trả về true. Trạng thái Contract sẽ do ContractProvider xử lý.
-    return true;
-  }
 }

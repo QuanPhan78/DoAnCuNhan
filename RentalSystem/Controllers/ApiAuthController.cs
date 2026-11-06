@@ -1,22 +1,29 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RentalSystem.Common;
 using RentalSystem.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace RentalSystem.Controllers
 {
     [Route("api/auth")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = ApiTokens.Scheme)]
     public class ApiAuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ApiTokens _tokens;
 
-        public ApiAuthController(ApplicationDbContext context)
+        public ApiAuthController(ApplicationDbContext context, ApiTokens tokens)
         {
             _context = context;
+            _tokens = tokens;
         }
 
         // POST: api/auth/login
+        [AllowAnonymous]
+        [EnableRateLimiting("ApiLoginLimiter")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -46,15 +53,7 @@ namespace RentalSystem.Controllers
             string roleDisplay = MapRoleToDisplay(user.VaiTro?.TenVaiTro);
             string roleCode = user.VaiTro?.TenVaiTro ?? "KhachHang";
 
-            var token = new
-            {
-                accessToken = $"token_{Guid.NewGuid():N}",
-                access_token = $"token_{Guid.NewGuid():N}",
-                refreshToken = $"refresh_{Guid.NewGuid():N}",
-                refresh_token = $"refresh_{Guid.NewGuid():N}",
-                expiresIn = DateTime.UtcNow.AddDays(7).ToString("o"),
-                expires_in = DateTime.UtcNow.AddDays(7).ToString("o")
-            };
+            var token = _tokens.Issue(user);
 
             var userInfo = new
             {
@@ -79,6 +78,7 @@ namespace RentalSystem.Controllers
         }
 
         // POST: api/auth/register
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -102,9 +102,15 @@ namespace RentalSystem.Controllers
                 return BadRequest(new { message = "Vui lòng nhập email." });
             if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
                 return BadRequest(new { message = "Mật khẩu phải có ít nhất 6 ký tự." });
+            if (!AccountCredentials.IsValidIdentity(cccd))
+                return BadRequest(new { message = AccountCredentials.InvalidIdentity });
 
             var emailNormalized = email.ToLower();
             var phoneNormalized = phone;
+
+            await using var transaction = await AccountCredentials.LockIdentityAsync(_context, cccd);
+            if (await AccountCredentials.IdentityExistsAsync(_context, cccd))
+                return BadRequest(new { message = AccountCredentials.DuplicateIdentity });
 
             // Kiểm tra email trùng
             var existingEmail = await _context.NguoiDungs.AnyAsync(u => u.Email != null && u.Email.ToLower() == emailNormalized);
@@ -122,7 +128,8 @@ namespace RentalSystem.Controllers
 
             // Tìm vai trò KhachHang
             var vaiTroKhachHang = await _context.VaiTros.FirstOrDefaultAsync(v => v.TenVaiTro == "KhachHang");
-            int roleId = vaiTroKhachHang?.MaVaiTro ?? 4;
+            if (vaiTroKhachHang == null)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Vai trò khách hàng chưa được cấu hình." });
 
             var newUser = new NguoiDung
             {
@@ -130,7 +137,7 @@ namespace RentalSystem.Controllers
                 SoDienThoai = phoneNormalized,
                 Email = emailNormalized,
                 MatKhau = password,
-                MaVaiTro = roleId,
+                MaVaiTro = vaiTroKhachHang.MaVaiTro,
                 TrangThai = true,
                 DiaChi = address,
                 CCCD = cccd
@@ -138,16 +145,9 @@ namespace RentalSystem.Controllers
 
             _context.NguoiDungs.Add(newUser);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-            var token = new
-            {
-                accessToken = $"token_{Guid.NewGuid():N}",
-                access_token = $"token_{Guid.NewGuid():N}",
-                refreshToken = $"refresh_{Guid.NewGuid():N}",
-                refresh_token = $"refresh_{Guid.NewGuid():N}",
-                expiresIn = DateTime.UtcNow.AddDays(7).ToString("o"),
-                expires_in = DateTime.UtcNow.AddDays(7).ToString("o")
-            };
+            var token = _tokens.Issue(newUser);
 
             var userInfo = new
             {
@@ -172,12 +172,16 @@ namespace RentalSystem.Controllers
         }
 
         // GET: api/auth/profile/{id}
-        [HttpGet("profile/{id}")]
-        public async Task<IActionResult> GetProfile(int id)
+        [HttpGet("me")]
+        [HttpGet("profile/{id:int}")]
+        public async Task<IActionResult> GetProfile(int? id)
         {
+            int accountId = User.UserId();
+            if (id.HasValue && id.Value != accountId) return Forbid(ApiTokens.Scheme);
+
             var user = await _context.NguoiDungs
                 .Include(u => u.VaiTro)
-                .FirstOrDefaultAsync(u => u.MaNguoiDung == id);
+                .FirstOrDefaultAsync(u => u.MaNguoiDung == accountId);
 
             if (user == null)
             {
@@ -202,18 +206,29 @@ namespace RentalSystem.Controllers
         [HttpPut("profile/{id}")]
         public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateProfileRequest request)
         {
-            var user = await _context.NguoiDungs.FindAsync(id);
+            if (id != User.UserId()) return Forbid(ApiTokens.Scheme);
+            var user = await _context.NguoiDungs.Include(u => u.VaiTro).FirstOrDefaultAsync(u => u.MaNguoiDung == id);
             if (user == null)
             {
                 return NotFound(new { message = "Không tìm thấy người dùng." });
             }
 
+            var candidate = request.Cccd?.Trim() ?? "";
+            bool identityChanged = request.Cccd != null && candidate != (user.CCCD?.Trim() ?? "");
+            if (identityChanged && !AccountCredentials.IsValidIdentity(candidate))
+                return BadRequest(new { message = AccountCredentials.InvalidIdentity });
+
+            await using var transaction = identityChanged ? await AccountCredentials.LockIdentityAsync(_context, candidate) : null;
+            if (identityChanged && await AccountCredentials.IdentityExistsAsync(_context, candidate, id))
+                return BadRequest(new { message = AccountCredentials.DuplicateIdentity });
+
             if (!string.IsNullOrWhiteSpace(request.Name)) user.HoTen = request.Name.Trim();
             if (!string.IsNullOrWhiteSpace(request.Phone)) user.SoDienThoai = request.Phone.Trim();
             if (request.Address != null) user.DiaChi = request.Address.Trim();
-            if (request.Cccd != null) user.CCCD = request.Cccd.Trim();
+            if (identityChanged) user.CCCD = candidate;
 
             await _context.SaveChangesAsync();
+            if (transaction != null) await transaction.CommitAsync();
 
             return Ok(new
             {
@@ -225,7 +240,9 @@ namespace RentalSystem.Controllers
                     email = user.Email ?? "",
                     phone = user.SoDienThoai,
                     address = user.DiaChi ?? "",
-                    cccd = user.CCCD ?? ""
+                    cccd = user.CCCD ?? "",
+                    role = MapRoleToDisplay(user.VaiTro?.TenVaiTro),
+                    roleCode = user.VaiTro?.TenVaiTro ?? "KhachHang"
                 }
             });
         }
@@ -234,26 +251,21 @@ namespace RentalSystem.Controllers
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var user = await _context.NguoiDungs.FindAsync(request.UserId);
+            int accountId = User.UserId();
+            if (request.UserId.HasValue && request.UserId.Value != accountId) return Forbid(ApiTokens.Scheme);
+            var user = await _context.NguoiDungs.FindAsync(accountId);
             if (user == null)
             {
                 return NotFound(new { message = "Không tìm thấy người dùng." });
             }
 
-            if (user.MatKhau != request.OldPassword)
-            {
-                return BadRequest(new { message = "Mật khẩu hiện tại không chính xác." });
-            }
-
-            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
-            {
-                return BadRequest(new { message = "Mật khẩu mới phải có ít nhất 6 ký tự." });
-            }
+            var error = AccountCredentials.PasswordError(user.MatKhau, request.OldPassword, request.NewPassword, request.ConfirmPassword);
+            if (error != null) return BadRequest(new { message = error });
 
             user.MatKhau = request.NewPassword;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Đổi mật khẩu thành công!" });
+            return Ok(new { success = true, message = "Đổi mật khẩu thành công!", token = _tokens.Issue(user) });
         }
 
         private static string MapRoleToDisplay(string? roleCode)
@@ -313,8 +325,9 @@ namespace RentalSystem.Controllers
 
     public class ChangePasswordRequest
     {
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
         public string OldPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
+        public string? ConfirmPassword { get; set; }
     }
 }

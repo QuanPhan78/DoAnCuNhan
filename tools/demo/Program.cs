@@ -71,6 +71,7 @@ if (command is "prepare" or "reset")
     using var tx = await db.Database.BeginTransactionAsync();
     if (command == "reset" && await db.VaiTros.AnyAsync()) DbInitializer.ClearData(db);
     await Seed();
+    await db.Database.ExecuteSqlRawAsync(DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql"));
     await tx.CommitAsync();
     db.ChangeTracker.Clear();
     await Check();

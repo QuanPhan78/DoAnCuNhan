@@ -1,3 +1,4 @@
+using RentalSystem.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -109,11 +110,11 @@ namespace RentalSystem.Controllers
         }
 
         // Endpoint dành cho Mobile App lấy bản in HTML hợp đồng với phân quyền bảo mật nghiêm ngặt
-        [AllowAnonymous]
+        [Authorize(AuthenticationSchemes = ApiTokens.Scheme)]
         [HttpGet("api/contracts/{id}/html")]
-        public async Task<IActionResult> InHopDongHtml(int id, [FromQuery] int? userId, [FromQuery] string? role)
+        public async Task<IActionResult> InHopDongHtml(int id)
         {
-            var hopDong = await _context.HopDongs
+            var hopDong = await _context.HopDongs.VisibleContracts(User, _context)
                 .Include(h => h.KhachHang)
                 .Include(h => h.NhanVien)
                 .FirstOrDefaultAsync(h => h.MaHopDong == id);
@@ -121,22 +122,6 @@ namespace RentalSystem.Controllers
             if (hopDong == null)
             {
                 return NotFound(new { message = $"Không tìm thấy hợp đồng #{id} trong hệ thống." });
-            }
-
-            // Kiểm tra phân quyền bảo mật:
-            // Chỉ Admin hoặc Nhân viên kinh doanh mới được xem toàn bộ.
-            // Khách hàng bắt buộc phải có userId trùng với MaKhachHang của hợp đồng này.
-            bool isAdminOrStaff = !string.IsNullOrEmpty(role) && 
-                (role.Equals("Admin", System.StringComparison.OrdinalIgnoreCase) || 
-                 role.Equals("NhanVien", System.StringComparison.OrdinalIgnoreCase) || 
-                 role.Equals("KinhDoanh", System.StringComparison.OrdinalIgnoreCase));
-
-            if (!isAdminOrStaff)
-            {
-                if (!userId.HasValue || hopDong.MaKhachHang != userId.Value)
-                {
-                    return StatusCode(403, new { message = "BẢO MẬT: Bạn không có quyền truy cập hoặc xem hợp đồng của khách hàng khác." });
-                }
             }
 
             var chiTiets = await _context.ChiTietHopDongs

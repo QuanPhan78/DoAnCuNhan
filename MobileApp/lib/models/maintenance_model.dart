@@ -27,10 +27,15 @@ class MaintenanceModel {
   final String? description;
   String? status;
   String? assignedEmployee;
+  final String? assignedStaffId;
+  final int? statusCode;
+  final String? updateNote;
+  bool get isClosed => statusCode == 4 || statusCode == 5;
   final String? createdAt;
   String? completedAt;
   String? result;
   List<MaintenanceNote> notes;
+  final List<String> imageUrls;
 
   MaintenanceModel({
     required this.id,
@@ -41,10 +46,14 @@ class MaintenanceModel {
     this.description,
     this.status,
     this.assignedEmployee,
+    this.assignedStaffId,
+    this.statusCode,
+    this.updateNote,
     this.createdAt,
     this.completedAt,
     this.result,
     this.notes = const [],
+    this.imageUrls = const [],
   });
 
   factory MaintenanceModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +66,8 @@ class MaintenanceModel {
       description: json['description'],
       status: json['status'],
       assignedEmployee: json['assignedEmployee'],
+      assignedStaffId: json['assignedStaffId']?.toString(),
+      statusCode: (json['statusCode'] as num?)?.toInt(),
       createdAt: json['createdAt'],
       completedAt: json['completedAt'],
       result: json['result'],
@@ -74,6 +85,8 @@ class MaintenanceModel {
       'description': description,
       'status': status,
       'assignedEmployee': assignedEmployee,
+      'assignedStaffId': assignedStaffId,
+      'statusCode': statusCode,
       'createdAt': createdAt,
       'completedAt': completedAt,
       'result': result,

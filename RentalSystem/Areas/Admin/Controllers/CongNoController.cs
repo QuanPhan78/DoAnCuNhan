@@ -29,7 +29,8 @@ namespace RentalSystem.Areas.Admin.Controllers
             int? agingTier = null, 
             DateTime? tuNgay = null, 
             DateTime? denNgay = null, 
-            string? activeTab = "all")
+            string? activeTab = null,
+            bool dueSoon = false)
         {
             var hopDongs = await _context.HopDongs
                 .Include(h => h.KhachHang)
@@ -55,7 +56,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             {
                 decimal phiDenBu = h.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m;
                 decimal phaiThu = h.TongTien + phiDenBu;
-                decimal daThu = h.TienDaCoc + (h.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien) 
+                decimal daThu = (h.YeuCauThanhToanLanDau ? 0m : h.TienDaCoc) + (h.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien)
                     ?? h.KyHanThanhToans?.Sum(k => k.SoTienDaTra) ?? 0m);
                 decimal conNo = Math.Max(0m, phaiThu - daThu);
 
@@ -64,108 +65,87 @@ namespace RentalSystem.Areas.Admin.Controllers
                 tongCongNo += conNo;
             }
 
+            var now = DateTime.Now;
             var overdueKyHansAll = allKyHans
-                .Where(k => (k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date)) && k.TrangThai != 1 && k.TrangThai != 3)
-                .ToList();
-
-            decimal tongNoQuaHan = overdueKyHansAll.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
-
-            decimal tyLeThuHoi = tongPhaiThuToanHeThong > 0 
-                ? Math.Min(100m, Math.Max(0m, Math.Round((tongDaThuToanHeThong / tongPhaiThuToanHeThong) * 100m, 1)))
+                .Where(k => DebtCalculationHelper.IsPayableInstallment(k) &&
+                    DebtCalculationHelper.DaysPastDue(k, now) > 0);
+            ViewBag.TongCongNo = tongCongNo;
+            ViewBag.TongNoQuaHan = overdueKyHansAll.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
+            ViewBag.TyLeThuHoi = tongPhaiThuToanHeThong > 0
+                ? Math.Min(100m, Math.Max(0m, Math.Round(tongDaThuToanHeThong / tongPhaiThuToanHeThong * 100m, 1)))
                 : 100m;
 
-            int soKhoanNoXau = overdueKyHansAll.Count(k => k.NhomTuoiNo == 4 || k.SoNgayTreHan > 90);
+            bool showUpcoming = agingTier == 0 ||
+                (!agingTier.HasValue && activeTab == "upcoming");
+            dueSoon = dueSoon && showUpcoming;
+            var restrictedCustomers = hopDongs
+                .GroupBy(h => h.MaKhachHang)
+                .Select(group => (Customer: group.Key, Reason: DebtCalculationHelper.RentalRestrictionReason(
+                    group.SelectMany(h => h.KyHanThanhToans ?? Array.Empty<KyHanThanhToan>()), now)))
+                .Where(entry => entry.Reason != null)
+                .ToDictionary(entry => entry.Customer, entry => entry.Reason!);
+            var congNoList = FilterContracts(hopDongs, search, agingTier, tuNgay, denNgay, dueSoon, now).ToList();
 
-            // Phân loại theo 4 nhóm tuổi nợ
-            var tier1Items = overdueKyHansAll.Where(k => k.NhomTuoiNo == 1 || (k.SoNgayTreHan >= 1 && k.SoNgayTreHan <= 30)).ToList();
-            var tier2Items = overdueKyHansAll.Where(k => k.NhomTuoiNo == 2 || (k.SoNgayTreHan >= 31 && k.SoNgayTreHan <= 60)).ToList();
-            var tier3Items = overdueKyHansAll.Where(k => k.NhomTuoiNo == 3 || (k.SoNgayTreHan >= 61 && k.SoNgayTreHan <= 90)).ToList();
-            var tier4Items = overdueKyHansAll.Where(k => k.NhomTuoiNo == 4 || k.SoNgayTreHan > 90).ToList();
-
-            ViewBag.TongCongNo = tongCongNo;
-            ViewBag.TongNoQuaHan = tongNoQuaHan;
-            ViewBag.TyLeThuHoi = tyLeThuHoi;
-            ViewBag.SoKhoanNoXau = soKhoanNoXau;
-
-            ViewBag.AgingTier1Count = tier1Items.Count;
-            ViewBag.AgingTier1Amount = tier1Items.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
-
-            ViewBag.AgingTier2Count = tier2Items.Count;
-            ViewBag.AgingTier2Amount = tier2Items.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
-
-            ViewBag.AgingTier3Count = tier3Items.Count;
-            ViewBag.AgingTier3Amount = tier3Items.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
-
-            ViewBag.AgingTier4Count = tier4Items.Count;
-            ViewBag.AgingTier4Amount = tier4Items.Sum(k => Math.Max(0m, k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
-
-            // Lọc danh sách hợp đồng còn nợ hoặc chưa tất toán
-            var congNoQuery = hopDongs.Where(h =>
-            {
-                decimal totalReceivable = h.TongTien + (h.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m);
-                decimal totalCollected = h.TienDaCoc + (h.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien) ?? h.KyHanThanhToans?.Sum(k => k.SoTienDaTra) ?? 0m);
-                decimal remainingDebt = totalReceivable - totalCollected;
-                return remainingDebt > 0 || (h.TrangThaiThanhToan != 3);
-            });
-
-            // Bộ lọc tìm kiếm: Mã HĐ, Họ tên, SĐT, CCCD
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string s = search.Trim().ToLower();
-                congNoQuery = congNoQuery.Where(h =>
-                    h.MaHopDong.ToString().Contains(s) ||
-                    (h.KhachHang != null && (
-                        (h.KhachHang.HoTen != null && h.KhachHang.HoTen.ToLower().Contains(s)) ||
-                        (h.KhachHang.SoDienThoai != null && h.KhachHang.SoDienThoai.Contains(s)) ||
-                        (h.KhachHang.CCCD != null && h.KhachHang.CCCD.Contains(s))
-                    ))
-                );
-            }
-
-            // Bộ lọc nhóm tuổi nợ
-            if (agingTier.HasValue && agingTier.Value >= 0)
-            {
-                if (agingTier.Value == 0)
-                {
-                    congNoQuery = congNoQuery.Where(h =>
-                        h.KyHanThanhToans == null ||
-                        !h.KyHanThanhToans.Any(k => (k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date)) && k.SoNgayTreHan > 0)
-                    );
-                }
-                else
-                {
-                    congNoQuery = congNoQuery.Where(h =>
-                        h.KyHanThanhToans != null &&
-                        h.KyHanThanhToans.Any(k => (k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date)) && 
-                                                   DebtCalculationHelper.CalculateAgingTier(k.SoNgayTreHan) == agingTier.Value)
-                    );
-                }
-            }
-
-            // Bộ lọc từ ngày - đến ngày theo ngày bắt đầu hợp đồng
-            if (tuNgay.HasValue)
-            {
-                congNoQuery = congNoQuery.Where(h => h.NgayBatDau.Date >= tuNgay.Value.Date);
-            }
-            if (denNgay.HasValue)
-            {
-                congNoQuery = congNoQuery.Where(h => h.NgayBatDau.Date <= denNgay.Value.Date);
-            }
-
-            var congNoList = congNoQuery.ToList();
-
+            ViewBag.Installments = congNoList.SelectMany(h => h.KyHanThanhToans ?? Array.Empty<KyHanThanhToan>())
+                .Where(k => DebtCalculationHelper.IsPayableInstallment(k) &&
+                    DebtCalculationHelper.GetInstallmentBalance(k) > 0 &&
+                    (DebtCalculationHelper.DaysPastDue(k, now) == 0) == showUpcoming &&
+                    MatchesInstallmentFilter(k, agingTier, dueSoon, now))
+                .OrderBy(k => k.NgayDenHan)
+                .ToList();
+            ViewBag.RestrictedCustomers = restrictedCustomers;
+            ViewBag.Today = now.Date;
             ViewBag.Search = search;
             ViewBag.AgingTier = agingTier;
             ViewBag.TuNgay = tuNgay?.ToString("yyyy-MM-dd");
             ViewBag.DenNgay = denNgay?.ToString("yyyy-MM-dd");
-            ViewBag.ActiveTab = string.IsNullOrEmpty(activeTab) ? "all" : activeTab;
+            ViewBag.ActiveTab = showUpcoming ? "upcoming" : "overdue";
+            ViewBag.DueSoon = dueSoon;
 
             return View(congNoList);
         }
 
+        private static bool MatchesInstallmentFilter(KyHanThanhToan installment, int? agingTier, bool dueSoon, DateTime today)
+        {
+            int days = DebtCalculationHelper.DaysPastDue(installment, today);
+            return (!agingTier.HasValue || DebtCalculationHelper.CalculateAgingTier(days) == agingTier.Value) &&
+                (!dueSoon || (days == 0 && installment.NgayDenHan.Date <= today.Date.AddDays(7)));
+        }
+
+        private static IEnumerable<HopDong> FilterContracts(IEnumerable<HopDong> contracts, string? search,
+            int? agingTier, DateTime? from, DateTime? to, bool dueSoon, DateTime today)
+        {
+            string? term = search?.Trim();
+            return contracts.Where(contract =>
+            {
+                decimal receivable = contract.TongTien + (contract.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m);
+                decimal collected = (contract.YeuCauThanhToanLanDau ? 0m : contract.TienDaCoc) +
+                    (contract.PhieuThus?.Where(p => !p.DaHuy && (p.LoaiPhieu == 0 || p.LoaiPhieu == 2)).Sum(p => p.SoTien)
+                        ?? contract.KyHanThanhToans?.Sum(k => k.SoTienDaTra) ?? 0m);
+                if (receivable <= collected && contract.TrangThaiThanhToan == ContractPaymentStatus.Settled)
+                    return false;
+
+                var customer = contract.KhachHang;
+                if (!string.IsNullOrEmpty(term) && !contract.MaHopDong.ToString().Contains(term) &&
+                    customer?.HoTen?.Contains(term, StringComparison.OrdinalIgnoreCase) != true &&
+                    customer?.SoDienThoai?.Contains(term, StringComparison.OrdinalIgnoreCase) != true &&
+                    customer?.CCCD?.Contains(term, StringComparison.OrdinalIgnoreCase) != true)
+                    return false;
+
+                if ((from.HasValue && contract.NgayBatDau.Date < from.Value.Date) ||
+                    (to.HasValue && contract.NgayBatDau.Date > to.Value.Date))
+                    return false;
+
+                return (!agingTier.HasValue && !dueSoon) || contract.KyHanThanhToans?.Any(k =>
+                    DebtCalculationHelper.IsPayableInstallment(k) &&
+                    DebtCalculationHelper.GetInstallmentBalance(k) > 0 &&
+                    MatchesInstallmentFilter(k, agingTier, dueSoon, today)) == true;
+            });
+        }
+
         // Xuất báo cáo công nợ ra file Excel (.xlsx)
         [HttpGet]
-        public async Task<IActionResult> ExportExcel(string? search = null, int? agingTier = null, DateTime? tuNgay = null, DateTime? denNgay = null)
+        public async Task<IActionResult> ExportExcel(string? search = null, int? agingTier = null, DateTime? tuNgay = null, DateTime? denNgay = null, bool dueSoon = false)
         {
             var hopDongs = await _context.HopDongs
                 .Include(h => h.KhachHang)
@@ -181,56 +161,8 @@ namespace RentalSystem.Areas.Admin.Controllers
             HopDongController.CapNhatTreHanVaPhiPhat(allKyHans);
             await _context.SaveChangesAsync();
 
-            var query = hopDongs.Where(h =>
-            {
-                decimal totalReceivable = h.TongTien + (h.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m);
-                decimal totalCollected = h.TienDaCoc + (h.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien) ?? h.KyHanThanhToans?.Sum(k => k.SoTienDaTra) ?? 0m);
-                decimal remainingDebt = totalReceivable - totalCollected;
-                return remainingDebt > 0 || h.TrangThaiThanhToan != 3;
-            });
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string s = search.Trim().ToLower();
-                query = query.Where(h =>
-                    h.MaHopDong.ToString().Contains(s) ||
-                    (h.KhachHang != null && (
-                        (h.KhachHang.HoTen != null && h.KhachHang.HoTen.ToLower().Contains(s)) ||
-                        (h.KhachHang.SoDienThoai != null && h.KhachHang.SoDienThoai.Contains(s)) ||
-                        (h.KhachHang.CCCD != null && h.KhachHang.CCCD.Contains(s))
-                    ))
-                );
-            }
-
-            if (agingTier.HasValue && agingTier.Value >= 0)
-            {
-                if (agingTier.Value == 0)
-                {
-                    query = query.Where(h =>
-                        h.KyHanThanhToans == null ||
-                        !h.KyHanThanhToans.Any(k => (k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date)) && k.SoNgayTreHan > 0)
-                    );
-                }
-                else
-                {
-                    query = query.Where(h =>
-                        h.KyHanThanhToans != null &&
-                        h.KyHanThanhToans.Any(k => (k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date)) && 
-                                                   DebtCalculationHelper.CalculateAgingTier(k.SoNgayTreHan) == agingTier.Value)
-                    );
-                }
-            }
-
-            if (tuNgay.HasValue)
-            {
-                query = query.Where(h => h.NgayBatDau.Date >= tuNgay.Value.Date);
-            }
-            if (denNgay.HasValue)
-            {
-                query = query.Where(h => h.NgayBatDau.Date <= denNgay.Value.Date);
-            }
-
-            var listData = query.ToList();
+            var today = DateTime.Today;
+            var listData = FilterContracts(hopDongs, search, agingTier, tuNgay, denNgay, dueSoon, today);
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Báo Cáo Công Nợ");
@@ -259,7 +191,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 "STT", "Mã HĐ", "Khách Hàng", "Số Điện Thoại", "CCCD/CMND",
                 "Ngày Bắt Đầu", "Ngày Kết Thúc", "Tổng Tiền Thuê", "Phí Bồi Thường Hư Hại",
                 "Tổng Phải Thu", "Đã Thu (Gồm Cọc)", "Còn Nợ", "Quá Hạn (Ngày)",
-                "Phí Phạt Trễ Hạn", "Nhóm Tuổi Nợ", "Trạng Thái", "Hạn Trả Gần Nhất"
+                "Phí Phạt Trễ Hạn", "Tuổi nợ cao nhất", "Trạng thái thanh toán", "Hạn Trả Gần Nhất"
             };
 
             for (int col = 1; col <= headers.Length; col++)
@@ -285,34 +217,21 @@ namespace RentalSystem.Areas.Admin.Controllers
             {
                 decimal phiDenBu = hd.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m;
                 decimal tongPhaiThu = hd.TongTien + phiDenBu;
-                decimal daThu = hd.TienDaCoc + (hd.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien) 
+                decimal daThu = (hd.YeuCauThanhToanLanDau ? 0m : hd.TienDaCoc) + (hd.PhieuThus?.Where(pt => !pt.DaHuy && (pt.LoaiPhieu == 0 || pt.LoaiPhieu == 2)).Sum(pt => pt.SoTien)
                     ?? hd.KyHanThanhToans?.Sum(k => k.SoTienDaTra) ?? 0m);
                 decimal conNo = Math.Max(0m, tongPhaiThu - daThu);
 
-                var overdueKyHans = hd.KyHanThanhToans?
-                    .Where(k => (k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date)) && k.TrangThai != 1 && k.TrangThai != 3)
-                    .ToList();
-                int maxDaysPastDue = overdueKyHans != null && overdueKyHans.Any() ? overdueKyHans.Max(k => k.SoNgayTreHan) : 0;
-                decimal phiPhat = overdueKyHans?.Sum(k => k.TienPhat) ?? 0m;
-                int tier = DebtCalculationHelper.CalculateAgingTier(maxDaysPastDue);
-                string agingTierName = DebtCalculationHelper.GetAgingTierName(tier);
-
-                var unpaidKyHans = hd.KyHanThanhToans?
-                    .Where(k => k.TrangThai != 1 && k.TrangThai != 3)
+                var unpaidKyHans = (hd.KyHanThanhToans ?? Array.Empty<KyHanThanhToan>())
+                    .Where(DebtCalculationHelper.IsPayableInstallment)
                     .OrderBy(k => k.NgayDenHan)
                     .ToList();
-                string nearestDueDate = unpaidKyHans != null && unpaidKyHans.Any() 
-                    ? unpaidKyHans.First().NgayDenHan.ToString("dd/MM/yyyy") 
-                    : "Đã hoàn thành";
-
-                string statusText = hd.TrangThaiThanhToan switch
-                {
-                    0 => "Chưa thanh toán",
-                    1 => "Đã đặt cọc",
-                    2 => maxDaysPastDue > 0 ? "Quá hạn" : "Còn nợ",
-                    3 => "Đã tất toán",
-                    _ => "Đang theo dõi"
-                };
+                var overdueKyHans = unpaidKyHans.Where(k => DebtCalculationHelper.DaysPastDue(k, today) > 0).ToList();
+                int maxDaysPastDue = overdueKyHans.Select(k => DebtCalculationHelper.DaysPastDue(k, today)).DefaultIfEmpty().Max();
+                decimal phiPhat = overdueKyHans.Sum(k => k.TienPhat);
+                int tier = DebtCalculationHelper.CalculateAgingTier(maxDaysPastDue);
+                string agingTierName = DebtCalculationHelper.GetAgingTierName(tier);
+                string nearestDueDate = unpaidKyHans.FirstOrDefault()?.NgayDenHan.ToString("dd/MM/yyyy") ?? "—";
+                string statusText = ContractPaymentStatus.Label(hd.TrangThaiThanhToan);
 
                 worksheet.Cell(currentRow, 1).Value = stt++;
                 worksheet.Cell(currentRow, 2).Value = $"HD{hd.MaHopDong}";
@@ -355,13 +274,13 @@ namespace RentalSystem.Areas.Admin.Controllers
                 worksheet.Cell(currentRow, 17).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Nổi bật có điều kiện theo nhóm tuổi nợ
-                if (tier == 4) // Nợ xấu
+                if (tier == 4)
                 {
                     worksheet.Row(currentRow).Style.Fill.BackgroundColor = XLColor.FromHtml("#FDE8E8");
                     worksheet.Cell(currentRow, 12).Style.Font.Bold = true;
                     worksheet.Cell(currentRow, 12).Style.Font.FontColor = XLColor.Red;
                 }
-                else if (tier == 3) // Nghi ngờ
+                else if (tier == 3)
                 {
                     worksheet.Row(currentRow).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF4E5");
                 }
@@ -438,6 +357,11 @@ namespace RentalSystem.Areas.Admin.Controllers
             if (kyHan == null || kyHan.HopDong == null)
             {
                 return Json(new { success = false, message = "Kỳ hạn không tồn tại" });
+            }
+
+            if (!DebtCalculationHelper.IsPayableInstallment(kyHan) || DebtCalculationHelper.GetInstallmentBalance(kyHan) <= 0)
+            {
+                return Json(new { success = false, message = "Kỳ hạn không còn khoản cần nhắc nợ." });
             }
 
             int count = await _context.LichSuNhacNos.CountAsync(l => l.MaKyHan == maKyHan);

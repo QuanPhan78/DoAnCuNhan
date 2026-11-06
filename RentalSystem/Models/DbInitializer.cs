@@ -1585,6 +1585,8 @@ namespace RentalSystem.Models
             };
             context.PhanCongCongViecs.AddRange(tasks);
             context.SaveChanges();
+            if (context.Database.IsSqlServer())
+                context.Database.ExecuteSqlRaw(RentalSystem.Database.DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql"));
 
             // ==========================================
             // 12. LỊCH SỬ THIẾT BỊ (LichSuThietBi)

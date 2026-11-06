@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Services;
 
 namespace RentalSystem.Areas.Admin.Controllers
 {
@@ -90,8 +91,10 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,KinhDoanh")]
-        public async Task<IActionResult> Create(PhanCongCongViec model)
+        public async Task<IActionResult> Create(
+            [Bind("MaNhanVien,TieuDe,NoiDung,MaHopDong,MaPhieuBaoTri,HanHoanThanh")] PhanCongCongViec model)
         {
+            ModelState.Remove(nameof(PhanCongCongViec.NhanVien));
             if (string.IsNullOrWhiteSpace(model.TieuDe))
             {
                 ModelState.AddModelError("TieuDe", "Vui lòng nhập tiêu đề công việc.");
@@ -105,10 +108,9 @@ namespace RentalSystem.Areas.Admin.Controllers
                 ModelState.AddModelError("MaNhanVien", "Vui lòng chọn nhân viên thực hiện.");
             }
 
-            var staff = await _context.NguoiDungs.FindAsync(model.MaNhanVien);
-            if (staff == null)
+            if (!await IsAssignableAsync(model.MaNhanVien))
             {
-                ModelState.AddModelError("MaNhanVien", "Nhân viên được chọn không tồn tại.");
+                ModelState.AddModelError("MaNhanVien", "Hãy chọn nhân viên đang hoạt động.");
             }
 
             if (ModelState.IsValid)
@@ -117,12 +119,14 @@ namespace RentalSystem.Areas.Admin.Controllers
                 int? currentUserId = claim != null && int.TryParse(claim.Value, out int uid) ? uid : null;
 
                 model.NgayGiao = DateTime.Now;
+                model.TuDongTuBaoTri = false;
                 model.TrangThai = 0; // Mới
                 model.MaNguoiGiao = currentUserId;
                 model.MaHopDong = (model.MaHopDong.HasValue && model.MaHopDong.Value > 0) ? model.MaHopDong : null;
                 model.MaPhieuBaoTri = (model.MaPhieuBaoTri.HasValue && model.MaPhieuBaoTri.Value > 0) ? model.MaPhieuBaoTri : null;
 
                 _context.PhanCongCongViecs.Add(model);
+                StaffAssignments.NotifyAssignee(_context, model);
                 await _context.SaveChangesAsync();
 
                 TempData["Success"] = "Giao việc cho nhân viên thành công!";
@@ -145,6 +149,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (task.TuDongTuBaoTri) return LinkedTicket(task);
             await PopulateDropDowns(task.MaNhanVien, task.MaHopDong, task.MaPhieuBaoTri);
             return View(task);
         }
@@ -152,8 +157,10 @@ namespace RentalSystem.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,KinhDoanh")]
-        public async Task<IActionResult> Edit(int id, PhanCongCongViec model)
+        public async Task<IActionResult> Edit(int id,
+            [Bind("MaNhanVien,TieuDe,NoiDung,MaHopDong,MaPhieuBaoTri,HanHoanThanh,TrangThai,GhiChuTienDo")] PhanCongCongViec model)
         {
+            ModelState.Remove(nameof(PhanCongCongViec.NhanVien));
             var task = await _context.PhanCongCongViecs.FindAsync(id);
             if (task == null)
             {
@@ -161,6 +168,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (task.TuDongTuBaoTri) return LinkedTicket(task);
             if (string.IsNullOrWhiteSpace(model.TieuDe))
             {
                 ModelState.AddModelError("TieuDe", "Vui lòng nhập tiêu đề công việc.");
@@ -174,8 +182,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                 ModelState.AddModelError("MaNhanVien", "Vui lòng chọn nhân viên.");
             }
 
+            if (model.MaNhanVien != task.MaNhanVien && !await IsAssignableAsync(model.MaNhanVien))
+                ModelState.AddModelError("MaNhanVien", "Hãy chọn nhân viên đang hoạt động.");
+
             if (ModelState.IsValid)
             {
+                bool reassigned = task.MaNhanVien != model.MaNhanVien;
                 task.TieuDe = model.TieuDe.Trim();
                 task.NoiDung = model.NoiDung.Trim();
                 task.MaNhanVien = model.MaNhanVien;
@@ -193,6 +205,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     task.NgayHoanThanh = null;
                 }
                 task.TrangThai = model.TrangThai;
+                if (reassigned) StaffAssignments.NotifyAssignee(_context, task);
 
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Cập nhật phân công công việc thành công!";
@@ -212,6 +225,7 @@ namespace RentalSystem.Areas.Admin.Controllers
             var task = await _context.PhanCongCongViecs.FindAsync(id);
             if (task != null)
             {
+                if (task.TuDongTuBaoTri) return LinkedTicket(task);
                 _context.PhanCongCongViecs.Remove(task);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Đã xóa phân công công việc thành công!";
@@ -269,57 +283,18 @@ namespace RentalSystem.Areas.Admin.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateStatus(int id, int status, string? ghiChu)
         {
-            var task = await _context.PhanCongCongViecs.FindAsync(id);
-            if (task == null)
-            {
-                if (IsAjaxRequest())
-                {
-                    return NotFound(new { success = false, message = "Không tìm thấy công việc." });
-                }
-                TempData["Error"] = "Không tìm thấy công việc.";
-                return RedirectToAction(nameof(MyTasks));
-            }
-
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int? currentUserId = claim != null && int.TryParse(claim.Value, out int uid) ? uid : null;
+            if (!int.TryParse(claim?.Value, out int userId)) return Challenge();
             bool isManager = User.IsInRole("Admin") || User.IsInRole("KinhDoanh");
-
-            if (task.MaNhanVien != currentUserId && !isManager)
+            var result = await StaffAssignments.UpdateAsync(_context, id, userId, isManager, status, ghiChu);
+            if (result.Code != 200)
             {
-                if (IsAjaxRequest())
-                {
-                    return StatusCode(403, new { success = false, message = "Bạn không có quyền cập nhật công việc này." });
-                }
-                TempData["Error"] = "Bạn không có quyền cập nhật công việc này.";
+                if (IsAjaxRequest()) return StatusCode(result.Code, new { success = false, message = result.Message });
+                if (result.Code == 409 && result.Task != null) return LinkedTicket(result.Task);
+                TempData["Error"] = result.Message;
                 return RedirectToAction(nameof(MyTasks));
             }
-
-            if (status < 0 || status > 3)
-            {
-                if (IsAjaxRequest())
-                {
-                    return BadRequest(new { success = false, message = "Trạng thái không hợp lệ." });
-                }
-                TempData["Error"] = "Trạng thái không hợp lệ.";
-                return RedirectToAction(nameof(MyTasks));
-            }
-
-            task.TrangThai = status;
-            if (status == 2)
-            {
-                task.NgayHoanThanh = DateTime.Now;
-            }
-            else
-            {
-                task.NgayHoanThanh = null;
-            }
-
-            if (!string.IsNullOrWhiteSpace(ghiChu))
-            {
-                task.GhiChuTienDo = ghiChu.Trim();
-            }
-
-            await _context.SaveChangesAsync();
+            var task = result.Task!;
 
             if (IsAjaxRequest())
             {
@@ -328,7 +303,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     success = true,
                     message = "Cập nhật tiến độ thành công!",
                     status = task.TrangThai,
-                    statusText = GetStatusText(task.TrangThai),
+                    statusText = StaffAssignments.StatusLabel(task.TrangThai),
                     ngayHoanThanh = task.NgayHoanThanh?.ToString("dd/MM/yyyy HH:mm"),
                     ghiChu = task.GhiChuTienDo
                 });
@@ -372,12 +347,17 @@ namespace RentalSystem.Areas.Admin.Controllers
                 dueDate = task.HanHoanThanh?.ToString("dd/MM/yyyy HH:mm") ?? "Không có",
                 completedDate = task.NgayHoanThanh?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa hoàn thành",
                 status = task.TrangThai,
-                statusText = GetStatusText(task.TrangThai),
+                statusText = task.TuDongTuBaoTri ? RentalSystem.Services.MaintenanceAssignment.TaskLabel(task) : StaffAssignments.StatusLabel(task.TrangThai),
                 progressNote = task.GhiChuTienDo ?? "",
                 contractId = task.MaHopDong,
                 ticketId = task.MaPhieuBaoTri
             });
         }
+
+        private IActionResult LinkedTicket(PhanCongCongViec task) =>
+            task.MaPhieuBaoTri.HasValue
+                ? RedirectToAction("Details", "BaoTri", new { id = task.MaPhieuBaoTri })
+                : RedirectToAction(nameof(MyTasks));
 
         // Hàm hỗ trợ
         private async Task PopulateDropDowns(int? selectedNhanVien = null, int? selectedHopDong = null, int? selectedPhieuBaoTri = null)
@@ -425,13 +405,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                    Request.Headers.Accept.ToString().Contains("application/json");
         }
 
-        private static string GetStatusText(int status) => status switch
-        {
-            0 => "Mới",
-            1 => "Đang thực hiện",
-            2 => "Hoàn thành",
-            3 => "Đã hủy",
-            _ => "Không xác định"
-        };
+        private Task<bool> IsAssignableAsync(int userId) =>
+            _context.NguoiDungs.AnyAsync(u => u.MaNguoiDung == userId && u.TrangThai &&
+                (u.VaiTro.TenVaiTro == "Admin" || u.VaiTro.TenVaiTro == "KinhDoanh" || u.VaiTro.TenVaiTro == "KyThuat"));
     }
 }
