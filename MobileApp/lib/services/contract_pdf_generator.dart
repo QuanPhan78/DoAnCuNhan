@@ -1,3 +1,4 @@
+import '../widgets/authenticated_image.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -5,7 +6,17 @@ import 'package:pdf/widgets.dart' as pw;
 import '../models/contract_model.dart';
 
 class ContractPdfGenerator {
+  static String signatureLabel(bool? signed) => switch (signed) {
+    true => 'Đã ký',
+    false => 'Chưa ký',
+    null => 'Chưa xác định',
+  };
+
   static Future<Uint8List> generateContractPdf(ContractModel contract) async {
+    final customerImage = contract.customerSignature?.isNotEmpty == true
+        ? await loadContractImage(contract.customerSignature!) : null;
+    final staffImage = contract.staffSignature?.isNotEmpty == true
+        ? await loadContractImage(contract.staffSignature!) : null;
     final pdf = pw.Document();
 
     // Nạp Font chữ Times New Roman hỗ trợ 100% tiếng Việt Unicode
@@ -16,10 +27,9 @@ class ContractPdfGenerator {
     final ttfBold = pw.Font.ttf(fontBoldData);
 
     final currencyFormat = NumberFormat('#,###', 'vi_VN');
-    final now = DateTime.now();
 
     final totalFormatted = currencyFormat.format(contract.totalAmount ?? 0);
-    final depositFormatted = currencyFormat.format(contract.depositAmount ?? 0);
+    final depositFormatted = currencyFormat.format(contract.depositRequired ?? contract.depositAmount ?? 0);
 
     final deviceList = (contract.deviceIds != null && contract.deviceIds!.isNotEmpty)
         ? contract.deviceIds!
@@ -59,7 +69,7 @@ class ContractPdfGenerator {
                   pw.Align(
                     alignment: pw.Alignment.centerRight,
                     child: pw.Text(
-                      'TP.HCM, ngày ${now.day} tháng ${now.month} năm ${now.year}',
+                      'BẢN XEM TRƯỚC',
                       style: pw.TextStyle(font: ttfRegular, fontSize: 9.5, fontStyle: pw.FontStyle.italic),
                     ),
                   ),
@@ -166,9 +176,9 @@ class ContractPdfGenerator {
               pw.Text('ĐIỀU 2: PHƯƠNG THỨC THANH TOÁN & ĐẶT CỌC', style: pw.TextStyle(font: ttfBold, fontSize: 10.5)),
               pw.SizedBox(height: 2),
               pw.Text(
-                '1. Tiền đặt cọc: Bên A thanh toán cho Bên B số tiền cọc là: $depositFormatted VNĐ ngay khi ký hợp đồng và nhận bàn giao.\n'
+                '1. Tiền đặt cọc: Bên A thanh toán cho Bên B số tiền cọc là: $depositFormatted VNĐ cùng tiền thuê kỳ đầu sau khi ký và trước khi nhận thiết bị.\n'
                 '2. Thanh toán: Tiền mặt hoặc chuyển khoản qua ngân hàng / cổng thanh toán tích hợp trên ứng dụng.\n'
-                '3. Hoàn cọc: Bên B hoàn trả 100% tiền đặt cọc cho Bên A sau khi thu hồi thiết bị đầy đủ phụ kiện và nguyên vẹn.',
+                '3. Hoàn cọc: Tiền cọc được quyết toán sau khi đối soát tiền thuê, phí phát sinh và tình trạng thiết bị; hoàn phần dư hoặc thông báo phần còn thiếu.',
                 style: const pw.TextStyle(fontSize: 9.5),
               ),
               pw.SizedBox(height: 6),
@@ -188,7 +198,7 @@ class ContractPdfGenerator {
               pw.SizedBox(height: 2),
               pw.Text(
                 '• Trách nhiệm Bên A: Bảo quản thiết bị trong suốt quá trình thuê; không tự ý tháo dỡ, thay thế linh kiện máy; chịu trách nhiệm bồi thường nếu làm mất mát hoặc hư hỏng do bất cẩn; hoàn trả thiết bị đúng thời hạn đã cam kết.\n'
-                '• Trách nhiệm Bên B: Bàn giao thiết bị đúng chủng loại, cấu hình và hoạt động tốt; hỗ trợ kỹ thuật và đổi máy thay thế nếu phát sinh lỗi kỹ thuật từ nhà sản xuất; hoàn cọc đầy đủ cho Bên A khi kết thúc hợp đồng.',
+                '• Trách nhiệm Bên B: Bàn giao thiết bị đúng chủng loại, cấu hình và hoạt động tốt; hỗ trợ kỹ thuật và đổi máy thay thế nếu phát sinh lỗi kỹ thuật từ nhà sản xuất; hoàn phần cọc còn lại sau khi cấn trừ các khoản phải thu khi kết thúc hợp đồng.',
                 style: const pw.TextStyle(fontSize: 9.5),
               ),
               pw.SizedBox(height: 6),
@@ -197,14 +207,12 @@ class ContractPdfGenerator {
               pw.Text('ĐIỀU 5: ĐIỀU KHOẢN CHUNG & HIỆU LỰC HỢP ĐỒNG', style: pw.TextStyle(font: ttfBold, fontSize: 10.5)),
               pw.SizedBox(height: 2),
               pw.Text(
-                '1. Hợp đồng điện tử này có giá trị pháp lý kể từ thời điểm hệ thống ghi nhận thành công giao dịch thuê từ khách hàng.\n'
-                '2. Hai bên cam kết thực hiện đúng mọi điều khoản đã thỏa thuận. Mọi tranh chấp phát sinh được ưu tiên thương lượng giải quyết.\n'
-                '3. Bản hợp đồng này được mã hóa, lưu trữ an toàn trên hệ thống máy chủ của ABC Rental, hai bên có thể tra cứu và in ấn bất kỳ lúc nào.',
+                'Hai bên thực hiện các điều khoản đã thỏa thuận trong hồ sơ hợp đồng.',
                 style: const pw.TextStyle(fontSize: 9.5),
               ),
               pw.SizedBox(height: 10),
 
-              // 9. Chữ ký xác nhận điện tử hai bên
+              // 9. Trạng thái chữ ký của hai bên
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -216,19 +224,10 @@ class ContractPdfGenerator {
                       children: [
                         pw.Text('ĐẠI DIỆN BÊN A (BÊN THUÊ)', style: pw.TextStyle(font: ttfBold, fontSize: 10.5)),
                         pw.SizedBox(height: 2),
-                        pw.Text('(Đã xác nhận & ký số qua Mobile App)', style: pw.TextStyle(font: ttfRegular, fontSize: 9, fontStyle: pw.FontStyle.italic)),
-                        pw.SizedBox(height: 14),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.blue700, width: 0.8),
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-                          ),
-                          child: pw.Text(
-                            'ĐÃ KÝ ĐIỆN TỬ BỞI: ${contract.customerName?.toUpperCase() ?? "KHÁCH HÀNG"}',
-                            style: pw.TextStyle(font: ttfBold, fontSize: 8, color: PdfColors.blue900),
-                          ),
-                        ),
+                        pw.SizedBox(height: 8),
+                        if (customerImage != null && !contract.customerSignature!.endsWith('.svg'))
+                          pw.Image(pw.MemoryImage(customerImage), height: 50),
+                        pw.Text(signatureLabel(contract.customerSigned), style: pw.TextStyle(font: ttfBold, fontSize: 9)),
                         pw.SizedBox(height: 4),
                         pw.Text(contract.customerName ?? "Khách hàng", style: pw.TextStyle(font: ttfBold, fontSize: 10)),
                       ],
@@ -241,19 +240,10 @@ class ContractPdfGenerator {
                       children: [
                         pw.Text('ĐẠI DIỆN BÊN B (ABC RENTAL)', style: pw.TextStyle(font: ttfBold, fontSize: 10.5)),
                         pw.SizedBox(height: 2),
-                        pw.Text('(Đã phê duyệt & xác thực trên hệ thống)', style: pw.TextStyle(font: ttfRegular, fontSize: 9, fontStyle: pw.FontStyle.italic)),
-                        pw.SizedBox(height: 14),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.red700, width: 0.8),
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-                          ),
-                          child: pw.Text(
-                            'XÁC THỰC BỞI HỆ THỐNG ABC RENTAL',
-                            style: pw.TextStyle(font: ttfBold, fontSize: 8, color: PdfColors.red900),
-                          ),
-                        ),
+                        pw.SizedBox(height: 8),
+                        if (staffImage != null && !contract.staffSignature!.endsWith('.svg'))
+                          pw.Image(pw.MemoryImage(staffImage), height: 50),
+                        pw.Text(signatureLabel(contract.staffSigned), style: pw.TextStyle(font: ttfBold, fontSize: 9)),
                         pw.SizedBox(height: 4),
                         pw.Text('Đại diện Hệ thống ABC Rental', style: pw.TextStyle(font: ttfBold, fontSize: 10)),
                       ],

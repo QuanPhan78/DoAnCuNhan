@@ -1,0 +1,84 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+participant "Giao diện:\nCheckoutView" as View
+participant "Điều khiển:\nCartController" as Ctrl
+participant "Khóa tương tranh:\nInventoryLock\n(SemaphoreSlim)" as Lock
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+
+User -> View : Bấm xác nhận đặt thuê (Checkout)
+activate View
+
+View -> Ctrl : HTTP POST Checkout(CheckoutViewModel model)
+activate Ctrl
+
+Ctrl -> Lock : await InventoryLock.WaitAsync()
+activate Lock
+Lock --> Ctrl : Cấp quyền thực thi vùng găng (Lock count = 0)
+
+group Vùng găng kiểm soát tồn kho chống Overbooking (Atomic Section)
+    Ctrl -> DB : Kiểm tra tồn kho khả dụng không trùng lịch thuê
+    activate DB
+    DB --> Ctrl : Danh sách thiết bị Serial khả dụng (availableCount)
+    deactivate DB
+    
+    alt Không đủ thiết bị khả dụng
+        Ctrl -> Ctrl : Rollback & Cập nhật lại số lượng giỏ hàng
+        Ctrl -> Lock : InventoryLock.Release() (trong khối finally)
+        Ctrl --> View : Thông báo hết máy cho khung thời gian đã chọn
+        View --> User : Hiển thị cảnh báo xung đột tồn kho
+    else Đủ thiết bị khả dụng
+        Ctrl -> DB : Cập nhật ThietBi.TrangThai = 3 (Giữ chỗ 24h)
+        activate DB
+        Ctrl -> DB : Tạo HopDong (TrangThai=0, HanChotKy = DateTime.Now.AddHours(24))
+        Ctrl -> DB : Thêm ChiTietHopDong cho từng thiết bị
+        Ctrl -> DB : await SaveChangesAsync()
+        DB --> Ctrl : Lưu hợp đồng và giữ chỗ thành công
+        deactivate DB
+    end
+end
+
+Ctrl -> Lock : InventoryLock.Release() (trong khối finally)
+deactivate Lock
+
+Ctrl -> Ctrl : HttpContext.Session.Remove("Cart")
+Ctrl --> View : Chuyển hướng RedirectToAction("SignContract", new { id = hopDongId })
+deactivate Ctrl
+
+View --> User : Hiển thị màn hình Ký hợp đồng điện tử Canvas
+deactivate View
+
+@enduml

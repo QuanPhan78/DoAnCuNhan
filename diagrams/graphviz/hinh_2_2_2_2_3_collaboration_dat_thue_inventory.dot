@@ -1,0 +1,19 @@
+digraph Collab_DatThueInventory {
+    graph [rankdir="LR", splines=ortho, nodesep=1.0, ranksep=1.2, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, fontname="Segoe UI", fontsize=10.5, style="rounded,filled", fillcolor="#ffffff", color="#000000", penwidth=1.3];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    User [label="Khách hàng\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    View [label=":CheckoutView\n(Boundary)"];
+    Ctrl [label=":CartController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    Lock [label=":InventoryLock\n(SemaphoreSlim(1,1))", fillcolor="#e4e4e7"];
+    DB [label=":ApplicationDbContext\n(Entity/Data)"];
+    Session [label=":SessionManager\n(State)"];
+
+    User -> View [label="1: Xác nhận đơn thuê"];
+    View -> Ctrl [label="2: POST Checkout(model)"];
+    Ctrl -> Lock [label="3: await WaitAsync()\n7: Release() (finally)"];
+    Ctrl -> DB [label="4: Query tồn kho Serial\n5: Update TrangThai=3\n6: Lưu HopDong"];
+    Ctrl -> Session [label="7.1: Xóa Session('Cart')"];
+    View -> User [label="8: Chuyển hướng SignContract", style=dashed];
+}

@@ -191,7 +191,7 @@
                                     @if (item.MaPhieuBaoTri.HasValue)
                                     {
                                         <div class="mt-1">
-                                            <a href="/Admin/BaoTri" class="badge-soft-danger text-decoration-none">
+                                            <a href="/Admin/BaoTri/Details/@item.MaPhieuBaoTri" class="badge-soft-danger text-decoration-none">
                                                 <i class="fas fa-tools me-1"></i>PBT #@item.MaPhieuBaoTri
                                             </a>
                                         </div>
@@ -222,23 +222,30 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    @switch (item.TrangThai)
+                                    @if (item.TuDongTuBaoTri)
                                     {
-                                        case 0:
-                                            <span class="status-pill"><span class="status-dot dot-navy"></span> Mới</span>
-                                            break;
-                                        case 1:
-                                            <span class="status-pill"><span class="status-dot dot-warning"></span> Đang thực hiện</span>
-                                            break;
-                                        case 2:
-                                            <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span>
-                                            break;
-                                        case 3:
-                                            <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span>
-                                            break;
-                                        default:
-                                            <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span>
-                                            break;
+                                        <span class="status-pill"><span class="status-dot @(item.TrangThai == 2 ? "dot-success" : item.TrangThai == 1 ? "dot-warning" : "dot-navy")"></span> @RentalSystem.Services.MaintenanceAssignment.TaskLabel(item)</span>
+                                    }
+                                    else
+                                    {
+                                        @switch (item.TrangThai)
+                                        {
+                                            case 0:
+                                                <span class="status-pill"><span class="status-dot dot-navy"></span> Mới</span>
+                                                break;
+                                            case 1:
+                                                <span class="status-pill"><span class="status-dot dot-warning"></span> Đang thực hiện</span>
+                                                break;
+                                            case 2:
+                                                <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span>
+                                                break;
+                                            case 3:
+                                                <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span>
+                                                break;
+                                            default:
+                                                <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span>
+                                                break;
+                                        }
                                     }
                                 </td>
                                 <td class="text-end pe-3">
@@ -246,12 +253,24 @@
                                         <button type="button" class="action-btn" title="Xem chi tiết" onclick="viewTaskDetail(@item.MaPhanCong)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <a asp-action="Edit" asp-route-id="@item.MaPhanCong" class="action-btn" title="Chỉnh sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="action-btn action-btn-danger" title="Xóa" onclick="confirmDeleteTask(@item.MaPhanCong, '@item.TieuDe')">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+                                        @if (item.TuDongTuBaoTri)
+                                        {
+                                            @if (item.MaPhieuBaoTri.HasValue)
+                                            {
+                                                <a asp-controller="BaoTri" asp-action="Details" asp-route-id="@item.MaPhieuBaoTri" class="action-btn" title="Mở phiếu xử lý" aria-label="Mở phiếu xử lý">
+                                                    <i class="fas fa-tools"></i>
+                                                </a>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.MaPhanCong" class="action-btn" title="Chỉnh sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="action-btn action-btn-danger" title="Xóa" onclick="confirmDeleteTask(@item.MaPhanCong, '@item.TieuDe')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>

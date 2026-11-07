@@ -1,11 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
+using RentalSystem.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Services;
 
 namespace RentalSystem.Controllers
 {
     [Route("api/search")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = ApiTokens.Scheme)]
     public class ApiSearchController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -15,9 +19,9 @@ namespace RentalSystem.Controllers
             _context = context;
         }
 
-        // GET: api/search?q={query}&type={type}&userId={userId}&role={role}
+        // GET: api/search?q={query}&type={type}
         [HttpGet]
-        public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? keyword, [FromQuery] string? type, [FromQuery] string? userId, [FromQuery] string? role)
+        public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] string? keyword, [FromQuery] string? type)
         {
             var searchStr = !string.IsNullOrWhiteSpace(q) ? q : keyword;
             if (string.IsNullOrWhiteSpace(searchStr))
@@ -90,18 +94,9 @@ namespace RentalSystem.Controllers
             // 2. Search Contracts
             if (filterType == "all" || filterType == "contract")
             {
-                IQueryable<HopDong> contractQuery = _context.HopDongs
+                IQueryable<HopDong> contractQuery = _context.HopDongs.VisibleContracts(User, _context)
                     .Include(h => h.KhachHang);
 
-                if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int parsedUserId))
-                {
-                    if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) &&
-                        !string.Equals(role, "KinhDoanh", StringComparison.OrdinalIgnoreCase) &&
-                        !string.Equals(role, "Staff", StringComparison.OrdinalIgnoreCase))
-                    {
-                        contractQuery = contractQuery.Where(h => h.MaKhachHang == parsedUserId);
-                    }
-                }
 
                 var hopDongs = await contractQuery
                     .Where(h => 
@@ -114,14 +109,7 @@ namespace RentalSystem.Controllers
 
                 foreach (var h in hopDongs)
                 {
-                    string statusText = h.TrangThai switch
-                    {
-                        0 => "Chờ duyệt",
-                        1 => "Đang hiệu lực",
-                        2 => "Hoàn thành",
-                        3 => "Đã hủy",
-                        _ => "Chờ duyệt"
-                    };
+                    string statusText = ContractLifecycle.Label(h);
 
                     results.Add(new
                     {
@@ -140,6 +128,9 @@ namespace RentalSystem.Controllers
                             rentalEnd = h.NgayKetThuc.ToString("dd/MM/yyyy"),
                             rentalType = "Theo ngày",
                             status = statusText,
+                            statusCode = h.TrangThai,
+                            cancellationRequested = h.TrangThai == 0 && h.YeuCauHuy,
+                            cancellationReason = h.LyDoHuy,
                             totalAmount = (double)h.TongTien,
                             depositAmount = (double)h.TienDaCoc
                         }
@@ -150,21 +141,12 @@ namespace RentalSystem.Controllers
             // 3. Search Incidents / Maintenances
             if (filterType == "all" || filterType == "incident" || filterType == "maintenance")
             {
-                IQueryable<PhieuBaoTri> maintQuery = _context.PhieuBaoTris
+                IQueryable<PhieuBaoTri> maintQuery = _context.PhieuBaoTris.VisibleTickets(User)
                     .Include(p => p.HopDong)
-                    .ThenInclude(h => h.KhachHang)
+                    .ThenInclude(h => h!.KhachHang)
                     .Include(p => p.ThietBi)
                     .ThenInclude(t => t.SanPham);
 
-                if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int parsedUserId))
-                {
-                    if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) &&
-                        !string.Equals(role, "KyThuat", StringComparison.OrdinalIgnoreCase) &&
-                        !string.Equals(role, "Staff", StringComparison.OrdinalIgnoreCase))
-                    {
-                        maintQuery = maintQuery.Where(p => p.HopDong.MaKhachHang == parsedUserId);
-                    }
-                }
 
                 var maints = await maintQuery
                     .Where(p =>
@@ -178,15 +160,10 @@ namespace RentalSystem.Controllers
 
                 foreach (var p in maints)
                 {
-                    string statusText = p.TrangThai switch
-                    {
-                        1 => "Chờ xử lý",
-                        2 => "Đang xử lý",
-                        3 => "Đã hoàn thành",
-                        _ => "Chờ xử lý"
-                    };
+                    string statusText = MaintenanceAssignment.StatusLabel(p.TrangThai);
 
-                    string resType = filterType == "maintenance" ? "maintenance" : "incident";
+                    string resType = filterType == "maintenance" && !User.IsInRole("KhachHang")
+                        ? "maintenance" : "incident";
                     results.Add(new
                     {
                         id = p.MaPhieu.ToString(),
@@ -205,6 +182,7 @@ namespace RentalSystem.Controllers
                             severity = "Trung bình",
                             occurrenceTime = p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm"),
                             status = statusText,
+                            statusCode = p.TrangThai,
                             createdAt = p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm")
                         }
                     });

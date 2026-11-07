@@ -62,6 +62,7 @@ namespace RentalSystem.Models
 
                     DELETE FROM [ChiTietHopDongs];
                     DELETE FROM [LichSuNhacNos];
+                    DELETE FROM [ContractSettlements];
                     DELETE FROM [PhanCongCongViecs];
                     DELETE FROM [YeuCauGiaHans];
                     DELETE FROM [BienBanBanGiaos];
@@ -119,6 +120,7 @@ namespace RentalSystem.Models
             }
             else
             {
+                context.ContractSettlements.RemoveRange(context.ContractSettlements);
                 context.ChiTietHopDongs.RemoveRange(context.ChiTietHopDongs);
                 context.LichSuNhacNos.RemoveRange(context.LichSuNhacNos);
                 context.PhanCongCongViecs.RemoveRange(context.PhanCongCongViecs);
@@ -822,7 +824,6 @@ namespace RentalSystem.Models
                 TrangThai = 2, // Trễ hạn
                 SoNgayTreHan = 105,
                 TienPhat = 231000m,
-                PhiPhatTreHan = 231000m,
                 NhomTuoiNo = 4, // >90 ngày
                 GhiChu = "Khách thanh toán thiếu đợt 1, trễ hạn trên 90 ngày (Nợ nhóm 4)"
             };
@@ -838,7 +839,6 @@ namespace RentalSystem.Models
                 TrangThai = 2,
                 SoNgayTreHan = 75,
                 TienPhat = 540000m,
-                PhiPhatTreHan = 540000m,
                 NhomTuoiNo = 3, // 61-90 ngày
                 GhiChu = "Chưa thanh toán đợt 2, trễ hạn nhóm 3"
             };
@@ -854,7 +854,6 @@ namespace RentalSystem.Models
                 TrangThai = 2,
                 SoNgayTreHan = 45,
                 TienPhat = 324000m,
-                PhiPhatTreHan = 324000m,
                 NhomTuoiNo = 2, // 31-60 ngày
                 GhiChu = "Chưa thanh toán đợt 3, trễ hạn nhóm 2"
             };
@@ -870,7 +869,6 @@ namespace RentalSystem.Models
                 TrangThai = 2,
                 SoNgayTreHan = 20,
                 TienPhat = 144000m,
-                PhiPhatTreHan = 144000m,
                 NhomTuoiNo = 1, // 1-30 ngày
                 GhiChu = "Quá hạn nợ 20 ngày đợt 4 kèm tiền phạt trễ hạn"
             };
@@ -1585,6 +1583,8 @@ namespace RentalSystem.Models
             };
             context.PhanCongCongViecs.AddRange(tasks);
             context.SaveChanges();
+            if (context.Database.IsSqlServer())
+                context.Database.ExecuteSqlRaw(RentalSystem.Database.DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql"));
 
             // ==========================================
             // 12. LỊCH SỬ THIẾT BỊ (LichSuThietBi)

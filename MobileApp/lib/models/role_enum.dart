@@ -1,27 +1,25 @@
 enum Role {
   customer,
   staff,
-  admin
+  admin,
+  unavailable
 }
 
 extension RoleExtension on Role {
-  String get name {
+  String get displayName {
     switch (this) {
       case Role.customer: return 'Khách hàng';
-      case Role.staff: return 'Nhân viên';
+      case Role.staff: return 'Kỹ thuật';
       case Role.admin: return 'Quản lý';
+      case Role.unavailable: return 'Chỉ dùng trên Web';
     }
   }
 
   static Role fromString(String? role) {
-    if (role == null) return Role.customer;
-    final r = role.trim().toLowerCase();
-    if (r == 'admin' || r == 'quản lý' || r == 'quanly' || r == 'quản trị viên') {
-      return Role.admin;
-    }
-    if (r == 'nhân viên' || r == 'nhanvien' || r == 'staff' || r == 'kinhdoanh' || r == 'kythuat') {
-      return Role.staff;
-    }
-    return Role.customer;
+    final r = role?.trim().toLowerCase();
+    if (r == 'khachhang' || r == 'khách hàng' || r == 'customer') return Role.customer;
+    if (r == 'kythuat' || r == 'kỹ thuật' || r == 'staff') return Role.staff;
+    if (r == 'admin' || r == 'quản lý' || r == 'quanly') return Role.admin;
+    return Role.unavailable;
   }
 }

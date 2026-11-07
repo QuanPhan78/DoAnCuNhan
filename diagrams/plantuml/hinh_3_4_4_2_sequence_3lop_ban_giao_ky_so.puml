@@ -1,0 +1,74 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Khách hàng" as User
+participant "Giao diện: SignContractView\n(HTML5 Canvas Pad)" as View
+participant "Điều khiển: CartController\n(Business Controller)" as Ctrl
+participant "Xác thực: ImageValidator\n(Deep Byte Inspection)" as Val
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+User -> View : 1: Ký số trên thẻ <canvas id="signature-pad"> & Chọn ảnh CCCD
+activate View
+View -> Ctrl : 2: POST /Cart/SignContract (signatureData Base64, cccdFront, cccdBack)
+activate Ctrl
+
+group Kiểm tra chữ ký điện tử Base64
+    Ctrl -> Ctrl : 3: Kiểm tra dung lượng signatureData.Length <= 256KB
+    Ctrl -> Ctrl : 4: Tách bỏ tiền tố "data:image/png;base64,"
+    Ctrl -> Val : 5: Kiểm tra 4 Magic Bytes PNG (0x89 0x50 0x4E 0x47)
+    activate Val
+    Val --> Ctrl : 6: Chữ ký hợp lệ, lưu vào wwwroot/uploads/signatures/sign_{id}.png
+    deactivate Val
+end
+
+group Kiểm tra định dạng nhị phân ảnh CCCD (Deep Byte Inspection)
+    Ctrl -> Val : 7: ValidateAndSaveImageAsync(cccdFront, cccdBack)
+    activate Val
+    Val -> Val : 8: Kiểm tra dung lượng <= 5MB & Content-Type bắt đầu "image/"
+    Val -> Val : 9: Kiểm tra Magic Bytes nhị phân: PNG (89 50 4E 47), JPG (FF D8 FF), WEBP (52 49 46 46)
+    Val --> Ctrl : 10: Ảnh CCCD hợp lệ, lưu vào wwwroot/uploads/cmnd/
+    deactivate Val
+end
+
+group Lưu trữ Hợp đồng & Cập nhật trạng thái
+    Ctrl -> DB : 11: HopDongs.FindAsync(id)
+    activate DB
+    DB --> Ctrl : 12: Trả về thực thể HopDong
+    deactivate DB
+    
+    Ctrl -> DB : 13: Gán ChuKyKhachHang, AnhCCCD_Truoc, AnhCCCD_Sau, NgayKy = DateTime.Now
+    Ctrl -> DB : 14: Cập nhật HopDong.TrangThai = 1 (Đang thuê)
+    Ctrl -> DB : 15: Cập nhật ThietBis.TrangThai = 1 (Đang thuê)
+    activate DB
+    Ctrl -> DB : 16: await SaveChangesAsync()
+    DB --> Ctrl : 17: Lưu CSDL thành công
+    deactivate DB
+end
+
+Ctrl --> View : 18: RedirectToAction("PaymentSuccess", new { id = hopDong.MaHopDong })
+deactivate Ctrl
+View --> User : 19: Thông báo ký hợp đồng thành công, sẵn sàng bàn giao máy
+deactivate View
+
+@enduml

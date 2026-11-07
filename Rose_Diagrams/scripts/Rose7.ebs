@@ -1,0 +1,187 @@
+' ==============================================================================
+' RATIONAL ROSE SCRIPT: HINH 3.4.5.1 - SO DO 3 LOP BCE 
+' CHUC NANG: BAO CAO SU CO & PHAN CONG BAO TRI THIET BI
+' ==============================================================================
+Option Explicit
+
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, docStr As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    If st <> "" Then aCls.Stereotype = st
+                    If docStr <> "" Then aCls.Documentation = docStr
+                    Set GetOrCreateClass = aCls
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If docStr <> "" Then aCls.Documentation = docStr
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Sub SafeAddAttr(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOp(theCls As Class, opName As String, retType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, retType)
+        If Not anOp Is Nothing Then
+            anOp.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddRel(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    Dim anAssoc As Association
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+    End If
+End Sub
+
+Sub Main
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgRoot As Category
+    Dim pkgUC As Category
+    Dim diagBCE As Diagram
+    
+    Dim bBaoCao As Class
+    Dim bPhanCong As Class
+    Dim cBaoTri As Class
+    Dim cSLA As Class
+    Dim ePhieuBaoTri As Class
+    Dim ePhanCong As Class
+    Dim eThietBi As Class
+    
+    Set theModel = RoseApp.CurrentModel
+    Set rootLog = theModel.RootCategory
+    
+    ' 1. Tao cac goi quan ly
+    Set pkgRoot = GetOrCreateCategory(rootLog, "04_Design_3_Layers_UseCases")
+    Set pkgUC = GetOrCreateCategory(pkgRoot, "3_4_5_BaoCaoSuCo_BaoTri")
+    
+    ' --------------------------------------------------------------------------
+    ' 2. TANG BIEN (BOUNDARY CLASSES)
+    ' --------------------------------------------------------------------------
+    Set bBaoCao = GetOrCreateClass(pkgUC, "GiaoDienBaoSuCo", "boundary", "Giao dien khach hang gui bao cao su co")
+    Call SafeAddAttr(bBaoCao, "txtMoTaLoi", "string")
+    Call SafeAddAttr(bBaoCao, "txtMucDoUuTien", "string")
+    Call SafeAddAttr(bBaoCao, "hinhAnhDinhKem", "string")
+    Call SafeAddOp(bBaoCao, "HienThiForm", "void")
+    Call SafeAddOp(bBaoCao, "GuiYeuCauBaoTri", "void")
+
+    Set bPhanCong = GetOrCreateClass(pkgUC, "GiaoDienPhanCong", "boundary", "Giao dien danh cho Admin/Quan ly phan cong KTV")
+    Call SafeAddAttr(bPhanCong, "danhSachSuCo", "List<PhieuBaoTri>")
+    Call SafeAddAttr(bPhanCong, "danhSachKTV", "List<NguoiDung>")
+    Call SafeAddOp(bPhanCong, "HienThiDanhSach", "void")
+    Call SafeAddOp(bPhanCong, "XacNhanPhanCong", "void")
+
+    ' --------------------------------------------------------------------------
+    ' 3. TANG DIEU KHIEN (CONTROL CLASSES)
+    ' --------------------------------------------------------------------------
+    Set cBaoTri = GetOrCreateClass(pkgUC, "BoDieuKhienBaoTri", "control", "Xu ly nghiep vu tiep nhan su co va phan cong")
+    Call SafeAddAttr(cBaoTri, "_nguCanhCSDL", "ApplicationDbContext")
+    Call SafeAddAttr(cBaoTri, "_dichVuSLA", "DichVuSLA")
+    Call SafeAddOp(cBaoTri, "TiepNhanSuCo", "bool")
+    Call SafeAddOp(cBaoTri, "PhanCongKyThuatVien", "bool")
+    Call SafeAddOp(cBaoTri, "CapNhatTrangThai", "void")
+
+    Set cSLA = GetOrCreateClass(pkgUC, "DichVuSLA", "control", "Dich vu tinh toan thoi gian cam ket SLA")
+    Call SafeAddOp(cSLA, "TinhThoiGianConLai", "TimeSpan")
+    Call SafeAddOp(cSLA, "KichHoatCanhBaoTreHan", "void")
+
+    ' --------------------------------------------------------------------------
+    ' 4. TANG THUC THE (ENTITY CLASSES)
+    ' --------------------------------------------------------------------------
+    Set ePhieuBaoTri = GetOrCreateClass(pkgUC, "PhieuBaoTri", "entity", "Thuc the luu tru thong tin su co thiet bi")
+    Call SafeAddAttr(ePhieuBaoTri, "MaPhieu", "int")
+    Call SafeAddAttr(ePhieuBaoTri, "MaLienKetHopDong", "int")
+    Call SafeAddAttr(ePhieuBaoTri, "MaThietBi", "int")
+    Call SafeAddAttr(ePhieuBaoTri, "MoTaLoi", "string")
+    Call SafeAddAttr(ePhieuBaoTri, "MucDoUuTien", "string")
+    Call SafeAddAttr(ePhieuBaoTri, "TrangThai", "string")
+    Call SafeAddOp(ePhieuBaoTri, "KiemTraTrangThai", "bool")
+
+    Set ePhanCong = GetOrCreateClass(pkgUC, "PhanCongBaoTri", "entity", "Thuc the luu tru lich su phan cong ky thuat vien")
+    Call SafeAddAttr(ePhanCong, "MaPhanCong", "int")
+    Call SafeAddAttr(ePhanCong, "MaPhieu", "int")
+    Call SafeAddAttr(ePhanCong, "MaKyThuatVien", "int")
+    Call SafeAddAttr(ePhanCong, "NgayPhanCong", "DateTime")
+    Call SafeAddAttr(ePhanCong, "NgayHoanThanh", "DateTime")
+    Call SafeAddAttr(ePhanCong, "ChiPhiSuaChua", "decimal")
+
+    Set eThietBi = GetOrCreateClass(pkgUC, "ThietBi", "entity", "Thuc the thiet bi phan cung")
+    Call SafeAddAttr(eThietBi, "MaThietBi", "int")
+    Call SafeAddAttr(eThietBi, "SoSerial", "string")
+    Call SafeAddAttr(eThietBi, "TrangThaiPin", "int")
+    Call SafeAddAttr(eThietBi, "TinhTrang", "string")
+
+    ' --------------------------------------------------------------------------
+    ' 5. THIET LAP LIEN KET TUONG TAC (ASSOCIATIONS)
+    ' --------------------------------------------------------------------------
+    ' Lien ket Giao dien -> Dieu khien
+    Call SafeAddRel(bBaoCao, "BoDieuKhienBaoTri")
+    Call SafeAddRel(bPhanCong, "BoDieuKhienBaoTri")
+    
+    ' Lien ket Dieu khien -> Dich vu / Thuc the
+    Call SafeAddRel(cBaoTri, "DichVuSLA")
+    Call SafeAddRel(cBaoTri, "PhieuBaoTri")
+    Call SafeAddRel(cBaoTri, "PhanCongBaoTri")
+    
+    ' Lien ket giua cac Thuc the
+    Call SafeAddRel(ePhieuBaoTri, "ThietBi")
+    Call SafeAddRel(ePhanCong, "PhieuBaoTri")
+
+    ' --------------------------------------------------------------------------
+    ' 6. TAO VA MO SO DO BCE
+    ' --------------------------------------------------------------------------
+    Set diagBCE = pkgUC.AddClassDiagram("Hinh_3_4_5_1_BCE_BaoCao_BaoTri")
+    If Not diagBCE Is Nothing Then
+        diagBCE.Activate
+    End If
+    
+    MsgBox "DA TAO XONG HINH 3.4.5.1 - SO DO 3 LOP BCE BAO CAO SU CO & PHAN CONG!" & Chr(10) & _
+           "Cach hien thi:" & Chr(10) & _
+           "1. Vao menu Query -> Add Classes... -> Bam All >> -> Bam OK." & Chr(10) & _
+           "2. Nhan Ctrl+A de chon tat ca, chon Format -> Line Style -> Rectilinear." & Chr(10) & _
+           "3. Tu keo tha vi tri cac lop thanh 3 cot (Boundary - Control - Entity).", 64, "RentalSystem UML Design"
+End Sub

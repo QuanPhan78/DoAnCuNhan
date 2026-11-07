@@ -6,6 +6,7 @@ class RenewalProvider with ChangeNotifier {
   final RenewalRepository _repository;
   RenewalProvider(this._repository);
 
+  String? errorMessage;
   bool _isSubmitting = false;
   bool get isSubmitting => _isSubmitting;
 
@@ -15,6 +16,10 @@ class RenewalProvider with ChangeNotifier {
     required String duration,
     required String notes,
   }) async {
+    if (_isSubmitting) return false;
+    errorMessage = null;
+    final days = int.tryParse(duration);
+    if (days == null || days < 1 || days > 365) { errorMessage = "Nhập số ngày gia hạn từ 1 đến 365."; return false; }
     _isSubmitting = true;
     notifyListeners();
 
@@ -32,6 +37,7 @@ class RenewalProvider with ChangeNotifier {
       final success = await _repository.submitRenewalRequest(request);
       return success;
     } catch (e) {
+      errorMessage = e.toString().replaceFirst("Exception: ", "");
       return false;
     } finally {
       _isSubmitting = false;

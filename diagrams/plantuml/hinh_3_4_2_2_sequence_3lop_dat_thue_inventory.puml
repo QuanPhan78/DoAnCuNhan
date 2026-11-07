@@ -1,0 +1,68 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Khách hàng" as User
+participant "Giao diện: CheckoutView\n(Presentation)" as View
+participant "Điều khiển: CartController\n(Business Controller)" as Ctrl
+participant "Khóa: InventoryLock\n(SemaphoreSlim(1,1))" as Lock
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+User -> View : 1: Bấm nút "Xác nhận đặt thuê" (Checkout)
+activate View
+View -> Ctrl : 2: POST /Cart/Checkout()
+activate Ctrl
+
+Ctrl -> Lock : 3: await InventoryLock.WaitAsync()
+activate Lock
+Lock --> Ctrl : 4: Cấp quyền vào Critical Section (Đơn luồng kiểm kho)
+
+group Vùng găng kiểm tra tồn kho & Cấp phát Serial (Atomic Hold)
+    Ctrl -> DB : 5: Quét thiết bị khả dụng (TrangThai == 0, loại trừ đang thuê/bảo trì)
+    activate DB
+    DB --> Ctrl : 6: Trả về danh sách ThietBi Serial phù hợp
+    deactivate DB
+
+    alt Đủ số lượng máy đáp ứng
+        Ctrl -> DB : 7: Cập nhật ThietBi.TrangThai = 3 (Giữ chỗ / Reserved)
+        Ctrl -> DB : 8: Tạo HopDong (TrangThai = 0, HanChotKy = Now + 24h)
+        Ctrl -> DB : 9: Thêm ChiTietHopDong (MaHopDong, MaThietBi, GiaChotThu)
+        activate DB
+        Ctrl -> DB : 10: await SaveChangesAsync()
+        DB --> Ctrl : 11: Lưu thành công mã Hợp đồng mới
+        deactivate DB
+        Ctrl -> Ctrl : 12: Xóa Session Giỏ hàng
+    else Không đủ thiết bị khả dụng
+        Ctrl --> View : 13: Thông báo lỗi "Thiết bị vừa được giữ chỗ, vui lòng thử lại"
+    end
+end
+
+Ctrl -> Lock : 14: InventoryLock.Release() (trong khối finally)
+deactivate Lock
+
+Ctrl --> View : 15: RedirectToAction("SignContract", new { id = hopDong.MaHopDong })
+deactivate Ctrl
+View --> User : 16: Chuyển hướng tới giao diện Ký hợp đồng điện tử
+deactivate View
+
+@enduml

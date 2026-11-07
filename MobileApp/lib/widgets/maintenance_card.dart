@@ -14,8 +14,8 @@ class MaintenanceCard extends StatelessWidget {
 
   BadgeStatus _getBadgeStatus(String status) {
     status = status.toLowerCase();
-    if (status.contains('hoàn thành')) return BadgeStatus.success;
-    if (status.contains('đang xử lý')) return BadgeStatus.processing;
+    if (status.contains('hoàn thành') || status.contains('đã nghiệm thu')) return BadgeStatus.success;
+    if (status.contains('đang xử lý') || status.contains('chờ nghiệm thu')) return BadgeStatus.processing;
     if (status.contains('tiếp nhận') || status.contains('phân công')) return BadgeStatus.neutral;
     return BadgeStatus.warning;
   }

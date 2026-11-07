@@ -1,0 +1,40 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+rectangle ":CheckoutView" as View
+rectangle ":CartController" as Ctrl
+rectangle ":InventoryLock\n(SemaphoreSlim)" as Lock
+rectangle ":ApplicationDbContext" as DB
+rectangle ":SessionManager" as Session
+
+User -- View : 1: Xác nhận đơn thuê >\n8: Điều hướng sang ký hợp đồng <
+View -- Ctrl : 2: POST Checkout(model) >
+Ctrl -- Lock : 3: await WaitAsync() >\n7: Release() trong finally >
+Ctrl -- DB : 4: Kiểm tra tồn kho khả dụng >\n5: Update ThietBi.TrangThai = 3 >\n6: HopDongs.Add(hd) & SaveChanges() >
+Ctrl -- Session : 7.1: Remove("Cart") >
+
+@enduml

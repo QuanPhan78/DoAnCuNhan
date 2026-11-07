@@ -1,0 +1,80 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Khách hàng" as User
+actor "Kỹ thuật viên (KyThuat)" as Tech
+actor "Nhân viên KD (KinhDoanh)" as Staff
+participant "Giao diện: Return & Details View\n(Presentation Layer)" as View
+participant "Điều khiển: HopDongController\n(Action: HoanCoc)" as Ctrl
+participant "Thuật toán: DebtCalculationHelper\n(Business Logic)" as Helper
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+User -> Tech : 1: Bàn giao thiết bị và phụ kiện tại quầy
+Tech -> View : 2: Lập biên bản nghiệm thu (TinhTrangNgoaiQuan, PhuKien)
+activate View
+View -> Ctrl : 3: POST /Admin/HopDong/LapBienBanNghiemThu(id, model)
+activate Ctrl
+Ctrl -> DB : 4: Tạo BienBanBanGiao (LoaiBienBan = 1: Trả máy)
+activate DB
+DB --> Ctrl : 5: Lưu thành công
+deactivate DB
+Ctrl --> View : 6: Biên bản nghiệm thu hoàn tất
+deactivate Ctrl
+View --> Tech : 7: Xác nhận thiết bị nguyên vẹn / hư hại
+deactivate View
+
+== Giai đoạn Quyết toán Công nợ & Hoàn tiền cọc ==
+
+Staff -> View : 8: Nhấn "Quyết toán hoàn cọc" trên chi tiết hợp đồng
+activate View
+View -> Ctrl : 9: POST /Admin/HopDong/HoanCoc(id, model)
+activate Ctrl
+
+group Thuật toán Quyết toán Hoàn cọc (Deposit Settlement)
+    Ctrl -> DB : 10: Lấy TienDaCoc, tổng nợ chưa trả & PhiDenBu
+    activate DB
+    DB --> Ctrl : 11: Dữ liệu tài chính hợp đồng
+    deactivate DB
+    
+    Ctrl -> Helper : 12: CalculateDepositSettlement(deposit, unpaidRent, damages)
+    activate Helper
+    Helper --> Ctrl : 13: Trả về số tiền hoàn cọc thực tế (RefundAmount)
+    deactivate Helper
+
+    Ctrl -> DB : 14: Tạo PhieuChi (LoaiChi = 0: Hoàn cọc, SoTien = RefundAmount, MaNhanVienChi)
+    Ctrl -> DB : 15: Cập nhật HopDong.TrangThai = 2 (Đã hoàn tất) & TrangThaiThanhToan = 3 (Tất toán)
+    Ctrl -> DB : 16: Cập nhật ThietBis.TrangThai = 0 (Sẵn sàng trong kho)
+    activate DB
+    Ctrl -> DB : 17: await SaveChangesAsync()
+    DB --> Ctrl : 18: Hoàn tất lưu trữ cơ sở dữ liệu
+    deactivate DB
+end
+
+Ctrl --> View : 19: Thông báo quyết toán thành công & Xuất phiếu chi
+deactivate Ctrl
+View --> Staff : 20: In phiếu chi hoàn tiền cho khách hàng
+deactivate View
+Staff -> User : 21: Hoàn tiền cọc cho khách hàng (kết thúc vòng đời thuê máy)
+
+@enduml

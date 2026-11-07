@@ -65,6 +65,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     new() { TableName = "ChiTietHopDongs", DisplayName = "Chi tiết thiết bị thuê", RowCount = await _context.ChiTietHopDongs.CountAsync(), Icon = "fa-list-ol" },
                     new() { TableName = "PhieuThus", DisplayName = "Phiếu thu tiền", RowCount = await _context.PhieuThus.CountAsync(), Icon = "fa-receipt" },
                     new() { TableName = "PhieuChis", DisplayName = "Phiếu chi hoàn cọc", RowCount = await _context.PhieuChis.CountAsync(), Icon = "fa-money-bill-wave" },
+                    new() { TableName = "ContractSettlements", DisplayName = "Quyết toán hợp đồng", RowCount = await _context.ContractSettlements.CountAsync(), Icon = "fa-balance-scale" },
                     new() { TableName = "PhieuBaoTris", DisplayName = "Phiếu bảo trì & Sự cố", RowCount = await _context.PhieuBaoTris.CountAsync(), Icon = "fa-tools" },
                     new() { TableName = "BienBanBanGiaos", DisplayName = "Biên bản bàn giao thiết bị", RowCount = await _context.BienBanBanGiaos.CountAsync(), Icon = "fa-clipboard-check" },
                     new() { TableName = "ThongBaos", DisplayName = "Thông báo hệ thống", RowCount = await _context.ThongBaos.CountAsync(), Icon = "fa-bell" },
@@ -163,6 +164,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     ChiTietHopDongs = await _context.ChiTietHopDongs.AsNoTracking().ToListAsync(),
                     PhieuThus = await _context.PhieuThus.AsNoTracking().ToListAsync(),
                     PhieuChis = await _context.PhieuChis.AsNoTracking().ToListAsync(),
+                    ContractSettlements = await _context.ContractSettlements.AsNoTracking().ToListAsync(),
                     PhieuBaoTris = await _context.PhieuBaoTris.AsNoTracking().ToListAsync(),
                     BienBanBanGiaos = await _context.BienBanBanGiaos.AsNoTracking().ToListAsync(),
                     ThongBaos = await _context.ThongBaos.AsNoTracking().ToListAsync(),
@@ -376,9 +378,15 @@ namespace RentalSystem.Areas.Admin.Controllers
                         command.Transaction = transaction;
                         command.CommandText = DatabaseSchema.ReadSql("UpgradeContractIdentityImages.sql");
                         await command.ExecuteNonQueryAsync();
-                        await DatabaseSchema.VerifyModelAsync(_context.Model, connection, transaction);
                         command.CommandText = DatabaseSchema.ReadSql("RegisterExisting001.sql");
                         await command.ExecuteNonQueryAsync();
+                        command.CommandText = DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql");
+                        await command.ExecuteNonQueryAsync();
+                        command.CommandText = DatabaseSchema.ReadSql("003_FirstContractPayment.sql");
+                        await command.ExecuteNonQueryAsync();
+                        command.CommandText = DatabaseSchema.ReadSql("004_ContractSettlements.sql");
+                        await command.ExecuteNonQueryAsync();
+                        await DatabaseSchema.VerifyModelAsync(_context.Model, connection, transaction);
                         command.CommandText = """
                             IF EXISTS (SELECT 1 FROM sys.extended_properties WHERE class = 0 AND name = N'RentalSystem.Rehearsal')
                                 EXEC sys.sp_dropextendedproperty @name = N'RentalSystem.Rehearsal';
@@ -392,8 +400,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                     catch (SqlException ex)
                     {
                         throw new InvalidOperationException(
-                            $"Đã khôi phục tệp .bak nhưng chưa nâng cấp được các cột ảnh. " +
-                            $"Chạy UpgradeContractIdentityImages.sql trước khi sử dụng dữ liệu. {ex.Message}", ex);
+                            $"Đã khôi phục tệp .bak nhưng chưa nâng cấp được lược đồ. " +
+                            $"Kiểm tra phiên bản cơ sở dữ liệu trước khi sử dụng. {ex.Message}", ex);
                     }
                 }
                 finally
@@ -438,6 +446,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     ALTER TABLE [NguoiDungs] NOCHECK CONSTRAINT ALL;
                     ALTER TABLE [VaiTros] NOCHECK CONSTRAINT ALL;
 
+                    DELETE FROM [ContractSettlements];
                     DELETE FROM [PhanCongCongViecs];
                     DELETE FROM [YeuCauGiaHans];
                     DELETE FROM [LichSuNhacNos];
@@ -486,8 +495,8 @@ namespace RentalSystem.Areas.Admin.Controllers
                     foreach (var t in payload.ThietBis)
                     {
                         t.SanPham = null!;
-                        t.LichSuThietBis = null;
-                        t.PhieuBaoTris = null;
+                        t.LichSuThietBis = [];
+                        t.PhieuBaoTris = [];
                     }
                     await InsertWithIdentityAsync(_context.ThietBis, "ThietBis", payload.ThietBis);
                 }
@@ -506,7 +515,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                 {
                     foreach (var k in payload.KhuyenMais)
                     {
-                        k.HopDongs = null;
+                        k.HopDongs = [];
                     }
                     await InsertWithIdentityAsync(_context.KhuyenMais, "KhuyenMais", payload.KhuyenMais);
                 }
@@ -519,12 +528,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                         h.NhanVien = null!;
                         h.KhuyenMai = null;
                         h.KyHanThanhToans = null!;
-                        h.BienBanBanGiaos = null;
-                        h.PhieuChis = null;
-                        h.PhieuThus = null;
-                        h.PhieuBaoTris = null;
+                        h.BienBanBanGiaos = [];
+                        h.PhieuChis = [];
+                        h.PhieuThus = [];
+                        h.PhieuBaoTris = [];
                         h.LichSuNhacNos = null;
-                        h.DanhSachYeuCauGiaHan = null;
+                        h.DanhSachYeuCauGiaHan = [];
                     }
                     await InsertWithIdentityAsync(_context.HopDongs, "HopDongs", payload.HopDongs);
                 }
@@ -570,6 +579,12 @@ namespace RentalSystem.Areas.Admin.Controllers
                         pc.NhanVienChi = null!;
                     }
                     await InsertWithIdentityAsync(_context.PhieuChis, "PhieuChis", payload.PhieuChis);
+                }
+
+                if (payload.ContractSettlements?.Count > 0)
+                {
+                    _context.ContractSettlements.AddRange(payload.ContractSettlements);
+                    await _context.SaveChangesAsync();
                 }
 
                 if (payload.PhieuBaoTris != null && payload.PhieuBaoTris.Any())
@@ -657,6 +672,7 @@ namespace RentalSystem.Areas.Admin.Controllers
                     ALTER TABLE [PhanCongCongViecs] CHECK CONSTRAINT ALL;
                 ");
 
+                await _context.Database.ExecuteSqlRawAsync(DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql"));
                 await transaction.CommitAsync();
             }
             catch
@@ -720,6 +736,7 @@ namespace RentalSystem.Areas.Admin.Controllers
         public List<ChiTietHopDong> ChiTietHopDongs { get; set; } = new();
         public List<PhieuThu> PhieuThus { get; set; } = new();
         public List<PhieuChi> PhieuChis { get; set; } = new();
+        public List<ContractSettlement> ContractSettlements { get; set; } = new();
         public List<PhieuBaoTri> PhieuBaoTris { get; set; } = new();
         public List<BienBanBanGiao> BienBanBanGiaos { get; set; } = new();
         public List<ThongBao> ThongBaos { get; set; } = new();

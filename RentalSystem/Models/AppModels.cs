@@ -7,53 +7,53 @@ namespace RentalSystem.Models
 {
     public class VaiTro {
         [Key] public int MaVaiTro { get; set; }
-        [Required, MaxLength(50)] public string TenVaiTro { get; set; }
+        [Required, MaxLength(50)] public string TenVaiTro { get; set; } = string.Empty;
     }
     public class NguoiDung {
         [Key] public int MaNguoiDung { get; set; }
         [ForeignKey("VaiTro")] public int MaVaiTro { get; set; }
-        public VaiTro VaiTro { get; set; }
-        [Required, MaxLength(100)] public string HoTen { get; set; }
-        [Required, MaxLength(20)] public string SoDienThoai { get; set; }
-        public string Email { get; set; }
-        public string MatKhau { get; set; }
-        public string CCCD { get; set; }
-        public string DiaChi { get; set; }
+        public VaiTro VaiTro { get; set; } = null!;
+        [Required, MaxLength(100)] public string HoTen { get; set; } = string.Empty;
+        [Required, MaxLength(20)] public string SoDienThoai { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string MatKhau { get; set; } = string.Empty;
+        public string CCCD { get; set; } = string.Empty;
+        public string DiaChi { get; set; } = string.Empty;
         public bool TrangThai { get; set; }
     }
     public class LoaiThietBi {
         [Key] public int MaLoai { get; set; }
-        [Required, MaxLength(100)] public string TenLoai { get; set; }
+        [Required, MaxLength(100)] public string TenLoai { get; set; } = string.Empty;
     }
     public class SanPham {
         [Key] public int MaSanPham { get; set; }
         [ForeignKey("LoaiThietBi")] public int MaLoai { get; set; }
-        public LoaiThietBi LoaiThietBi { get; set; }
-        [Required, MaxLength(255)] public string TenSanPham { get; set; }
-        public string CauHinh { get; set; }
-        public string MoTa { get; set; }
+        public LoaiThietBi LoaiThietBi { get; set; } = null!;
+        [Required, MaxLength(255)] public string TenSanPham { get; set; } = string.Empty;
+        public string CauHinh { get; set; } = string.Empty;
+        public string MoTa { get; set; } = string.Empty;
         [Column(TypeName = "decimal(18,2)")] public decimal GiaThueNgay { get; set; }
         [Column(TypeName = "decimal(18,2)")] public decimal TienCoc { get; set; }
-        public string HinhAnh { get; set; }
+        public string HinhAnh { get; set; } = string.Empty;
     }
     // Đại diện cho từng Máy vật lý cụ thể (phân biệt qua Số Serial).
     // Trạng thái: 0: Sẵn sàng, 1: Đang cho thuê, 2: Bảo trì/sửa chữa, 3: Giữ chỗ, 4: Hỏng/Thanh lý
     public class ThietBi {
         [Key] public int MaThietBi { get; set; }
         [ForeignKey("SanPham")] public int MaSanPham { get; set; }
-        public SanPham SanPham { get; set; }
-        [Required, MaxLength(50)] public string SoSerial { get; set; }
-        public string TinhTrangMay { get; set; }
+        public SanPham SanPham { get; set; } = null!;
+        [Required, MaxLength(50)] public string SoSerial { get; set; } = string.Empty;
+        public string TinhTrangMay { get; set; } = string.Empty;
         public int TrangThai { get; set; } 
 
-        public ICollection<LichSuThietBi>? LichSuThietBis { get; set; }
-        public ICollection<PhieuBaoTri>? PhieuBaoTris { get; set; }
+        public ICollection<LichSuThietBi> LichSuThietBis { get; set; } = new List<LichSuThietBi>();
+        public ICollection<PhieuBaoTri> PhieuBaoTris { get; set; } = new List<PhieuBaoTri>();
     }
     public class LichSuThietBi {
         [Key] public int MaLichSu { get; set; }
         [ForeignKey("ThietBi")] public int MaThietBi { get; set; }
-        public ThietBi ThietBi { get; set; }
-        public string HanhDong { get; set; }
+        public ThietBi ThietBi { get; set; } = null!;
+        public string HanhDong { get; set; } = string.Empty;
         public DateTime ThoiGian { get; set; } = DateTime.Now;
         [ForeignKey("NguoiDung")] public int? MaNguoiThucHien { get; set; }
         public NguoiDung? NguoiThucHien { get; set; }
@@ -84,15 +84,15 @@ namespace RentalSystem.Models
         [NotMapped]
         public string MaCode { get => Code; set => Code = value; }
 
-        public ICollection<HopDong>? HopDongs { get; set; }
+        public ICollection<HopDong> HopDongs { get; set; } = new List<HopDong>();
     }
     // Hợp đồng thuê thiết bị
     public class HopDong {
         [Key] public int MaHopDong { get; set; }
         [ForeignKey("KhachHang")] public int MaKhachHang { get; set; }
-        public NguoiDung KhachHang { get; set; }
+        public NguoiDung KhachHang { get; set; } = null!;
         [ForeignKey("NhanVien")] public int MaNhanVien { get; set; }
-        public NguoiDung NhanVien { get; set; }
+        public NguoiDung NhanVien { get; set; } = null!;
         [ForeignKey("KhuyenMai")] public int? MaKhuyenMai { get; set; }
         public KhuyenMai? KhuyenMai { get; set; }
         public DateTime NgayBatDau { get; set; }
@@ -105,11 +105,11 @@ namespace RentalSystem.Models
         // Thông tin ký số và ảnh xác minh
         public string? AnhCCCD_Truoc { get; set; }
         public string? AnhCCCD_Sau { get; set; }
-        public string ChuKyKhachHang { get; set; }
-        public string ChuKyNhanVien { get; set; }
+        public string ChuKyKhachHang { get; set; } = string.Empty;
+        public string ChuKyNhanVien { get; set; } = string.Empty;
         public DateTime? NgayKy { get; set; }
-        public int TrangThaiThanhToan { get; set; } // 0: Chưa thanh toán, 1: Còn nợ, 2: Đã thanh toán đủ
-        public string GhiChu { get; set; }
+        public int TrangThaiThanhToan { get; set; } // 0: Chưa thanh toán, 1: Đã đặt cọc, 2: Còn nợ, 3: Đã tất toán
+        public string GhiChu { get; set; } = string.Empty;
 
         // Hoàn cọc và quyết toán
         public int TrangThaiHoanCoc { get; set; } = 0; // 0: Chưa hoàn cọc, 1: Đã hoàn cọc, 2: Không hoàn cọc/Tịch thu
@@ -135,28 +135,30 @@ namespace RentalSystem.Models
         [Column(TypeName = "decimal(18,2)")] public decimal TienGiamTruBaoTri { get; set; } = 0;
         [Column(TypeName = "decimal(18,2)")] public decimal TienCocBaoDamMay { get; set; } = 0;
         [Column(TypeName = "decimal(18,2)")] public decimal TienThueTraTruoc { get; set; } = 0;
+        public bool YeuCauThanhToanLanDau { get; set; }
+        [NotMapped, System.Text.Json.Serialization.JsonIgnore] public ContractSettlement? QuyetToan { get; set; }
 
-        public ICollection<KyHanThanhToan> KyHanThanhToans { get; set; }
-        public ICollection<BienBanBanGiao>? BienBanBanGiaos { get; set; }
-        public ICollection<PhieuChi>? PhieuChis { get; set; }
-        public ICollection<PhieuThu>? PhieuThus { get; set; }
-        public ICollection<PhieuBaoTri>? PhieuBaoTris { get; set; }
+        public ICollection<KyHanThanhToan> KyHanThanhToans { get; set; } = new List<KyHanThanhToan>();
+        public ICollection<BienBanBanGiao> BienBanBanGiaos { get; set; } = new List<BienBanBanGiao>();
+        public ICollection<PhieuChi> PhieuChis { get; set; } = new List<PhieuChi>();
+        public ICollection<PhieuThu> PhieuThus { get; set; } = new List<PhieuThu>();
+        public ICollection<PhieuBaoTri> PhieuBaoTris { get; set; } = new List<PhieuBaoTri>();
         public virtual ICollection<LichSuNhacNo>? LichSuNhacNos { get; set; }
-        public ICollection<RentalSystem.Models.YeuCauGiaHan>? DanhSachYeuCauGiaHan { get; set; }
+        public ICollection<RentalSystem.Models.YeuCauGiaHan> DanhSachYeuCauGiaHan { get; set; } = new List<RentalSystem.Models.YeuCauGiaHan>();
     }
 
     // Lịch trình trả góp (hoặc thanh toán theo tháng) được sinh tự động khi duyệt đơn.
     public class KyHanThanhToan {
         [Key] public int MaKyHan { get; set; }
         [ForeignKey("HopDong")] public int MaHopDong { get; set; }
-        public HopDong HopDong { get; set; }
+        public HopDong HopDong { get; set; } = null!;
         public int SoKyHan { get; set; }
         public DateTime NgayDenHan { get; set; }
         [Column(TypeName = "decimal(18,2)")] public decimal SoTienPhai { get; set; }
         [Column(TypeName = "decimal(18,2)")] public decimal SoTienDaTra { get; set; }
         public int TrangThai { get; set; } // 0: Chưa trả, 1: Đã trả, 2: Trễ hạn, 3: Đã hủy
         public DateTime? NgayThanhToan { get; set; }
-        public string GhiChu { get; set; }
+        public string GhiChu { get; set; } = string.Empty;
 
         // Thông tin biên lai chuyển khoản ngân hàng
         public string? MaGiaoDichChuyenKhoan { get; set; }
@@ -164,8 +166,8 @@ namespace RentalSystem.Models
         public int TrangThaiXacNhan { get; set; } = 0; // 0: Chưa gửi, 1: Chờ duyệt đối soát, 2: Đã duyệt
         public DateTime? NgayGuiBienLai { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")] public decimal PhiPhatTreHan { get; set; } = 0;
         [Column(TypeName = "decimal(18,2)")] public decimal TienPhat { get; set; } = 0;
+        [NotMapped] public decimal PhiPhatTreHan { get => TienPhat; set => TienPhat = value; }
         public int SoNgayTreHan { get; set; } = 0;
         public int NhomTuoiNo { get; set; } = 0; // 0: Đúng hạn, 1: 1-30d, 2: 31-60d, 3: 61-90d, 4: >90d
         public DateTime? NgayHenTraTiepTheo { get; set; }
@@ -175,20 +177,20 @@ namespace RentalSystem.Models
 
     public class ChiTietHopDong {
         [Key, Column(Order = 0), ForeignKey("HopDong")] public int MaHopDong { get; set; }
-        public HopDong HopDong { get; set; }
+        public HopDong HopDong { get; set; } = null!;
         [Key, Column(Order = 1), ForeignKey("ThietBi")] public int MaThietBi { get; set; }
-        public ThietBi ThietBi { get; set; }
+        public ThietBi ThietBi { get; set; } = null!;
         [Column(TypeName = "decimal(18,2)")] public decimal GiaChotThu { get; set; }
     }
     public class PhieuThu {
         [Key] public int MaPhieuThu { get; set; }
         [ForeignKey("HopDong")] public int MaHopDong { get; set; }
-        public HopDong HopDong { get; set; }
+        public HopDong HopDong { get; set; } = null!;
         public int LoaiPhieu { get; set; } // 0=Thu thuê, 1=Thu cọc, 2=Thu phí BT
         [Column(TypeName = "decimal(18,2)")] public decimal SoTien { get; set; }
         public DateTime NgayGiaoDich { get; set; }
         public int HinhThucThanhToan { get; set; } // 0=Tiền mặt, 1=Chuyển khoản, 2=Online/VNPay, 3=Khác
-        public string GhiChu { get; set; }
+        public string GhiChu { get; set; } = string.Empty;
         [ForeignKey("KyHanThanhToan")] public int? MaKyHan { get; set; }
         public KyHanThanhToan? KyHanThanhToan { get; set; }
 
@@ -206,10 +208,10 @@ namespace RentalSystem.Models
         [ForeignKey("HopDong")] public int? MaHopDong { get; set; }
         public HopDong? HopDong { get; set; }
         [ForeignKey("ThietBi")] public int MaThietBi { get; set; }
-        public ThietBi ThietBi { get; set; }
+        public ThietBi ThietBi { get; set; } = null!;
         [ForeignKey("KyThuatVien")] public int? MaKyThuatVien { get; set; }
         public NguoiDung? KyThuatVien { get; set; }
-        public string MoTaLoi { get; set; }
+        public string MoTaLoi { get; set; } = string.Empty;
         public DateTime NgayBaoLoi { get; set; }
         public string GhiChuSuaChua { get; set; } = "";
         [Column(TypeName = "decimal(18,2)")] public decimal PhiDenBu { get; set; } = 0;
@@ -266,9 +268,9 @@ namespace RentalSystem.Models
     public class ThongBao {
         [Key] public int MaThongBao { get; set; }
         [ForeignKey("NguoiDung")] public int MaNguoiDung { get; set; }
-        public NguoiDung NguoiDung { get; set; }
-        [Required, MaxLength(255)] public string TieuDe { get; set; }
-        [Required] public string NoiDung { get; set; }
+        public NguoiDung NguoiDung { get; set; } = null!;
+        [Required, MaxLength(255)] public string TieuDe { get; set; } = string.Empty;
+        [Required] public string NoiDung { get; set; } = string.Empty;
         public DateTime NgayTao { get; set; } = DateTime.Now;
         public bool DaDoc { get; set; } = false;
         public string? LoaiThongBao { get; set; }
@@ -279,11 +281,11 @@ namespace RentalSystem.Models
     public class BienBanBanGiao {
         [Key] public int MaBienBan { get; set; }
         [ForeignKey("HopDong")] public int MaHopDong { get; set; }
-        public HopDong HopDong { get; set; }
+        public HopDong HopDong { get; set; } = null!;
         public int LoaiBienBan { get; set; } // 0: Bàn giao xuất kho, 1: Thu hồi nhập kho
         public DateTime NgayLap { get; set; } = DateTime.Now;
         [ForeignKey("NhanVienLap")] public int MaNhanVienLap { get; set; }
-        public NguoiDung NhanVienLap { get; set; }
+        public NguoiDung NhanVienLap { get; set; } = null!;
         public string? PhuKienKemTheo { get; set; }
         public string? TinhTrangNgoaiQuan { get; set; }
         public string? HinhAnh1 { get; set; }
@@ -298,7 +300,7 @@ namespace RentalSystem.Models
     public class PhieuChi {
         [Key] public int MaPhieuChi { get; set; }
         [ForeignKey("HopDong")] public int MaHopDong { get; set; }
-        public HopDong HopDong { get; set; }
+        public HopDong HopDong { get; set; } = null!;
         public int LoaiChi { get; set; } // 0: Hoàn tiền cọc, 1: Chi hoàn tiền thừa, 2: Chi khác
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public int LoaiPhieu { get => LoaiChi; set => LoaiChi = value; }
@@ -306,7 +308,7 @@ namespace RentalSystem.Models
         public DateTime NgayChi { get; set; } = DateTime.Now;
         public int HinhThucChi { get; set; } // 0: Tiền mặt, 1: Chuyển khoản, 2: Khác
         [ForeignKey("NhanVienChi")] public int MaNhanVienChi { get; set; }
-        public NguoiDung NhanVienChi { get; set; }
+        public NguoiDung NhanVienChi { get; set; } = null!;
         public string? MaGiaoDichNganHang { get; set; }
         public string? GhiChu { get; set; }
     }
@@ -387,6 +389,8 @@ namespace RentalSystem.Models
         public int? MaPhieuBaoTri { get; set; }
         public PhieuBaoTri? PhieuBaoTri { get; set; }
 
+        public bool TuDongTuBaoTri { get; set; }
+
         // 0: Mới, 1: Đang thực hiện, 2: Hoàn thành, 3: Đã hủy
         public int TrangThai { get; set; } = 0;
 
@@ -425,6 +429,7 @@ namespace RentalSystem.Models
         public DbSet<PhieuBaoTri> PhieuBaoTris { get; set; }
         public DbSet<BienBanBanGiao> BienBanBanGiaos { get; set; }
         public DbSet<PhieuChi> PhieuChis { get; set; }
+        public DbSet<ContractSettlement> ContractSettlements { get; set; }
         public DbSet<ThongBao> ThongBaos { get; set; }
         public DbSet<LichSuNhacNo> LichSuNhacNos { get; set; }
         public DbSet<YeuCauGiaHan> YeuCauGiaHans { get; set; }
@@ -432,6 +437,10 @@ namespace RentalSystem.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ContractSettlement>().HasOne<HopDong>().WithOne()
+                .HasForeignKey<ContractSettlement>(s => s.MaHopDong).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ContractSettlement>().HasOne<NguoiDung>().WithMany()
+                .HasForeignKey(s => s.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<ChiTietHopDong>().HasKey(c => new { c.MaHopDong, c.MaThietBi });
             modelBuilder.Entity<HopDong>().HasOne(h => h.KhachHang).WithMany().HasForeignKey(h => h.MaKhachHang).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<HopDong>().HasOne(h => h.NhanVien).WithMany().HasForeignKey(h => h.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
@@ -468,6 +477,11 @@ namespace RentalSystem.Models
                 .HasForeignKey(y => y.MaNguoiDuyet)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PhanCongCongViec>()
+                .HasIndex(p => p.MaPhieuBaoTri, "UX_PhanCongCongViecs_PhieuBaoTriTuDong")
+                .IsUnique()
+                .HasFilter("[TuDongTuBaoTri] = 1 AND [MaPhieuBaoTri] IS NOT NULL");
 
             modelBuilder.Entity<PhanCongCongViec>()
                 .HasOne(p => p.NhanVien)

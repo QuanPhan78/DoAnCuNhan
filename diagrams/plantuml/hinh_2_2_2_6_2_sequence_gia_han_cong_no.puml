@@ -1,0 +1,99 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+participant "Giao diện:\nContractDetailView" as View
+actor "Nhân viên\nKinh doanh" as Sales
+participant "Quản lý HĐ:\nHopDongController" as HdCtrl
+participant "Thuật toán nợ:\nDebtCalculationHelper" as Calc
+participant "Quản trị nợ:\nCongNoController" as CnCtrl
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+
+User -> View : Bấm chọn gia hạn & Nhập ngày kết thúc mới
+activate View
+
+View -> HdCtrl : POST YeuCauGiaHan(contractId, newEndDate)
+activate HdCtrl
+
+HdCtrl -> DB : Cập nhật HopDong.YeuCauGiaHan = true
+activate DB
+HdCtrl -> DB : await SaveChangesAsync()
+DB --> HdCtrl : Lưu trạng thái yêu cầu
+deactivate DB
+
+HdCtrl --> View : Thông báo yêu cầu gia hạn đã gửi
+deactivate HdCtrl
+View --> User : Hiển thị trạng thái "Chờ thẩm định gia hạn"
+deactivate View
+
+Sales -> CnCtrl : Kiểm tra lịch sử công nợ & Cấp độ tuổi nợ
+activate Sales
+activate CnCtrl
+CnCtrl -> Calc : CalculateAgingTier(customerId)
+activate Calc
+Calc --> CnCtrl : AgingTier = Cấp 0 (Đúng hạn, đủ điều kiện)
+deactivate Calc
+CnCtrl --> Sales : Khách hàng uy tín, không nợ xấu
+deactivate CnCtrl
+
+Sales -> HdCtrl : POST DuyetGiaHan(contractId)
+activate HdCtrl
+HdCtrl -> DB : Cập nhật HopDong.NgayKetThuc = newEndDate
+activate DB
+
+HdCtrl -> Calc : RecalculateAmortization(contract, newEndDate)
+activate Calc
+Calc --> HdCtrl : Danh sách kỳ hạn mới (List<KyHanThanhToan>)
+deactivate Calc
+
+HdCtrl -> DB : KyHanThanhToans.AddRangeAsync(newInstallments)
+HdCtrl -> DB : await SaveChangesAsync()
+DB --> HdCtrl : Lưu các kỳ nợ mới thành công
+deactivate DB
+
+HdCtrl --> Sales : Phê duyệt thành công
+deactivate HdCtrl
+deactivate Sales
+
+User -> View : Mở sổ theo dõi công nợ cá nhân (MyDebt)
+activate View
+View -> DB : Tải danh sách kỳ hạn và mã VietQR thanh toán
+activate DB
+DB --> View : Trả về dữ liệu kỳ hạn mới kèm VietQR
+deactivate DB
+View --> User : Hiển thị bảng phân kỳ mới & Cú pháp VietQR
+deactivate View
+
+@enduml

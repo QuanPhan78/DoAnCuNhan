@@ -1,0 +1,210 @@
+' ==============================================================================
+' ROSESCRIPT 01: SINH SO DO CA SU DUNG NGHIEP VU TONG QUAT (MUC 2.2.1)
+' (01_Business_UseCase_Diagram.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Quy chuan: RUP Business Modeling (Business Actors, Workers & 7 BUCs)
+' Ngon ngu: 100% Tieng Viet khong dau (Pure ASCII)
+' ==============================================================================
+Option Explicit
+
+
+' ------------------------------------------------------------------------------
+' TIEN ICH TRO GIUP MO HINH HOA (MODELING HELPER FUNCTIONS)
+' ------------------------------------------------------------------------------
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, doc As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    Set GetOrCreateClass = aCls
+                    If st <> "" Then aCls.Stereotype = st
+                    If doc <> "" Then aCls.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If doc <> "" Then aCls.Documentation = doc
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Function GetOrCreateUseCase(parentCat As Category, ucName As String, st As String, doc As String) As UseCase
+    On Error Resume Next
+    Dim aUc As UseCase
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.UseCases.Count
+            Set aUc = parentCat.UseCases.GetAt(i)
+            If Not aUc Is Nothing Then
+                If aUc.Name = ucName Then
+                    Set GetOrCreateUseCase = aUc
+                    If st <> "" Then aUc.Stereotype = st
+                    If doc <> "" Then aUc.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aUc = parentCat.AddUseCase(ucName)
+        If Not aUc Is Nothing Then
+            If st <> "" Then aUc.Stereotype = st
+            If doc <> "" Then aUc.Documentation = doc
+        End If
+        Set GetOrCreateUseCase = aUc
+    End If
+End Function
+
+Sub SafeAddAssociation(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        clientCls.AddAssociation "", supplierName
+    End If
+End Sub
+
+Sub SafeAddAttribute(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOperation(theCls As Class, opName As String, returnType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, returnType)
+    End If
+End Sub
+
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootUC As Category
+    Dim targetCat As Category
+    Dim theDiagram As Diagram
+    
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo Model trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Set rootUC = theModel.RootUseCaseCategory
+    Set targetCat = GetOrCreateCategory(rootUC, "01_Business_Use_Cases")
+    
+    ' 1. Khoi tao 2 Tac nhan nghiep vu ngoai (Business Actors)
+    Dim actKH As Class, actNH As Class
+    Set actKH = GetOrCreateClass(targetCat, "Khach hang", "business actor", "Khach hang ca nhan hoac to chuc thue thiet bi cong nghe, ky hop dong, thanh toan va tiep nhan.")
+    Set actNH = GetOrCreateClass(targetCat, "Ngan hang / Cong VietQR", "actor", "Cong thanh toan VietQR NAPAS 247 va Ngan hang doi soat giao dich tu dong.")
+    
+    ' Dong thoi dang ky tai goc Use Case View de de keo tha tren so do
+    GetOrCreateClass rootUC, "Khach hang", "business actor", "Khach hang ca nhan hoac to chuc thue thiet bi cong nghe."
+    GetOrCreateClass rootUC, "Ngan hang / Cong VietQR", "actor", "Cong thanh toan VietQR NAPAS 247 va Ngan hang."
+    
+    ' 2. Khoi tao 3 Nhan su nghiep vu noi bo (Business Workers)
+    Dim wrkKD As Class, wrkKTV As Class, wrkAdmin As Class
+    Set wrkKD = GetOrCreateClass(targetCat, "Nhan vien kinh doanh", "business worker", "Nhan vien kinh doanh: Tham dinh KYC, lap hop dong, nhac no, phe duyet gia han, lap phieu chi hoan coc.")
+    Set wrkKTV = GetOrCreateClass(targetCat, "Ky thuat vien", "business worker", "Ky thuat vien: Quet serial xuat kho, ban giao tan noi, dong kiem, bao tri SLA, nghiem thu thu hoi may.")
+    Set wrkAdmin = GetOrCreateClass(targetCat, "Quan tri vien", "business worker", "Quan tri vien: Cau hinh he thong, phan quyen RBAC, quan ly danh muc, dieu phoi bao tri va giam sat BI.")
+    
+    GetOrCreateClass rootUC, "Nhan vien kinh doanh", "business worker", "Nhan vien kinh doanh noi bo."
+    GetOrCreateClass rootUC, "Ky thuat vien", "business worker", "Ky thuat vien noi bo."
+    GetOrCreateClass rootUC, "Quan tri vien", "business worker", "Quan tri vien he thong."
+    
+    ' 3. Khoi tao 7 Ca su dung nghiep vu cot loi (Business Use Cases)
+    Dim buc1 As UseCase, buc2 As UseCase, buc3 As UseCase, buc4 As UseCase
+    Dim buc5 As UseCase, buc6 As UseCase, buc7 As UseCase
+    
+    Set buc1 = GetOrCreateUseCase(targetCat, "BUC-01 - Dang ky & Xac thuc nguoi dung", "business use case", "Dang ky tai khoan KYC, xac thuc danh tinh CCCD, ma hoa BCrypt va phan quyen truy cap he thong.")
+    Set buc2 = GetOrCreateUseCase(targetCat, "BUC-02 - Dat thue may & Kiem tra ton kho", "business use case", "Khach chon cau hinh serial, he thong kich hoat SemaphoreSlim kiem tra kha dung va giu cho 24h.")
+    Set buc3 = GetOrCreateUseCase(targetCat, "BUC-03 - Thanh toan dat coc qua VietQR dong", "business use case", "Sinh ma VietQR dong EMVCo NAPAS 247, gach no tu dong qua Banking Webhook va xu ly ca bien coc thieu.")
+    Set buc4 = GetOrCreateUseCase(targetCat, "BUC-04 - Ban giao & Ky bien ban ban giao may", "business use case", "KTV quet barcode serial xuat kho, giao tan noi, ky bien ban HTML5 Canvas, xu ly khach khong nhan may.")
+    Set buc5 = GetOrCreateUseCase(targetCat, "BUC-05 - Bao cao su co & Phan cong bao tri thiet bi", "business use case", "Khach tao ticket su co, he thong dieu phoi KTV, kich hoat SLA tam dung tinh tien va tham dinh phi den bu.")
+    Set buc6 = GetOrCreateUseCase(targetCat, "BUC-06 - Gia han hop dong & Phan ky no", "business use case", "Khach de xuat gia han hop dong, kinh doanh phe duyet, lap lich thanh toan moi va xu ly tre han khong tra may.")
+    Set buc7 = GetOrCreateUseCase(targetCat, "BUC-07 - Tra may, nghiem thu & Hoan tra tien coc", "business use case", "KTV nghiem thu thiet bi, giam dinh hu hai vat ly, can tru cong no phi den bu va lap phieu chi hoan tien coc.")
+    
+    ' Tao ban sao tai goc Use Case View
+    GetOrCreateUseCase rootUC, "BUC-01 - Dang ky & Xac thuc nguoi dung", "business use case", buc1.Documentation
+    GetOrCreateUseCase rootUC, "BUC-02 - Dat thue may & Kiem tra ton kho", "business use case", buc2.Documentation
+    GetOrCreateUseCase rootUC, "BUC-03 - Thanh toan dat coc qua VietQR dong", "business use case", buc3.Documentation
+    GetOrCreateUseCase rootUC, "BUC-04 - Ban giao & Ky bien ban ban giao may", "business use case", buc4.Documentation
+    GetOrCreateUseCase rootUC, "BUC-05 - Bao cao su co & Phan cong bao tri thiet bi", "business use case", buc5.Documentation
+    GetOrCreateUseCase rootUC, "BUC-06 - Gia han hop dong & Phan ky no", "business use case", buc6.Documentation
+    GetOrCreateUseCase rootUC, "BUC-07 - Tra may, nghiem thu & Hoan tra tien coc", "business use case", buc7.Documentation
+    
+    ' 4. Thiet lap cac quan he Association
+    SafeAddAssociation actKH, buc1.Name
+    SafeAddAssociation actKH, buc2.Name
+    SafeAddAssociation actKH, buc3.Name
+    SafeAddAssociation actKH, buc4.Name
+    SafeAddAssociation actKH, buc5.Name
+    SafeAddAssociation actKH, buc6.Name
+    SafeAddAssociation actKH, buc7.Name
+    
+    SafeAddAssociation actNH, buc3.Name
+    SafeAddAssociation actNH, buc7.Name
+    
+    SafeAddAssociation wrkKD, buc1.Name
+    SafeAddAssociation wrkKD, buc2.Name
+    SafeAddAssociation wrkKD, buc4.Name
+    SafeAddAssociation wrkKD, buc6.Name
+    SafeAddAssociation wrkKD, buc7.Name
+    
+    SafeAddAssociation wrkKTV, buc4.Name
+    SafeAddAssociation wrkKTV, buc5.Name
+    SafeAddAssociation wrkKTV, buc7.Name
+    
+    SafeAddAssociation wrkAdmin, buc1.Name
+    SafeAddAssociation wrkAdmin, buc5.Name
+    SafeAddAssociation wrkAdmin, buc6.Name
+    
+    ' 5. Tao va mo so do Business Use Case Diagram
+    Set theDiagram = targetCat.AddUseCaseDiagram("Business Use Case Diagram")
+    If Not theDiagram Is Nothing Then
+        theDiagram.Open
+    End If
+    
+    Dim rootDiag As Diagram
+    Set rootDiag = rootUC.AddUseCaseDiagram("Business Use Case Diagram")
+    If Not rootDiag Is Nothing Then
+        rootDiag.Open
+    End If
+    
+    MsgBox "DA TAO XONG SO DO CA SU DUNG NGHIEP VU TONG QUAT (MUC 2.2.1)!" & vbCrLf & vbCrLf & _
+           "- 2 Business Actors: Khach hang, Ngan hang / Cong VietQR" & vbCrLf & _
+           "- 3 Business Workers: Nhan vien kinh doanh, Ky thuat vien, Quan tri vien" & vbCrLf & _
+           "- 7 Business Use Cases: BUC-01 den BUC-07" & vbCrLf & _
+           "- 20 duong Association da duoc ket noi san theo Ma tran truy vet.", 64, "Hoan thanh Script 01"
+End Sub

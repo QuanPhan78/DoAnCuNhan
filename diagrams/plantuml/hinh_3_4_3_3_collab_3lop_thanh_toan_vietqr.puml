@@ -1,0 +1,35 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 9.5
+}
+
+rectangle "1. Tác nhân\nCổng NAPAS 247" as Bank
+rectangle "2. Cổng tiếp nhận\nBankingWebhook" as Endpoint
+rectangle "3. Bộ điều khiển\nPaymentController" as Ctrl
+rectangle "4. Khóa an toàn\nPaymentLock (Semaphore)" as Lock
+rectangle "5. Cơ sở dữ liệu\nApplicationDbContext" as DB
+rectangle "6. Thực thể\nPhieuThu & HopDong" as Entity
+
+Bank -right-> Endpoint : 1: POST /Payment/BankingWebhook\n10: Nhận phản hồi HTTP 200 OK
+Endpoint -right-> Ctrl : 2: BankingWebhook(payload)\n9: Trả về OkObjectResult
+Ctrl -down-> Lock : 3: await PaymentLock.WaitAsync()\n8: PaymentLock.Release() trong finally
+Ctrl -right-> DB : 4: Kiểm tra trùng mã Idempotency\n6: SaveChangesAsync() giao dịch Serializable
+DB -down-> Entity : 5: Thực thi gạch nợ thác nước 4 tầng\n7: Tạo PhieuThu (MaNhanVienThu = null)
+
+@enduml

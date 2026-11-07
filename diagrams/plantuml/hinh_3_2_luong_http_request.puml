@@ -1,0 +1,96 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Client / Webhook" as Client
+participant "1. Máy chủ Web\nKestrel Server" as Kestrel
+participant "2. Middleware\nExceptionHandler" as ExMid
+participant "3. Middleware\nStaticFiles & Https" as StaticMid
+participant "4. Middleware\nEndpointRouting" as RouteMid
+participant "5. Middleware\nAuthentication" as AuthMid
+participant "6. Middleware\nAuthorization (RBAC)" as AuthzMid
+participant "7. Middleware\nEndpoint / Action" as ExecMid
+participant "8. Tầng Nghiệp vụ\nController & DbContext" as AppCore
+
+Client -> Kestrel : 1: Gửi HTTP(S) Request (GET / POST)
+activate Kestrel
+
+Kestrel -> ExMid : 2: Chuyển tiếp Request vào Pipeline
+activate ExMid
+
+ExMid -> StaticMid : 3: Next.Invoke()
+activate StaticMid
+
+alt Yêu cầu tệp tĩnh (.css, .js, .png CCCD, chữ ký)
+    StaticMid --> Client : 4a: Trả về tệp tĩnh từ wwwroot (Short-circuit)
+else Yêu cầu động MVC
+    StaticMid -> RouteMid : 4b: Next.Invoke()
+    activate RouteMid
+
+    RouteMid -> RouteMid : 5: Khớp Route {area}/{controller}/{action}/{id}
+    RouteMid -> AuthMid : 6: Chuyển tiếp với Endpoint Metadata
+    activate AuthMid
+
+    AuthMid -> AuthMid : 7: Giải mã Cookie Authentication -> Tạo ClaimsPrincipal
+    AuthMid -> AuthzMid : 8: Next.Invoke()
+    activate AuthzMid
+
+    group Kiểm tra phân quyền RBAC (Single Source of Truth)
+        AuthzMid -> AuthzMid : 9: Kiểm tra vai trò (Admin, KinhDoanh, KyThuat, KhachHang)
+    end
+
+    alt Không đủ quyền truy cập (Unauthorized / Forbidden)
+        AuthzMid --> Client : 10a: Chuyển hướng /Account/Login hoặc trả về HTTP 403
+    else Đủ quyền truy cập
+        AuthzMid -> ExecMid : 10b: Next.Invoke()
+        activate ExecMid
+
+        ExecMid -> AppCore : 11: ActionInvoker thực thi Controller Action (Giao dịch CSDL)
+        activate AppCore
+        AppCore --> ExecMid : 12: Trả về IActionResult (ViewResult / JsonResult)
+        deactivate AppCore
+
+        ExecMid --> AuthzMid : 13: Response unwinding
+        deactivate ExecMid
+    end
+
+    AuthzMid --> AuthMid : 14: Response unwinding
+    deactivate AuthzMid
+
+    AuthMid --> RouteMid : 15: Response unwinding
+    deactivate AuthMid
+
+    RouteMid --> StaticMid : 16: Response unwinding
+    deactivate RouteMid
+
+    StaticMid --> ExMid : 17: Response unwinding
+    deactivate StaticMid
+
+    ExMid --> Kestrel : 18: Hoàn tất xử lý, bắt ngoại lệ nếu có
+    deactivate ExMid
+
+    Kestrel --> Client : 19: Trả về HTTP Response (HTML / JSON / 200 OK)
+    deactivate Kestrel
+end
+
+@enduml

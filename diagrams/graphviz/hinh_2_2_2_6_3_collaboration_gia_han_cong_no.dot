@@ -1,0 +1,23 @@
+digraph Collab_GiaHanCongNo {
+    graph [rankdir="LR", splines=ortho, nodesep=0.9, ranksep=1.1, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, fontname="Segoe UI", fontsize=10.5, style="rounded,filled", fillcolor="#ffffff", color="#000000", penwidth=1.3];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    User [label="Khách hàng\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    View [label=":ContractDetailView\n(Boundary)"];
+    Sales [label="Kinh doanh\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    HdCtrl [label=":HopDongController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    Calc [label=":DebtCalculationHelper\n(Service/Algorithm)"];
+    CnCtrl [label=":CongNoController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    DB [label=":ApplicationDbContext\n(Entity/Data)"];
+
+    User -> View [label="1: Yêu cầu gia hạn"];
+    View -> HdCtrl [label="2: POST YeuCauGiaHan()"];
+    HdCtrl -> DB [label="3: HopDong.YeuCauGiaHan = true"];
+    Sales -> CnCtrl [label="4: Kiểm tra lịch sử nợ"];
+    CnCtrl -> Calc [label="4.1: AgingTier 4 cấp"];
+    Sales -> HdCtrl [label="5: Duyệt gia hạn"];
+    HdCtrl -> Calc [label="6: Tính phân kỳ mới"];
+    HdCtrl -> DB [label="7: Thêm KyHanThanhToan"];
+    View -> User [label="8: Cập nhật Sổ nợ MyDebt", style=dashed];
+}

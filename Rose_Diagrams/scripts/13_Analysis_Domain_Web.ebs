@@ -1,0 +1,200 @@
+' IBM Rational Rose - RentalSystem Web domain analysis.
+' Run on the open model. Look for PackageName under Logical View.
+' Attribute names follow AppModels.cs. Operations describe analysis responsibilities.
+Option Explicit
+
+Const PackageName = "02.4 Lop nghiep vu Web"
+Const FigureName = "Hinh 2.27 - Lop phan tich nghiep vu Web"
+
+Sub AddField(owner As Class, fieldName As String, fieldType As String)
+    Dim field As Attribute
+    Set field = owner.AddAttribute(fieldName, fieldType, "")
+End Sub
+
+Sub AddAction(owner As Class, actionName As String, implementation As String)
+    Dim action As Operation
+    Set action = owner.AddOperation(actionName, "void")
+    action.Documentation = "Trach nhiem muc phan tich. Xu ly trong " & implementation & "."
+End Sub
+
+Sub PlaceClass(domainDiagram As ClassDiagram, domainClass As Class, x As Integer, y As Integer)
+    Dim classView As ClassView
+    If Not domainDiagram.AddClass(domainClass) Then Error 1001
+    Set classView = domainDiagram.GetClassView(domainClass)
+    classView.StereotypeDisplay = 0
+    classView.AutomaticResize = False
+    classView.ShowAllAttributes = True
+    classView.ShowAllOperations = True
+    classView.SuppressAttributes = False
+    classView.SuppressOperations = False
+    classView.Width = 860
+    classView.Height = 530
+    classView.XPosition = x
+    classView.YPosition = y
+End Sub
+
+Sub ConnectClasses(domainDiagram As ClassDiagram, leftClass As Class, rightClass As Class, leftCount As String, rightCount As String)
+    Dim link As Association
+    Dim endpoint As Role
+    Set link = leftClass.AddAssociation("", rightClass.GetQualifiedName())
+    Set endpoint = link.GetCorrespondingRole(leftClass)
+    endpoint.Cardinality = leftCount
+    endpoint.Navigable = False
+    Set endpoint = link.GetCorrespondingRole(rightClass)
+    endpoint.Cardinality = rightCount
+    endpoint.Navigable = False
+    If Not domainDiagram.AddAssociation(link) Then Error 1002
+End Sub
+
+Sub Main
+    Dim root As Category
+    Dim pkg As Category
+    Dim existing As Category
+    Dim domainDiagram As ClassDiagram
+    Dim createdPackage As Boolean
+    Dim removedPackage As Boolean
+    Dim index As Integer
+    Dim diagramIndex As Integer
+    Dim errorNumber As Integer
+    Dim user As Class
+    Dim contract As Class
+    Dim detail As Class
+    Dim device As Class
+    Dim term As Class
+    Dim receipt As Class
+    Dim repair As Class
+    Dim renewal As Class
+    Dim handover As Class
+    Dim expense As Class
+
+    On Error GoTo Failed
+    Set root = RoseApp.CurrentModel.RootCategory
+    For index = 1 To root.Categories.Count
+        Set existing = root.Categories.GetAt(index)
+        If existing.Name = PackageName Then
+            For diagramIndex = 1 To existing.ClassDiagrams.Count
+                Set domainDiagram = existing.ClassDiagrams.GetAt(diagramIndex)
+                If domainDiagram.Name = FigureName Then
+                    Exit Sub
+                End If
+            Next diagramIndex
+            Error 1003
+        End If
+    Next index
+
+    Set pkg = root.AddCategory(PackageName)
+    createdPackage = True
+    Set domainDiagram = pkg.AddClassDiagram(FigureName)
+
+    Set user = pkg.AddClass("NguoiDung")
+    Call AddField(user, "MaNguoiDung", "Integer")
+    Call AddField(user, "MaVaiTro", "Integer")
+    Call AddField(user, "HoTen", "String")
+    Call AddField(user, "Email", "String")
+    Call AddField(user, "SoDienThoai", "String")
+    Call AddField(user, "TrangThai", "Boolean")
+    Call AddAction(user, "DangNhap", "AccountController.Login")
+    Call AddAction(user, "CapNhatHoSo", "AccountController.Profile")
+
+    Set contract = pkg.AddClass("HopDong")
+    Call AddField(contract, "MaHopDong", "Integer")
+    Call AddField(contract, "NgayBatDau", "DateTime")
+    Call AddField(contract, "NgayKetThuc", "DateTime")
+    Call AddField(contract, "TongTien", "Decimal")
+    Call AddField(contract, "TienDaCoc", "Decimal")
+    Call AddField(contract, "TrangThai", "Integer")
+    Call AddAction(contract, "TaoHopDong", "CartController.Checkout")
+    Call AddAction(contract, "KyHopDong", "CartController.SignContract")
+
+    Set detail = pkg.AddClass("ChiTietHopDong")
+    Call AddField(detail, "MaHopDong", "Integer")
+    Call AddField(detail, "MaThietBi", "Integer")
+    Call AddField(detail, "GiaChotThu", "Decimal")
+    Call AddAction(detail, "GanThietBiVaChotGia", "CartController.Checkout")
+
+    Set device = pkg.AddClass("ThietBi")
+    Call AddField(device, "MaThietBi", "Integer")
+    Call AddField(device, "SoSerial", "String")
+    Call AddField(device, "TinhTrangMay", "String")
+    Call AddField(device, "TrangThai", "Integer")
+    Call AddAction(device, "GiuCho", "CartController.Checkout")
+
+    Set term = pkg.AddClass("KyHanThanhToan")
+    Call AddField(term, "MaKyHan", "Integer")
+    Call AddField(term, "NgayDenHan", "DateTime")
+    Call AddField(term, "SoTienPhai", "Decimal")
+    Call AddField(term, "SoTienDaTra", "Decimal")
+    Call AddField(term, "TrangThai", "Integer")
+    Call AddAction(term, "CapNhatQuaHan", "HopDongController.CapNhatTreHanVaPhiPhat")
+
+    Set receipt = pkg.AddClass("PhieuThu")
+    Call AddField(receipt, "MaPhieuThu", "Integer")
+    Call AddField(receipt, "LoaiPhieu", "Integer")
+    Call AddField(receipt, "SoTien", "Decimal")
+    Call AddField(receipt, "NgayGiaoDich", "DateTime")
+    Call AddField(receipt, "HinhThucThanhToan", "Integer")
+    Call AddAction(receipt, "HuyPhieuThu", "HopDongController.HuyPhieuThu")
+
+    Set repair = pkg.AddClass("PhieuBaoTri")
+    Call AddField(repair, "MaPhieu", "Integer")
+    Call AddField(repair, "MoTaLoi", "String")
+    Call AddField(repair, "NgayBaoLoi", "DateTime")
+    Call AddField(repair, "TrangThai", "Integer")
+    Call AddAction(repair, "CapNhatXuLy", "BaoTriController")
+
+    Set renewal = pkg.AddClass("YeuCauGiaHan")
+    Call AddField(renewal, "MaYeuCau", "Integer")
+    Call AddField(renewal, "SoNgayGiaHan", "Integer")
+    Call AddField(renewal, "LyDo", "String")
+    Call AddField(renewal, "NgayYeuCau", "DateTime")
+    Call AddField(renewal, "TrangThai", "Integer")
+    Call AddAction(renewal, "GuiYeuCau", "CartController.YeuCauGiaHan")
+    Call AddAction(renewal, "DuyetGiaHan", "HopDongController.DuyetGiaHan")
+
+    Set handover = pkg.AddClass("BienBanBanGiao")
+    Call AddField(handover, "MaBienBan", "Integer")
+    Call AddField(handover, "LoaiBienBan", "Integer")
+    Call AddField(handover, "NgayLap", "DateTime")
+    Call AddField(handover, "TinhTrangNgoaiQuan", "String")
+    Call AddAction(handover, "LapBienBan", "HopDongController.LapBienBanBanGiao")
+
+    Set expense = pkg.AddClass("PhieuChi")
+    Call AddField(expense, "MaPhieuChi", "Integer")
+    Call AddField(expense, "LoaiChi", "Integer")
+    Call AddField(expense, "SoTien", "Decimal")
+    Call AddField(expense, "NgayChi", "DateTime")
+    Call AddAction(expense, "GhiNhanHoanCoc", "HopDongController.HoanCoc")
+
+    Call PlaceClass(domainDiagram, renewal, 700, 790)
+    Call PlaceClass(domainDiagram, user, 1990, 790)
+    Call PlaceClass(domainDiagram, detail, 3270, 790)
+    Call PlaceClass(domainDiagram, device, 4470, 790)
+    Call PlaceClass(domainDiagram, handover, 700, 1770)
+    Call PlaceClass(domainDiagram, contract, 1990, 1770)
+    Call PlaceClass(domainDiagram, repair, 4470, 1770)
+    Call PlaceClass(domainDiagram, expense, 700, 2740)
+    Call PlaceClass(domainDiagram, term, 1990, 2740)
+    Call PlaceClass(domainDiagram, receipt, 3270, 2740)
+
+    Call ConnectClasses(domainDiagram, user, contract, "1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, detail, "1", "0..*")
+    Call ConnectClasses(domainDiagram, device, detail, "1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, term, "1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, receipt, "1", "0..*")
+    Call ConnectClasses(domainDiagram, term, receipt, "0..1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, repair, "0..1", "0..*")
+    Call ConnectClasses(domainDiagram, device, repair, "1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, renewal, "1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, handover, "1", "0..*")
+    Call ConnectClasses(domainDiagram, contract, expense, "1", "0..*")
+
+    Exit Sub
+
+Failed:
+    errorNumber = Err
+    On Error Resume Next
+    If createdPackage Then
+        removedPackage = root.DeleteCategory(pkg)
+    End If
+    MsgBox "Khong tao duoc so do. Ma loi: " & CStr(errorNumber), 48, "RentalSystem"
+End Sub

@@ -4,21 +4,27 @@ import '../theme/app_text_styles.dart';
 
 class MaintenanceStepper extends StatelessWidget {
   final String currentStatus;
-  const MaintenanceStepper({super.key, required this.currentStatus});
+  final int? statusCode;
+  final bool isAssigned;
+  const MaintenanceStepper({super.key, required this.currentStatus, this.statusCode, this.isAssigned = false});
 
-  final List<String> _steps = const ['Đã gửi', 'Tiếp nhận', 'Phân công', 'Đang xử lý', 'Hoàn thành'];
+  final List<String> _steps = const ['Tiếp nhận', 'Mới giao', 'Đang xử lý', 'Chờ nghiệm thu', 'Đã nghiệm thu'];
 
   int _getCurrentIndex() {
+    if (statusCode == 5) return 4;
+    if (statusCode == 3) return 3;
+    if (statusCode == 2) return 2;
+    if (statusCode == 1) return isAssigned ? 1 : 0;
     final status = currentStatus.toLowerCase();
     if (status.contains('hoàn thành')) return 4;
-    if (status.contains('đang xử lý')) return 3;
-    if (status.contains('phân công')) return 2;
-    if (status.contains('tiếp nhận')) return 1;
+    if (status.contains('đang xử lý')) return 2;
+    if (status.contains('phân công')) return 1;
     return 0; // Đã gửi or unknown
   }
 
   @override
   Widget build(BuildContext context) {
+    if (statusCode == 4) return Text(currentStatus, style: AppTextStyles.bodySecondary);
     final currentIndex = _getCurrentIndex();
     
     return Container(

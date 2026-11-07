@@ -86,11 +86,11 @@ void main() {
     test('RoleExtension correctly resolves all backend enterprise role codes', () {
       expect(RoleExtension.fromString('Admin'), equals(Role.admin));
       expect(RoleExtension.fromString('Quản lý'), equals(Role.admin));
-      expect(RoleExtension.fromString('NhanVien'), equals(Role.staff));
-      expect(RoleExtension.fromString('KinhDoanh'), equals(Role.staff));
+      expect(RoleExtension.fromString('NhanVien'), equals(Role.unavailable));
+      expect(RoleExtension.fromString('KinhDoanh'), equals(Role.unavailable));
       expect(RoleExtension.fromString('KyThuat'), equals(Role.staff));
       expect(RoleExtension.fromString('KhachHang'), equals(Role.customer));
-      expect(RoleExtension.fromString(null), equals(Role.customer));
+      expect(RoleExtension.fromString(null), equals(Role.unavailable));
     });
 
     test('DeviceModel correctly handles API devices JSON response with numeric price', () {

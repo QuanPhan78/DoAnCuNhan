@@ -1,0 +1,68 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam boundary {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam control {
+    BorderColor #000000
+    BackgroundColor #f4f4f5
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam entity {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 10
+}
+
+actor "Khách hàng" as ActorKH
+actor "Kỹ thuật viên\n(KyThuat)" as ActorKT
+boundary "Giao diện Báo hỏng\n(CreateTicketView)" as BoundaryCreate
+boundary "Giao diện Nhiệm vụ KTV\n(MyTasksView)" as BoundaryTasks
+control "Điều khiển Bảo trì\n(BaoTriController)" as ControlBaoTri
+control "Điều phối Công việc\n(PhanCongController)" as ControlPhanCong
+entity "Phiếu bảo trì SLA\n(PhieuBaoTri)" as EntityPhieuBT
+entity "Phân công công việc\n(PhanCongCongViec)" as EntityPhanCong
+entity "Thiết bị Serial\n(ThietBi)" as EntityThietBi
+entity "Cơ sở dữ liệu\n(ApplicationDbContext)" as EntityDB
+
+ActorKH --> BoundaryCreate : 1. Gửi mô tả lỗi sự cố thiết bị
+ActorKT --> BoundaryTasks : 2. Tiếp nhận & Cập nhật tiến độ xử lý
+
+BoundaryCreate --> ControlBaoTri : 3. POST /Account/CreateTicket
+BoundaryTasks --> ControlPhanCong : 4. Cập nhật trạng thái nhiệm vụ
+
+ControlBaoTri --> EntityDB : 5. Khởi tạo phiếu bảo trì (TrangThai = 0)
+ControlPhanCong --> EntityDB : 6. Gán nhiệm vụ trực tiếp cho KTV (KyThuat)
+
+EntityDB --> EntityPhieuBT : 7. Lưu thông tin lỗi & SLA đồng hồ đếm
+EntityDB --> EntityPhanCong : 8. Tạo bản ghi phân công hiện trường
+EntityDB --> EntityThietBi : 9. Chuyển ThietBi.TrangThai = 2 (Bảo trì)
+
+@enduml

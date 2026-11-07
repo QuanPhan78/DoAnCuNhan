@@ -1,0 +1,41 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+rectangle ":PaymentView" as View
+actor ":Cổng VietQR NAPAS" as Gateway
+rectangle ":PaymentController" as Ctrl
+rectangle ":PaymentLock\n(SemaphoreSlim)" as Lock
+rectangle ":ApplicationDbContext" as DB
+
+User -- View : 1: Bấm chọn thanh toán VietQR >\n8: Hiển thị kết quả thành công <
+View -- Ctrl : 2: Sinh chuỗi VietQR EMVCo >
+User -- Gateway : 3: Quét mã QR chuyển khoản >
+Gateway -- Ctrl : 4: Webhook POST biến động số dư >
+Ctrl -- Lock : 5: await WaitAsync() >\n7: Release() trong finally >
+Ctrl -- DB : 6: Kiểm tra trùng mã GD\n& Tạo PhieuThu (MaNV=null) & Save() >
+
+@enduml

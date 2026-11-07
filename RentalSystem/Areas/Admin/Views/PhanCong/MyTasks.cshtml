@@ -119,20 +119,27 @@
                         <!-- Tiêu đề và trạng thái -->
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <span class="badge-soft-neutral font-monospace">#@item.MaPhanCong</span>
-                            @switch (item.TrangThai)
+                            @if (item.TuDongTuBaoTri)
                             {
-                                case 0:
-                                    <span class="status-pill"><span class="status-dot dot-navy"></span> Mới</span>
-                                    break;
-                                case 1:
-                                    <span class="status-pill"><span class="status-dot dot-warning"></span> Đang thực hiện</span>
-                                    break;
-                                case 2:
-                                    <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span>
-                                    break;
-                                case 3:
-                                    <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span>
-                                    break;
+                                <span class="status-pill"><span class="status-dot @(item.TrangThai == 2 ? "dot-success" : item.TrangThai == 1 ? "dot-warning" : "dot-navy")"></span> @RentalSystem.Services.MaintenanceAssignment.TaskLabel(item)</span>
+                            }
+                            else
+                            {
+                                @switch (item.TrangThai)
+                                {
+                                    case 0:
+                                        <span class="status-pill"><span class="status-dot dot-navy"></span> Mới</span>
+                                        break;
+                                    case 1:
+                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Đang thực hiện</span>
+                                        break;
+                                    case 2:
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span>
+                                        break;
+                                    case 3:
+                                        <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span>
+                                        break;
+                                }
                             }
                         </div>
 
@@ -158,7 +165,7 @@
                             }
                             @if (item.MaPhieuBaoTri.HasValue)
                             {
-                                <a href="/Admin/BaoTri" class="badge-soft-danger text-decoration-none">
+                                <a href="/Admin/BaoTri/Details/@item.MaPhieuBaoTri" class="badge-soft-danger text-decoration-none">
                                     <i class="fas fa-tools me-1"></i>PBT #@item.MaPhieuBaoTri
                                 </a>
                             }
@@ -198,7 +205,14 @@
 
                         <!-- Chuyển trạng thái -->
                         <div class="d-grid gap-2">
-                            @if (item.TrangThai == 0)
+                            @if (item.TuDongTuBaoTri)
+                            {
+                                @if (item.MaPhieuBaoTri.HasValue)
+                                {
+                                    <a asp-controller="BaoTri" asp-action="Details" asp-route-id="@item.MaPhieuBaoTri" class="btn btn-outline-primary">Mở phiếu xử lý</a>
+                                }
+                            }
+                            else if (item.TrangThai == 0)
                             {
                                 <form method="post" asp-action="UpdateStatus" class="d-inline">
                                     <input type="hidden" name="id" value="@item.MaPhanCong" />

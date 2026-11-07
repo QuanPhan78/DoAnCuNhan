@@ -187,7 +187,9 @@
     <!-- CỘT PHẢI: FORM CẬP NHẬT TIẾN ĐỘ, THU PHÍ & GIẢM TRỪ TIỀN THUÊ -->
     <div class="col-lg-6">
         <!-- Cập nhật tiến độ xử lý -->
-        @if (User.IsInRole("Admin") || User.IsInRole("KyThuat"))
+        @if (User.IsInRole("Admin") ||
+             (User.IsInRole("KyThuat") && Model.MaKyThuatVien.HasValue &&
+              User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.MaKyThuatVien.Value.ToString()))
         {
         <div class="admin-card mb-4">
             <div class="admin-card-header fw-bold">
@@ -198,12 +200,15 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.MaPhieu" />
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Phân công Kỹ Thuật Viên</label>
-                        <select name="maKtv" class="form-select" asp-items="ViewBag.MaKyThuatVien">
-                            <option value="">-- Chọn nhân viên Kỹ thuật --</option>
-                        </select>
-                    </div>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phân công Kỹ Thuật Viên</label>
+                            <select name="maKtv" class="form-select" asp-items="ViewBag.MaKyThuatVien">
+                                <option value="">-- Chọn nhân viên Kỹ thuật --</option>
+                            </select>
+                        </div>
+                    }
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Trạng thái phiếu</label>
@@ -212,7 +217,10 @@
                             <option value="2" selected="@(Model.TrangThai == 2)">2 - Đang sửa chữa</option>
                             <option value="3" selected="@(Model.TrangThai == 3)">3 - Đã sửa xong (Chờ nghiệm thu)</option>
                             <option value="4" selected="@(Model.TrangThai == 4)">4 - Hỏng không thể khắc phục (Thanh lý)</option>
-                            <option value="5" selected="@(Model.TrangThai == 5)">5 - Đã nghiệm thu & Đóng phiếu</option>
+                            @if (Model.TrangThai == 5 || (User.IsInRole("Admin") && !Model.MaHopDong.HasValue && Model.TrangThai == 3))
+                            {
+                                <option value="5" selected="@(Model.TrangThai == 5)">5 - Đã nghiệm thu & Đóng phiếu</option>
+                            }
                         </select>
                     </div>
 

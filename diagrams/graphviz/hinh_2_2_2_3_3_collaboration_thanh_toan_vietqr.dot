@@ -1,0 +1,21 @@
+digraph Collab_ThanhToanVietQR {
+    graph [rankdir="LR", splines=ortho, nodesep=1.0, ranksep=1.2, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, fontname="Segoe UI", fontsize=10.5, style="rounded,filled", fillcolor="#ffffff", color="#000000", penwidth=1.3];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    User [label="Khách hàng\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    View [label=":PaymentView\n(Boundary)"];
+    Gateway [label="Cổng VietQR NAPAS\n(External Gateway)", shape=ellipse, fillcolor="#f4f4f5"];
+    Ctrl [label=":PaymentController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    Lock [label=":PaymentLock\n(SemaphoreSlim(1,1))", fillcolor="#e4e4e7"];
+    DB [label=":ApplicationDbContext\n(Entity/Data)"];
+
+    User -> View [label="1: Chọn thanh toán VietQR"];
+    View -> Ctrl [label="2: Sinh link VietQR EMVCo"];
+    User -> Gateway [label="3: Quét QR trên Mobile App"];
+    Gateway -> Ctrl [label="4: Webhook POST biến động"];
+    Ctrl -> Lock [label="5: await WaitAsync()\n7: Release() (finally)"];
+    Ctrl -> DB [label="6: Regex HD & Waterfall\nTạo PhieuThu(MaNV=null)"];
+    Ctrl -> Gateway [label="7.1: HTTP 200 OK", style=dashed];
+    View -> User [label="8: Cập nhật Đã đặt cọc", style=dashed];
+}

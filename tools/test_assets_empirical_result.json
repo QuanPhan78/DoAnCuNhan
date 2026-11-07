@@ -1,0 +1,3981 @@
+{
+  "summary": {
+    "total_figures": 72,
+    "png_exists_pass": 72,
+    "png_dpi_300_pass": 72,
+    "png_dim_strict_pass": 49,
+    "png_dim_orient_pass": 50,
+    "png_grayscale_pass": 72,
+    "svg_exists_pass": 72,
+    "svg_valid_pass": 72,
+    "all_checks_strict_pass": 49,
+    "all_checks_orient_pass": 50,
+    "failures_strict": [
+      {
+        "stt": 7,
+        "fig_num": "Hình 2.2.2.1. 3",
+        "target_png": "hinh_2_2_2_1_3_collaboration_dang_ky_xac_thuc.png",
+        "png_errors": [
+          "Strict dimensions (787x437) < (1000x600)",
+          "Oriented dimensions (787x437): max=787, min=437"
+        ],
+        "svg_errors": [],
+        "dims": [
+          787,
+          437
+        ]
+      },
+      {
+        "stt": 10,
+        "fig_num": "Hình 2.2.2.2. 3",
+        "target_png": "hinh_2_2_2_2_3_collaboration_dat_thue_inventory.png",
+        "png_errors": [
+          "Strict dimensions (656x463) < (1000x600)",
+          "Oriented dimensions (656x463): max=656, min=463"
+        ],
+        "svg_errors": [],
+        "dims": [
+          656,
+          463
+        ]
+      },
+      {
+        "stt": 13,
+        "fig_num": "Hình 2.2.2.3. 3",
+        "target_png": "hinh_2_2_2_3_3_collaboration_thanh_toan_vietqr.png",
+        "png_errors": [
+          "Strict dimensions (485x490) < (1000x600)",
+          "Oriented dimensions (485x490): max=490, min=485"
+        ],
+        "svg_errors": [],
+        "dims": [
+          485,
+          490
+        ]
+      },
+      {
+        "stt": 16,
+        "fig_num": "Hình 2.2.2.4. 3",
+        "target_png": "hinh_2_2_2_4_3_collaboration_ban_giao_ky_so.png",
+        "png_errors": [
+          "Strict dimensions (855x558) < (1000x600)",
+          "Oriented dimensions (855x558): max=855, min=558"
+        ],
+        "svg_errors": [],
+        "dims": [
+          855,
+          558
+        ]
+      },
+      {
+        "stt": 19,
+        "fig_num": "Hình 2.2.2.5. 3",
+        "target_png": "hinh_2_2_2_5_3_collaboration_bao_tri_su_co.png",
+        "png_errors": [
+          "Strict dimensions (1049x477) < (1000x600)",
+          "Oriented dimensions (1049x477): max=1049, min=477"
+        ],
+        "svg_errors": [],
+        "dims": [
+          1049,
+          477
+        ]
+      },
+      {
+        "stt": 22,
+        "fig_num": "Hình 2.2.2.6. 3",
+        "target_png": "hinh_2_2_2_6_3_collaboration_gia_han_cong_no.png",
+        "png_errors": [
+          "Strict dimensions (905x464) < (1000x600)",
+          "Oriented dimensions (905x464): max=905, min=464"
+        ],
+        "svg_errors": [],
+        "dims": [
+          905,
+          464
+        ]
+      },
+      {
+        "stt": 25,
+        "fig_num": "Hình 2.2.2.7. 3",
+        "target_png": "hinh_2_2_2_7_3_collaboration_tra_may_hoan_coc.png",
+        "png_errors": [
+          "Strict dimensions (761x477) < (1000x600)",
+          "Oriented dimensions (761x477): max=761, min=477"
+        ],
+        "svg_errors": [],
+        "dims": [
+          761,
+          477
+        ]
+      },
+      {
+        "stt": 46,
+        "fig_num": "Hình 3.4.1. 1",
+        "target_png": "hinh_3_4_1_1_bce_dang_ky_xac_thuc.png",
+        "png_errors": [
+          "Strict dimensions (3800x480) < (1000x600)",
+          "Oriented dimensions (3800x480): max=3800, min=480"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          480
+        ]
+      },
+      {
+        "stt": 48,
+        "fig_num": "Hình 3.4.1. 3",
+        "target_png": "hinh_3_4_1_3_collab_3lop_dang_ky_xac_thuc.png",
+        "png_errors": [
+          "Strict dimensions (3799x369) < (1000x600)",
+          "Oriented dimensions (3799x369): max=3799, min=369"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3799,
+          369
+        ]
+      },
+      {
+        "stt": 49,
+        "fig_num": "Hình 3.4.2. 1",
+        "target_png": "hinh_3_4_2_1_bce_dat_thue_inventory.png",
+        "png_errors": [
+          "Strict dimensions (3800x333) < (1000x600)",
+          "Oriented dimensions (3800x333): max=3800, min=333"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          333
+        ]
+      },
+      {
+        "stt": 51,
+        "fig_num": "Hình 3.4.2. 3",
+        "target_png": "hinh_3_4_2_3_collab_3lop_dat_thue_inventory.png",
+        "png_errors": [
+          "Strict dimensions (3799x355) < (1000x600)",
+          "Oriented dimensions (3799x355): max=3799, min=355"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3799,
+          355
+        ]
+      },
+      {
+        "stt": 52,
+        "fig_num": "Hình 3.4.3. 1",
+        "target_png": "hinh_3_4_3_1_bce_thanh_toan_vietqr.png",
+        "png_errors": [
+          "Strict dimensions (3800x295) < (1000x600)",
+          "Oriented dimensions (3800x295): max=3800, min=295"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          295
+        ]
+      },
+      {
+        "stt": 54,
+        "fig_num": "Hình 3.4.3. 3",
+        "target_png": "hinh_3_4_3_3_collab_3lop_thanh_toan_vietqr.png",
+        "png_errors": [
+          "Strict dimensions (3800x303) < (1000x600)",
+          "Oriented dimensions (3800x303): max=3800, min=303"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          303
+        ]
+      },
+      {
+        "stt": 55,
+        "fig_num": "Hình 3.4.4. 1",
+        "target_png": "hinh_3_4_4_1_bce_ban_giao_ky_so.png",
+        "png_errors": [
+          "Strict dimensions (3800x307) < (1000x600)",
+          "Oriented dimensions (3800x307): max=3800, min=307"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          307
+        ]
+      },
+      {
+        "stt": 57,
+        "fig_num": "Hình 3.4.4. 3",
+        "target_png": "hinh_3_4_4_3_collab_3lop_ban_giao_ky_so.png",
+        "png_errors": [
+          "Strict dimensions (3800x326) < (1000x600)",
+          "Oriented dimensions (3800x326): max=3800, min=326"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          326
+        ]
+      },
+      {
+        "stt": 58,
+        "fig_num": "Hình 3.4.5. 1",
+        "target_png": "hinh_3_4_5_1_bce_bao_tri_su_co.png",
+        "png_errors": [
+          "Strict dimensions (3800x349) < (1000x600)",
+          "Oriented dimensions (3800x349): max=3800, min=349"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          349
+        ]
+      },
+      {
+        "stt": 61,
+        "fig_num": "Hình 3.4.6. 1",
+        "target_png": "hinh_3_4_6_1_bce_gia_han_cong_no.png",
+        "png_errors": [
+          "Strict dimensions (3800x320) < (1000x600)",
+          "Oriented dimensions (3800x320): max=3800, min=320"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          320
+        ]
+      },
+      {
+        "stt": 63,
+        "fig_num": "Hình 3.4.6. 3",
+        "target_png": "hinh_3_4_6_3_collab_3lop_gia_han_cong_no.png",
+        "png_errors": [
+          "Strict dimensions (3800x378) < (1000x600)",
+          "Oriented dimensions (3800x378): max=3800, min=378"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          378
+        ]
+      },
+      {
+        "stt": 64,
+        "fig_num": "Hình 3.4.7. 1",
+        "target_png": "hinh_3_4_7_1_bce_tra_may_hoan_coc.png",
+        "png_errors": [
+          "Strict dimensions (3800x279) < (1000x600)",
+          "Oriented dimensions (3800x279): max=3800, min=279"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          279
+        ]
+      },
+      {
+        "stt": 66,
+        "fig_num": "Hình 3.4.7. 3",
+        "target_png": "hinh_3_4_7_3_collab_3lop_tra_may_hoan_coc.png",
+        "png_errors": [
+          "Strict dimensions (3799x377) < (1000x600)",
+          "Oriented dimensions (3799x377): max=3799, min=377"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3799,
+          377
+        ]
+      },
+      {
+        "stt": 68,
+        "fig_num": "Hình 4.2. 2",
+        "target_png": "hinh_3_2_luong_http_request.png",
+        "png_errors": [
+          "Strict dimensions (3800x550) < (1000x600)",
+          "Oriented dimensions (3800x550): max=3800, min=550"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          550
+        ]
+      },
+      {
+        "stt": 70,
+        "fig_num": "Hình 4.2. 4",
+        "target_png": "hinh_4_2_state_thiet_bi.png",
+        "png_errors": [
+          "Strict dimensions (733x1508) < (1000x600)"
+        ],
+        "svg_errors": [],
+        "dims": [
+          733,
+          1508
+        ]
+      },
+      {
+        "stt": 71,
+        "fig_num": "Hình 4.2. 5",
+        "target_png": "hinh_4_3_state_phieu_bao_tri.png",
+        "png_errors": [
+          "Strict dimensions (590x1228) < (1000x600)",
+          "Oriented dimensions (590x1228): max=1228, min=590"
+        ],
+        "svg_errors": [],
+        "dims": [
+          590,
+          1228
+        ]
+      }
+    ],
+    "failures_orient": [
+      {
+        "stt": 7,
+        "fig_num": "Hình 2.2.2.1. 3",
+        "target_png": "hinh_2_2_2_1_3_collaboration_dang_ky_xac_thuc.png",
+        "png_errors": [
+          "Strict dimensions (787x437) < (1000x600)",
+          "Oriented dimensions (787x437): max=787, min=437"
+        ],
+        "svg_errors": [],
+        "dims": [
+          787,
+          437
+        ]
+      },
+      {
+        "stt": 10,
+        "fig_num": "Hình 2.2.2.2. 3",
+        "target_png": "hinh_2_2_2_2_3_collaboration_dat_thue_inventory.png",
+        "png_errors": [
+          "Strict dimensions (656x463) < (1000x600)",
+          "Oriented dimensions (656x463): max=656, min=463"
+        ],
+        "svg_errors": [],
+        "dims": [
+          656,
+          463
+        ]
+      },
+      {
+        "stt": 13,
+        "fig_num": "Hình 2.2.2.3. 3",
+        "target_png": "hinh_2_2_2_3_3_collaboration_thanh_toan_vietqr.png",
+        "png_errors": [
+          "Strict dimensions (485x490) < (1000x600)",
+          "Oriented dimensions (485x490): max=490, min=485"
+        ],
+        "svg_errors": [],
+        "dims": [
+          485,
+          490
+        ]
+      },
+      {
+        "stt": 16,
+        "fig_num": "Hình 2.2.2.4. 3",
+        "target_png": "hinh_2_2_2_4_3_collaboration_ban_giao_ky_so.png",
+        "png_errors": [
+          "Strict dimensions (855x558) < (1000x600)",
+          "Oriented dimensions (855x558): max=855, min=558"
+        ],
+        "svg_errors": [],
+        "dims": [
+          855,
+          558
+        ]
+      },
+      {
+        "stt": 19,
+        "fig_num": "Hình 2.2.2.5. 3",
+        "target_png": "hinh_2_2_2_5_3_collaboration_bao_tri_su_co.png",
+        "png_errors": [
+          "Strict dimensions (1049x477) < (1000x600)",
+          "Oriented dimensions (1049x477): max=1049, min=477"
+        ],
+        "svg_errors": [],
+        "dims": [
+          1049,
+          477
+        ]
+      },
+      {
+        "stt": 22,
+        "fig_num": "Hình 2.2.2.6. 3",
+        "target_png": "hinh_2_2_2_6_3_collaboration_gia_han_cong_no.png",
+        "png_errors": [
+          "Strict dimensions (905x464) < (1000x600)",
+          "Oriented dimensions (905x464): max=905, min=464"
+        ],
+        "svg_errors": [],
+        "dims": [
+          905,
+          464
+        ]
+      },
+      {
+        "stt": 25,
+        "fig_num": "Hình 2.2.2.7. 3",
+        "target_png": "hinh_2_2_2_7_3_collaboration_tra_may_hoan_coc.png",
+        "png_errors": [
+          "Strict dimensions (761x477) < (1000x600)",
+          "Oriented dimensions (761x477): max=761, min=477"
+        ],
+        "svg_errors": [],
+        "dims": [
+          761,
+          477
+        ]
+      },
+      {
+        "stt": 46,
+        "fig_num": "Hình 3.4.1. 1",
+        "target_png": "hinh_3_4_1_1_bce_dang_ky_xac_thuc.png",
+        "png_errors": [
+          "Strict dimensions (3800x480) < (1000x600)",
+          "Oriented dimensions (3800x480): max=3800, min=480"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          480
+        ]
+      },
+      {
+        "stt": 48,
+        "fig_num": "Hình 3.4.1. 3",
+        "target_png": "hinh_3_4_1_3_collab_3lop_dang_ky_xac_thuc.png",
+        "png_errors": [
+          "Strict dimensions (3799x369) < (1000x600)",
+          "Oriented dimensions (3799x369): max=3799, min=369"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3799,
+          369
+        ]
+      },
+      {
+        "stt": 49,
+        "fig_num": "Hình 3.4.2. 1",
+        "target_png": "hinh_3_4_2_1_bce_dat_thue_inventory.png",
+        "png_errors": [
+          "Strict dimensions (3800x333) < (1000x600)",
+          "Oriented dimensions (3800x333): max=3800, min=333"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          333
+        ]
+      },
+      {
+        "stt": 51,
+        "fig_num": "Hình 3.4.2. 3",
+        "target_png": "hinh_3_4_2_3_collab_3lop_dat_thue_inventory.png",
+        "png_errors": [
+          "Strict dimensions (3799x355) < (1000x600)",
+          "Oriented dimensions (3799x355): max=3799, min=355"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3799,
+          355
+        ]
+      },
+      {
+        "stt": 52,
+        "fig_num": "Hình 3.4.3. 1",
+        "target_png": "hinh_3_4_3_1_bce_thanh_toan_vietqr.png",
+        "png_errors": [
+          "Strict dimensions (3800x295) < (1000x600)",
+          "Oriented dimensions (3800x295): max=3800, min=295"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          295
+        ]
+      },
+      {
+        "stt": 54,
+        "fig_num": "Hình 3.4.3. 3",
+        "target_png": "hinh_3_4_3_3_collab_3lop_thanh_toan_vietqr.png",
+        "png_errors": [
+          "Strict dimensions (3800x303) < (1000x600)",
+          "Oriented dimensions (3800x303): max=3800, min=303"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          303
+        ]
+      },
+      {
+        "stt": 55,
+        "fig_num": "Hình 3.4.4. 1",
+        "target_png": "hinh_3_4_4_1_bce_ban_giao_ky_so.png",
+        "png_errors": [
+          "Strict dimensions (3800x307) < (1000x600)",
+          "Oriented dimensions (3800x307): max=3800, min=307"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          307
+        ]
+      },
+      {
+        "stt": 57,
+        "fig_num": "Hình 3.4.4. 3",
+        "target_png": "hinh_3_4_4_3_collab_3lop_ban_giao_ky_so.png",
+        "png_errors": [
+          "Strict dimensions (3800x326) < (1000x600)",
+          "Oriented dimensions (3800x326): max=3800, min=326"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          326
+        ]
+      },
+      {
+        "stt": 58,
+        "fig_num": "Hình 3.4.5. 1",
+        "target_png": "hinh_3_4_5_1_bce_bao_tri_su_co.png",
+        "png_errors": [
+          "Strict dimensions (3800x349) < (1000x600)",
+          "Oriented dimensions (3800x349): max=3800, min=349"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          349
+        ]
+      },
+      {
+        "stt": 61,
+        "fig_num": "Hình 3.4.6. 1",
+        "target_png": "hinh_3_4_6_1_bce_gia_han_cong_no.png",
+        "png_errors": [
+          "Strict dimensions (3800x320) < (1000x600)",
+          "Oriented dimensions (3800x320): max=3800, min=320"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          320
+        ]
+      },
+      {
+        "stt": 63,
+        "fig_num": "Hình 3.4.6. 3",
+        "target_png": "hinh_3_4_6_3_collab_3lop_gia_han_cong_no.png",
+        "png_errors": [
+          "Strict dimensions (3800x378) < (1000x600)",
+          "Oriented dimensions (3800x378): max=3800, min=378"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          378
+        ]
+      },
+      {
+        "stt": 64,
+        "fig_num": "Hình 3.4.7. 1",
+        "target_png": "hinh_3_4_7_1_bce_tra_may_hoan_coc.png",
+        "png_errors": [
+          "Strict dimensions (3800x279) < (1000x600)",
+          "Oriented dimensions (3800x279): max=3800, min=279"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          279
+        ]
+      },
+      {
+        "stt": 66,
+        "fig_num": "Hình 3.4.7. 3",
+        "target_png": "hinh_3_4_7_3_collab_3lop_tra_may_hoan_coc.png",
+        "png_errors": [
+          "Strict dimensions (3799x377) < (1000x600)",
+          "Oriented dimensions (3799x377): max=3799, min=377"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3799,
+          377
+        ]
+      },
+      {
+        "stt": 68,
+        "fig_num": "Hình 4.2. 2",
+        "target_png": "hinh_3_2_luong_http_request.png",
+        "png_errors": [
+          "Strict dimensions (3800x550) < (1000x600)",
+          "Oriented dimensions (3800x550): max=3800, min=550"
+        ],
+        "svg_errors": [],
+        "dims": [
+          3800,
+          550
+        ]
+      },
+      {
+        "stt": 71,
+        "fig_num": "Hình 4.2. 5",
+        "target_png": "hinh_4_3_state_phieu_bao_tri.png",
+        "png_errors": [
+          "Strict dimensions (590x1228) < (1000x600)",
+          "Oriented dimensions (590x1228): max=1228, min=590"
+        ],
+        "svg_errors": [],
+        "dims": [
+          590,
+          1228
+        ]
+      }
+    ]
+  },
+  "results": [
+    {
+      "stt": 1,
+      "fig_num": "Hình 2.1.1. 1",
+      "title": "Sơ đồ nguyên lý kiểm soát tương tranh giữ chỗ máy bằng SemaphoreSlim đa tầng",
+      "engine": "matplotlib",
+      "target_png": "hinh_2_1_1_1_semaphore_concurrency.png",
+      "target_svg": "hinh_2_1_1_1_semaphore_concurrency.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 568929,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 4260,
+        "height": 2580,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 191469,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1022.4pt",
+          "height": "619.2pt",
+          "viewBox": "0 0 1022.4 619.2",
+          "version": "1.1"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 2,
+      "fig_num": "Hình 2.1.2. 1",
+      "title": "Cấu trúc bản tin và giải thuật sinh chuỗi mã VietQR động NAPAS 247",
+      "engine": "matplotlib",
+      "target_png": "hinh_2_1_2_1_vietqr_napas247_structure.png",
+      "target_svg": "hinh_2_1_2_1_vietqr_napas247_structure.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 779861,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 4650,
+        "height": 2520,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 298339,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1116pt",
+          "height": "604.8pt",
+          "viewBox": "0 0 1116 604.8",
+          "version": "1.1"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 3,
+      "fig_num": "Hình 2.1.3. 1",
+      "title": "Sơ đồ thuật toán phân kỳ trả góp và chuyển trạng thái 4 cấp độ tuổi nợ",
+      "engine": "matplotlib",
+      "target_png": "hinh_2_1_3_1_debt_aging_algorithm.png",
+      "target_svg": "hinh_2_1_3_1_debt_aging_algorithm.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 582178,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 4260,
+        "height": 2640,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 227867,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1022.4pt",
+          "height": "633.6pt",
+          "viewBox": "0 0 1022.4 633.6",
+          "version": "1.1"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 4,
+      "fig_num": "Hình 2.2.1. 1",
+      "title": "Sơ đồ ca sử dụng nghiệp vụ tổng quát (Business Use Case Diagram)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_1_use_case_tong_quat.png",
+      "target_svg": "hinh_2_1_use_case_tong_quat.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 527907,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 2080,
+        "height": 3800,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 27897,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:2080px;height:3800px;background:#FFFFFF;",
+          "width": "2080.388px",
+          "height": "3800.19px",
+          "viewBox": "0 0 2080 3800",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 5,
+      "fig_num": "Hình 2.2.2.1. 1",
+      "title": "Sơ đồ hoạt động Quy trình Đăng ký & Xác thực người dùng",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_1_1_activity_dang_ky_xac_thuc.png",
+      "target_svg": "hinh_2_2_2_1_1_activity_dang_ky_xac_thuc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 329558,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1574,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 13684,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:1575px;background:#FFFFFF;",
+          "width": "3800.328px",
+          "height": "1575.097px",
+          "viewBox": "0 0 3800 1575",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 6,
+      "fig_num": "Hình 2.2.2.1. 2",
+      "title": "Sơ đồ tuần tự Quy trình Đăng ký & Xác thực người dùng",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_1_2_sequence_dang_ky_xac_thuc.png",
+      "target_svg": "hinh_2_2_2_1_2_sequence_dang_ky_xac_thuc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 227335,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 890,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 16320,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:891px;background:#FFFFFF;",
+          "width": "3800.269px",
+          "height": "891.323px",
+          "viewBox": "0 0 3800 891",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 7,
+      "fig_num": "Hình 2.2.2.1. 3",
+      "title": "Sơ đồ cộng tác Quy trình Đăng ký & Xác thực người dùng",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_1_3_collaboration_dang_ky_xac_thuc.png",
+      "target_svg": "hinh_2_2_2_1_3_collaboration_dang_ky_xac_thuc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 22450,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 787,
+        "height": 437,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (787x437) < (1000x600)",
+          "Oriented dimensions (787x437): max=787, min=437"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 7231,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:788px;height:438px;background:#FFFFFF;",
+          "width": "788px",
+          "height": "438px",
+          "viewBox": "0 0 788 438",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 8,
+      "fig_num": "Hình 2.2.2.2. 1",
+      "title": "Sơ đồ hoạt động Quy trình Đặt thuê máy & Kiểm tra tồn kho (SemaphoreSlim)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_2_1_activity_dat_thue_inventory.png",
+      "target_svg": "hinh_2_2_2_2_1_activity_dat_thue_inventory.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 317465,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1207,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 17948,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:1207px;background:#FFFFFF;",
+          "width": "3800.078px",
+          "height": "1207.504px",
+          "viewBox": "0 0 3800 1207",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 9,
+      "fig_num": "Hình 2.2.2.2. 2",
+      "title": "Sơ đồ tuần tự Quy trình Đặt thuê máy & Kiểm tra tồn kho (SemaphoreSlim)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_2_2_sequence_dat_thue_inventory.png",
+      "target_svg": "hinh_2_2_2_2_2_sequence_dat_thue_inventory.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 307119,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1138,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 21757,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1138px;background:#FFFFFF;",
+          "width": "3800.236px",
+          "height": "1138.472px",
+          "viewBox": "0 0 3800 1138",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 10,
+      "fig_num": "Hình 2.2.2.2. 3",
+      "title": "Sơ đồ cộng tác Quy trình Đặt thuê máy & Kiểm tra tồn kho (SemaphoreSlim)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_2_3_collaboration_dat_thue_inventory.png",
+      "target_svg": "hinh_2_2_2_2_3_collaboration_dat_thue_inventory.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 24312,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 656,
+        "height": 463,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (656x463) < (1000x600)",
+          "Oriented dimensions (656x463): max=656, min=463"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8036,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:657px;height:464px;background:#FFFFFF;",
+          "width": "657px",
+          "height": "464px",
+          "viewBox": "0 0 657 464",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 11,
+      "fig_num": "Hình 2.2.2.3. 1",
+      "title": "Sơ đồ hoạt động Quy trình Thanh toán đặt cọc qua VietQR động NAPAS 247",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_3_1_activity_thanh_toan_vietqr.png",
+      "target_svg": "hinh_2_2_2_3_1_activity_thanh_toan_vietqr.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 370876,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1445,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 21099,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:1445px;background:#FFFFFF;",
+          "width": "3800.27px",
+          "height": "1445.794px",
+          "viewBox": "0 0 3800 1445",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 12,
+      "fig_num": "Hình 2.2.2.3. 2",
+      "title": "Sơ đồ tuần tự Quy trình Thanh toán đặt cọc qua VietQR động NAPAS 247",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_3_2_sequence_thanh_toan_vietqr.png",
+      "target_svg": "hinh_2_2_2_3_2_sequence_thanh_toan_vietqr.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 325638,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1048,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 23037,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1048px;background:#FFFFFF;",
+          "width": "3800.303px",
+          "height": "1048.23px",
+          "viewBox": "0 0 3800 1048",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 13,
+      "fig_num": "Hình 2.2.2.3. 3",
+      "title": "Sơ đồ cộng tác Quy trình Thanh toán đặt cọc qua VietQR động NAPAS 247",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_3_3_collaboration_thanh_toan_vietqr.png",
+      "target_svg": "hinh_2_2_2_3_3_collaboration_thanh_toan_vietqr.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 27648,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 485,
+        "height": 490,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (485x490) < (1000x600)",
+          "Oriented dimensions (485x490): max=490, min=485"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8423,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:486px;height:491px;background:#FFFFFF;",
+          "width": "486px",
+          "height": "491px",
+          "viewBox": "0 0 486 491",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 14,
+      "fig_num": "Hình 2.2.2.4. 1",
+      "title": "Sơ đồ hoạt động Quy trình Bàn giao & Ký biên bản bàn giao máy",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_4_1_activity_ban_giao_ky_so.png",
+      "target_svg": "hinh_2_2_2_4_1_activity_ban_giao_ky_so.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 242776,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 921,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 16336,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:922px;background:#FFFFFF;",
+          "width": "3800.118px",
+          "height": "922.023px",
+          "viewBox": "0 0 3800 922",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 15,
+      "fig_num": "Hình 2.2.2.4. 2",
+      "title": "Sơ đồ tuần tự Quy trình Bàn giao & Ký biên bản bàn giao máy",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_4_2_sequence_ban_giao_ky_so.png",
+      "target_svg": "hinh_2_2_2_4_2_sequence_ban_giao_ky_so.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 180522,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 654,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 23785,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:654px;background:#FFFFFF;",
+          "width": "3800.231px",
+          "height": "654.467px",
+          "viewBox": "0 0 3800 654",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 16,
+      "fig_num": "Hình 2.2.2.4. 3",
+      "title": "Sơ đồ cộng tác Quy trình Bàn giao & Ký biên bản bàn giao máy",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_4_3_collaboration_ban_giao_ky_so.png",
+      "target_svg": "hinh_2_2_2_4_3_collaboration_ban_giao_ky_so.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 34067,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 855,
+        "height": 558,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (855x558) < (1000x600)",
+          "Oriented dimensions (855x558): max=855, min=558"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 9577,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:856px;height:559px;background:#FFFFFF;",
+          "width": "856px",
+          "height": "559px",
+          "viewBox": "0 0 856 559",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 17,
+      "fig_num": "Hình 2.2.2.5. 1",
+      "title": "Sơ đồ hoạt động Quy trình Báo cáo sự cố & Phân công bảo trì thiết bị",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_5_1_activity_bao_tri_su_co.png",
+      "target_svg": "hinh_2_2_2_5_1_activity_bao_tri_su_co.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 257773,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1005,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 19425,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:1005px;background:#FFFFFF;",
+          "width": "3800.173px",
+          "height": "1005.247px",
+          "viewBox": "0 0 3800 1005",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 18,
+      "fig_num": "Hình 2.2.2.5. 2",
+      "title": "Sơ đồ tuần tự Quy trình Báo cáo sự cố & Phân công bảo trì thiết bị",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_5_2_sequence_bao_tri_su_co.png",
+      "target_svg": "hinh_2_2_2_5_2_sequence_bao_tri_su_co.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 294467,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1157,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 28011,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1157px;background:#FFFFFF;",
+          "width": "3800.151px",
+          "height": "1157.459px",
+          "viewBox": "0 0 3800 1157",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 19,
+      "fig_num": "Hình 2.2.2.5. 3",
+      "title": "Sơ đồ cộng tác Quy trình Báo cáo sự cố & Phân công bảo trì thiết bị",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_5_3_collaboration_bao_tri_su_co.png",
+      "target_svg": "hinh_2_2_2_5_3_collaboration_bao_tri_su_co.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 36509,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1049,
+        "height": 477,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (1049x477) < (1000x600)",
+          "Oriented dimensions (1049x477): max=1049, min=477"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 10633,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:1050px;height:478px;background:#FFFFFF;",
+          "width": "1050px",
+          "height": "478px",
+          "viewBox": "0 0 1050 478",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 20,
+      "fig_num": "Hình 2.2.2.6. 1",
+      "title": "Sơ đồ hoạt động Quy trình Gia hạn hợp đồng & Phân kỳ nợ",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_6_1_activity_gia_han_cong_no.png",
+      "target_svg": "hinh_2_2_2_6_1_activity_gia_han_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 214797,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 788,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 16043,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:788px;background:#FFFFFF;",
+          "width": "3800.082px",
+          "height": "788.494px",
+          "viewBox": "0 0 3800 788",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 21,
+      "fig_num": "Hình 2.2.2.6. 2",
+      "title": "Sơ đồ tuần tự Quy trình Gia hạn hợp đồng & Phân kỳ nợ",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_6_2_sequence_gia_han_cong_no.png",
+      "target_svg": "hinh_2_2_2_6_2_sequence_gia_han_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 305754,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1156,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 25175,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1156px;background:#FFFFFF;",
+          "width": "3800.321px",
+          "height": "1156.529px",
+          "viewBox": "0 0 3800 1156",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 22,
+      "fig_num": "Hình 2.2.2.6. 3",
+      "title": "Sơ đồ cộng tác Quy trình Gia hạn hợp đồng & Phân kỳ nợ",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_6_3_collaboration_gia_han_cong_no.png",
+      "target_svg": "hinh_2_2_2_6_3_collaboration_gia_han_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 29632,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 905,
+        "height": 464,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (905x464) < (1000x600)",
+          "Oriented dimensions (905x464): max=905, min=464"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 9469,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:906px;height:465px;background:#FFFFFF;",
+          "width": "906px",
+          "height": "465px",
+          "viewBox": "0 0 906 465",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 23,
+      "fig_num": "Hình 2.2.2.7. 1",
+      "title": "Sơ đồ hoạt động Quy trình Trả máy, nghiệm thu & Hoàn trả tiền cọc",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_7_1_activity_tra_may_hoan_coc.png",
+      "target_svg": "hinh_2_2_2_7_1_activity_tra_may_hoan_coc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 219975,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 872,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 15374,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "ACTIVITY",
+          "style": "width:3800px;height:872px;background:#FFFFFF;",
+          "width": "3800.1px",
+          "height": "872.673px",
+          "viewBox": "0 0 3800 872",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 24,
+      "fig_num": "Hình 2.2.2.7. 2",
+      "title": "Sơ đồ tuần tự Quy trình Trả máy, nghiệm thu & Hoàn trả tiền cọc",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_7_2_sequence_tra_may_hoan_coc.png",
+      "target_svg": "hinh_2_2_2_7_2_sequence_tra_may_hoan_coc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 168976,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 605,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 18684,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:605px;background:#FFFFFF;",
+          "width": "3800.092px",
+          "height": "605.528px",
+          "viewBox": "0 0 3800 605",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 25,
+      "fig_num": "Hình 2.2.2.7. 3",
+      "title": "Sơ đồ cộng tác Quy trình Trả máy, nghiệm thu & Hoàn trả tiền cọc",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_2_7_3_collaboration_tra_may_hoan_coc.png",
+      "target_svg": "hinh_2_2_2_7_3_collaboration_tra_may_hoan_coc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 22592,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 761,
+        "height": 477,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (761x477) < (1000x600)",
+          "Oriented dimensions (761x477): max=761, min=477"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 7516,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:762px;height:478px;background:#FFFFFF;",
+          "width": "762px",
+          "height": "478px",
+          "viewBox": "0 0 762 478",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 26,
+      "fig_num": "Hình 2.3.1. 1",
+      "title": "Sơ đồ ca sử dụng hệ thống tổng quát (System Use Case Diagram)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_3_1_1_use_case_he_thong_tong_quat.png",
+      "target_svg": "hinh_2_3_1_1_use_case_he_thong_tong_quat.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 527907,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 2080,
+        "height": 3800,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 27897,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:2080px;height:3800px;background:#FFFFFF;",
+          "width": "2080.388px",
+          "height": "3800.19px",
+          "viewBox": "0 0 2080 3800",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 27,
+      "fig_num": "Hình 2.3.1. 2",
+      "title": "Sơ đồ ca sử dụng phân rã phân hệ Khách hàng (Customer Portal)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_2_use_case_khach_hang.png",
+      "target_svg": "hinh_2_2_use_case_khach_hang.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 536498,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 2859,
+        "height": 3800,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 11664,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:2860px;height:3800px;background:#FFFFFF;",
+          "width": "2860.001px",
+          "height": "3800.335px",
+          "viewBox": "0 0 2860 3800",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 28,
+      "fig_num": "Hình 2.3.1. 3",
+      "title": "Sơ đồ ca sử dụng phân rã phân hệ Quản trị & Vận hành (Admin & Operations)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_3_use_case_admin.png",
+      "target_svg": "hinh_2_3_use_case_admin.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 631739,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3066,
+        "height": 3800,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 17261,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3066px;height:3800px;background:#FFFFFF;",
+          "width": "3066.741px",
+          "height": "3800.295px",
+          "viewBox": "0 0 3066 3800",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 29,
+      "fig_num": "Hình 2.3.1. 4",
+      "title": "Sơ đồ ca sử dụng phân rã phân hệ Bảo trì & Kỹ thuật (Maintenance & Technical)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_4_use_case_bao_tri.png",
+      "target_svg": "hinh_2_4_use_case_bao_tri.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 516780,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 3302,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 11571,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:3303px;background:#FFFFFF;",
+          "width": "3800.678px",
+          "height": "3303.29px",
+          "viewBox": "0 0 3800 3303",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 30,
+      "fig_num": "Hình 2.4. 1",
+      "title": "Sơ đồ lớp mức phân tích toàn hệ thống (Analysis Class Diagram)",
+      "engine": "plantuml",
+      "target_png": "hinh_2_4_1_analysis_class_diagram.png",
+      "target_svg": "hinh_2_4_1_analysis_class_diagram.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 720770,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 2564,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 67902,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "CLASS",
+          "style": "width:3800px;height:2564px;background:#FFFFFF;",
+          "width": "3800.06px",
+          "height": "2564.762px",
+          "viewBox": "0 0 3800 2564",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 31,
+      "fig_num": "Hình 3.1.3. 1",
+      "title": "Sơ đồ cơ sở dữ liệu quan hệ vật lý chi tiết (Physical Relational Database Schema ERD)",
+      "engine": "graphviz",
+      "target_png": "hinh_3_3_erd_vat_ly_chi_tiet.png",
+      "target_svg": "hinh_3_3_erd_vat_ly_chi_tiet.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 1781644,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 6327,
+        "height": 9741,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 63327,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "6327pt",
+          "height": "9741pt",
+          "viewBox": "0.00 0.00 6327.00 9741.00"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 32,
+      "fig_num": "Hình 3.2.1. 1",
+      "title": "Thiết kế giao diện Trang chủ và Bộ lọc danh mục thiết bị",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_10_ui_trang_chu.png",
+      "target_svg": "hinh_3_10_ui_trang_chu.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 165051,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 220321,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 33,
+      "fig_num": "Hình 3.2.1. 2",
+      "title": "Thiết kế giao diện Chi tiết thiết bị và Đặt thông số gói thuê",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_11_ui_chi_tiet_san_pham.png",
+      "target_svg": "hinh_3_11_ui_chi_tiet_san_pham.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 184363,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 246073,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 34,
+      "fig_num": "Hình 3.2.1. 3",
+      "title": "Thiết kế giao diện Giỏ hàng và Xác nhận yêu cầu đặt thuê (Checkout)",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_12_ui_checkout.png",
+      "target_svg": "hinh_3_12_ui_checkout.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 80484,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 107565,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 35,
+      "fig_num": "Hình 3.2.1. 4",
+      "title": "Thiết kế giao diện Ký hợp đồng điện tử Canvas và Tải ảnh CCCD",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_13_ui_ky_hop_dong.png",
+      "target_svg": "hinh_3_13_ui_ky_hop_dong.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 73534,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 98301,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 36,
+      "fig_num": "Hình 3.2.1. 5",
+      "title": "Thiết kế giao diện Quản lý hợp đồng của khách hàng (MyContracts)",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_14_ui_hop_dong_khach_hang.png",
+      "target_svg": "hinh_3_14_ui_hop_dong_khach_hang.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 115077,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 153689,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 37,
+      "fig_num": "Hình 3.2.1. 6",
+      "title": "Thiết kế giao diện Sổ theo dõi công nợ cá nhân và Tích hợp VietQR",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_15_ui_cong_no_khach_hang.png",
+      "target_svg": "hinh_3_15_ui_cong_no_khach_hang.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 156860,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 209401,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 38,
+      "fig_num": "Hình 3.2.1. 7",
+      "title": "Thiết kế giao diện Báo cáo sự cố kỹ thuật của khách hàng (MyTickets)",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_16_ui_phieu_bao_tri.png",
+      "target_svg": "hinh_3_16_ui_phieu_bao_tri.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 69089,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 92373,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 39,
+      "fig_num": "Hình 3.2.2. 1",
+      "title": "Thiết kế giao diện Dashboard tổng quan quản trị và Các thẻ chỉ số tài chính KPI",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_17_ui_admin_dashboard.png",
+      "target_svg": "hinh_3_17_ui_admin_dashboard.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 149451,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 199521,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 40,
+      "fig_num": "Hình 3.2.2. 2",
+      "title": "Thiết kế giao diện Quản lý kho máy Serial và Tình trạng thiết bị",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_18_ui_admin_serial_kho.png",
+      "target_svg": "hinh_3_18_ui_admin_serial_kho.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 154884,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 206765,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 41,
+      "fig_num": "Hình 3.2.2. 3",
+      "title": "Thiết kế giao diện Thẩm định hợp đồng, Cấp phát máy Serial",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_19_ui_admin_tham_dinh.png",
+      "target_svg": "hinh_3_19_ui_admin_tham_dinh.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 120027,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 160289,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 42,
+      "fig_num": "Hình 3.2.2. 4",
+      "title": "Thiết kế giao diện Quản lý công nợ, Phân nhóm tuổi nợ 4 cấp",
+      "engine": "ui_screenshot",
+      "target_png": "hinh_3_20_ui_admin_cong_no.png",
+      "target_svg": "hinh_3_20_ui_admin_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 146783,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1920,
+        "height": 1080,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 195965,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "1920",
+          "height": "1080",
+          "viewBox": "0 0 1920 1080"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 43,
+      "fig_num": "Hình 3.2.2. 5",
+      "title": "Thiết kế sơ đồ điều hướng phân hệ Khách hàng (Sitemap Customer)",
+      "engine": "graphviz",
+      "target_png": "hinh_3_8_dieu_huong_khach_hang.png",
+      "target_svg": "hinh_3_8_dieu_huong_khach_hang.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 643896,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 6742,
+        "height": 3791,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 32827,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "6742pt",
+          "height": "3791pt",
+          "viewBox": "0.00 0.00 6742.00 3791.00"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 44,
+      "fig_num": "Hình 3.2.2. 6",
+      "title": "Thiết kế sơ đồ điều hướng phân hệ Quản trị (Sitemap Admin)",
+      "engine": "graphviz",
+      "target_png": "hinh_3_9_dieu_huong_admin.png",
+      "target_svg": "hinh_3_9_dieu_huong_admin.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 541073,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 10179,
+        "height": 1750,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 33444,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "10179pt",
+          "height": "1750pt",
+          "viewBox": "0.00 0.00 10179.00 1750.00"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 45,
+      "fig_num": "Hình 3.3. 1",
+      "title": "Sơ đồ lớp mức thiết kế 3 lớp (Design Class Diagram - Presentation, Business, Data)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_3_1_design_class_diagram.png",
+      "target_svg": "hinh_3_3_1_design_class_diagram.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 291011,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 805,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 90579,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "CLASS",
+          "style": "width:3800px;height:805px;background:#FFFFFF;",
+          "width": "3800.011px",
+          "height": "805.448px",
+          "viewBox": "0 0 3800 805",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 46,
+      "fig_num": "Hình 3.4.1. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Đăng ký & Xác thực người dùng (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_1_1_bce_dang_ky_xac_thuc.png",
+      "target_svg": "hinh_3_4_1_1_bce_dang_ky_xac_thuc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 182080,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 480,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x480) < (1000x600)",
+          "Oriented dimensions (3800x480): max=3800, min=480"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 13213,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:481px;background:#FFFFFF;",
+          "width": "3800.053px",
+          "height": "481.328px",
+          "viewBox": "0 0 3800 481",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 47,
+      "fig_num": "Hình 3.4.1. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Đăng ký & Xác thực người dùng",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_1_2_sequence_3lop_dang_ky_xac_thuc.png",
+      "target_svg": "hinh_3_4_1_2_sequence_3lop_dang_ky_xac_thuc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 230751,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 863,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 15617,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:863px;background:#FFFFFF;",
+          "width": "3800.287px",
+          "height": "863.571px",
+          "viewBox": "0 0 3800 863",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 48,
+      "fig_num": "Hình 3.4.1. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Đăng ký & Xác thực người dùng",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_1_3_collab_3lop_dang_ky_xac_thuc.png",
+      "target_svg": "hinh_3_4_1_3_collab_3lop_dang_ky_xac_thuc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 124389,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3799,
+        "height": 369,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3799x369) < (1000x600)",
+          "Oriented dimensions (3799x369): max=3799, min=369"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8293,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:369px;background:#FFFFFF;",
+          "width": "3800.14px",
+          "height": "369.629px",
+          "viewBox": "0 0 3800 369",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 49,
+      "fig_num": "Hình 3.4.2. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Đặt thuê máy & Kiểm tra tồn kho (SemaphoreSlim) (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_2_1_bce_dat_thue_inventory.png",
+      "target_svg": "hinh_3_4_2_1_bce_dat_thue_inventory.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 154860,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 333,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.67,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x333) < (1000x600)",
+          "Oriented dimensions (3800x333): max=3800, min=333"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 17580,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:333px;background:#FFFFFF;",
+          "width": "3800.374px",
+          "height": "333.304px",
+          "viewBox": "0 0 3800 333",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 50,
+      "fig_num": "Hình 3.4.2. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Đặt thuê máy & Kiểm tra tồn kho (SemaphoreSlim)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_2_2_sequence_3lop_dat_thue_inventory.png",
+      "target_svg": "hinh_3_4_2_2_sequence_3lop_dat_thue_inventory.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 281873,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1102,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 17688,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1102px;background:#FFFFFF;",
+          "width": "3800.207px",
+          "height": "1102.663px",
+          "viewBox": "0 0 3800 1102",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 51,
+      "fig_num": "Hình 3.4.2. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Đặt thuê máy & Kiểm tra tồn kho (SemaphoreSlim)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_2_3_collab_3lop_dat_thue_inventory.png",
+      "target_svg": "hinh_3_4_2_3_collab_3lop_dat_thue_inventory.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 122549,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3799,
+        "height": 355,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3799x355) < (1000x600)",
+          "Oriented dimensions (3799x355): max=3799, min=355"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8405,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:355px;background:#FFFFFF;",
+          "width": "3800.158px",
+          "height": "355.278px",
+          "viewBox": "0 0 3800 355",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 52,
+      "fig_num": "Hình 3.4.3. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Thanh toán đặt cọc qua VietQR động NAPAS 247 (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_3_1_bce_thanh_toan_vietqr.png",
+      "target_svg": "hinh_3_4_3_1_bce_thanh_toan_vietqr.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 153184,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 295,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x295) < (1000x600)",
+          "Oriented dimensions (3800x295): max=3800, min=295"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 19182,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:295px;background:#FFFFFF;",
+          "width": "3800.027px",
+          "height": "295.283px",
+          "viewBox": "0 0 3800 295",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 53,
+      "fig_num": "Hình 3.4.3. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Thanh toán đặt cọc qua VietQR động NAPAS 247",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_3_2_sequence_3lop_thanh_toan_vietqr.png",
+      "target_svg": "hinh_3_4_3_2_sequence_3lop_thanh_toan_vietqr.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 369124,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1229,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 19270,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1229px;background:#FFFFFF;",
+          "width": "3800.156px",
+          "height": "1229.645px",
+          "viewBox": "0 0 3800 1229",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 54,
+      "fig_num": "Hình 3.4.3. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Thanh toán đặt cọc qua VietQR động NAPAS 247",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_3_3_collab_3lop_thanh_toan_vietqr.png",
+      "target_svg": "hinh_3_4_3_3_collab_3lop_thanh_toan_vietqr.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 119819,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 303,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x303) < (1000x600)",
+          "Oriented dimensions (3800x303): max=3800, min=303"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8561,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:304px;background:#FFFFFF;",
+          "width": "3800.226px",
+          "height": "304.057px",
+          "viewBox": "0 0 3800 304",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 55,
+      "fig_num": "Hình 3.4.4. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Bàn giao & Ký biên bản bàn giao máy (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_4_1_bce_ban_giao_ky_so.png",
+      "target_svg": "hinh_3_4_4_1_bce_ban_giao_ky_so.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 160385,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 307,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.67,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x307) < (1000x600)",
+          "Oriented dimensions (3800x307): max=3800, min=307"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 19214,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:307px;background:#FFFFFF;",
+          "width": "3800.088px",
+          "height": "307.811px",
+          "viewBox": "0 0 3800 307",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 56,
+      "fig_num": "Hình 3.4.4. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Bàn giao & Ký biên bản bàn giao máy",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_4_2_sequence_3lop_ban_giao_ky_so.png",
+      "target_svg": "hinh_3_4_4_2_sequence_3lop_ban_giao_ky_so.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 234993,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3799,
+        "height": 773,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 20071,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:773px;background:#FFFFFF;",
+          "width": "3800.207px",
+          "height": "773.406px",
+          "viewBox": "0 0 3800 773",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 57,
+      "fig_num": "Hình 3.4.4. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Bàn giao & Ký biên bản bàn giao máy",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_4_3_collab_3lop_ban_giao_ky_so.png",
+      "target_svg": "hinh_3_4_4_3_collab_3lop_ban_giao_ky_so.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 123222,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 326,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x326) < (1000x600)",
+          "Oriented dimensions (3800x326): max=3800, min=326"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8516,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:326px;background:#FFFFFF;",
+          "width": "3800.153px",
+          "height": "326.586px",
+          "viewBox": "0 0 3800 326",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 58,
+      "fig_num": "Hình 3.4.5. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Báo cáo sự cố & Phân công bảo trì thiết bị (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_5_1_bce_bao_tri_su_co.png",
+      "target_svg": "hinh_3_4_5_1_bce_bao_tri_su_co.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 170957,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 349,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x349) < (1000x600)",
+          "Oriented dimensions (3800x349): max=3800, min=349"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 18528,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:349px;background:#FFFFFF;",
+          "width": "3800.337px",
+          "height": "349.154px",
+          "viewBox": "0 0 3800 349",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 59,
+      "fig_num": "Hình 3.4.5. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Báo cáo sự cố & Phân công bảo trì thiết bị",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_5_2_sequence_3lop_bao_tri_su_co.png",
+      "target_svg": "hinh_3_4_5_2_sequence_3lop_bao_tri_su_co.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 312973,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1188,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 20645,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1188px;background:#FFFFFF;",
+          "width": "3800.214px",
+          "height": "1188.883px",
+          "viewBox": "0 0 3800 1188",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 60,
+      "fig_num": "Hình 3.4.5. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Báo cáo sự cố & Phân công bảo trì thiết bị",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_5_3_collab_3lop_bao_tri_su_co.png",
+      "target_svg": "hinh_3_4_5_3_collab_3lop_bao_tri_su_co.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 150009,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 699,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 8668,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:699px;background:#FFFFFF;",
+          "width": "3800.018px",
+          "height": "699.941px",
+          "viewBox": "0 0 3800 699",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 61,
+      "fig_num": "Hình 3.4.6. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Gia hạn hợp đồng & Phân kỳ nợ (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_6_1_bce_gia_han_cong_no.png",
+      "target_svg": "hinh_3_4_6_1_bce_gia_han_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 161690,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 320,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.67,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x320) < (1000x600)",
+          "Oriented dimensions (3800x320): max=3800, min=320"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 19240,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:321px;background:#FFFFFF;",
+          "width": "3800.148px",
+          "height": "321.033px",
+          "viewBox": "0 0 3800 321",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 62,
+      "fig_num": "Hình 3.4.6. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Gia hạn hợp đồng & Phân kỳ nợ",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_6_2_sequence_3lop_gia_han_cong_no.png",
+      "target_svg": "hinh_3_4_6_2_sequence_3lop_gia_han_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 360611,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 1316,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 22506,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:1316px;background:#FFFFFF;",
+          "width": "3800.306px",
+          "height": "1316.535px",
+          "viewBox": "0 0 3800 1316",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 63,
+      "fig_num": "Hình 3.4.6. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Gia hạn hợp đồng & Phân kỳ nợ",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_6_3_collab_3lop_gia_han_cong_no.png",
+      "target_svg": "hinh_3_4_6_3_collab_3lop_gia_han_cong_no.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 128318,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 378,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x378) < (1000x600)",
+          "Oriented dimensions (3800x378): max=3800, min=378"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 9676,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:378px;background:#FFFFFF;",
+          "width": "3800.098px",
+          "height": "378.126px",
+          "viewBox": "0 0 3800 378",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 64,
+      "fig_num": "Hình 3.4.7. 1",
+      "title": "Sơ đồ 3 lớp mức thiết kế Chức năng Trả máy, nghiệm thu & Hoàn trả tiền cọc (BCE)",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_7_1_bce_tra_may_hoan_coc.png",
+      "target_svg": "hinh_3_4_7_1_bce_tra_may_hoan_coc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 150357,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 279,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x279) < (1000x600)",
+          "Oriented dimensions (3800x279): max=3800, min=279"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 22915,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:279px;background:#FFFFFF;",
+          "width": "3800.021px",
+          "height": "279.743px",
+          "viewBox": "0 0 3800 279",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 65,
+      "fig_num": "Hình 3.4.7. 2",
+      "title": "Sơ đồ tuần tự 3 lớp Chức năng Trả máy, nghiệm thu & Hoàn trả tiền cọc",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_7_2_sequence_3lop_tra_may_hoan_coc.png",
+      "target_svg": "hinh_3_4_7_2_sequence_3lop_tra_may_hoan_coc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 271695,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 919,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 22349,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:919px;background:#FFFFFF;",
+          "width": "3800.205px",
+          "height": "919.865px",
+          "viewBox": "0 0 3800 919",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 66,
+      "fig_num": "Hình 3.4.7. 3",
+      "title": "Sơ đồ cộng tác 3 lớp Chức năng Trả máy, nghiệm thu & Hoàn trả tiền cọc",
+      "engine": "plantuml",
+      "target_png": "hinh_3_4_7_3_collab_3lop_tra_may_hoan_coc.png",
+      "target_svg": "hinh_3_4_7_3_collab_3lop_tra_may_hoan_coc.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 119548,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3799,
+        "height": 377,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3799x377) < (1000x600)",
+          "Oriented dimensions (3799x377): max=3799, min=377"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 9609,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "DESCRIPTION",
+          "style": "width:3800px;height:377px;background:#FFFFFF;",
+          "width": "3800.034px",
+          "height": "377.371px",
+          "viewBox": "0 0 3800 377",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 67,
+      "fig_num": "Hình 4.2. 1",
+      "title": "Sơ đồ kiến trúc tổng thể phân tầng hệ thống trên nền tảng ASP.NET Core 9 MVC",
+      "engine": "graphviz",
+      "target_png": "hinh_3_1_kien_truc_he_thong.png",
+      "target_svg": "hinh_3_1_kien_truc_he_thong.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 688032,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 9913,
+        "height": 2325,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 22757,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "9913pt",
+          "height": "2325pt",
+          "viewBox": "0.00 0.00 9913.00 2325.00"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 68,
+      "fig_num": "Hình 4.2. 2",
+      "title": "Sơ đồ luồng xử lý yêu cầu HTTP qua ASP.NET Core Middleware Pipeline",
+      "engine": "plantuml",
+      "target_png": "hinh_3_2_luong_http_request.png",
+      "target_svg": "hinh_3_2_luong_http_request.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 196868,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 3800,
+        "height": 550,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (3800x550) < (1000x600)",
+          "Oriented dimensions (3800x550): max=3800, min=550"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 25815,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "version": "1.1",
+          "data-diagram-type": "SEQUENCE",
+          "style": "width:3800px;height:550px;background:#FFFFFF;",
+          "width": "3800.223px",
+          "height": "550.603px",
+          "viewBox": "0 0 3800 550",
+          "zoomAndPan": "magnify",
+          "preserveAspectRatio": "none",
+          "contentStyleType": "text/css"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 69,
+      "fig_num": "Hình 4.2. 3",
+      "title": "Sơ đồ cấu trúc phân rã thư mục và Module mã nguồn dự án RentalSystem",
+      "engine": "graphviz",
+      "target_png": "hinh_4_1_cau_truc_ma_nguon.png",
+      "target_svg": "hinh_4_1_cau_truc_ma_nguon.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 729733,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 4851,
+        "height": 2621,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 25662,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "4851pt",
+          "height": "2621pt",
+          "viewBox": "0.00 0.00 4851.00 2621.00"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    },
+    {
+      "stt": 70,
+      "fig_num": "Hình 4.2. 4",
+      "title": "Sơ đồ máy trạng thái biểu diễn vòng đời quản lý thiết bị vật lý Serial",
+      "engine": "mermaid",
+      "target_png": "hinh_4_2_state_thiet_bi.png",
+      "target_svg": "hinh_4_2_state_thiet_bi.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 114540,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 733,
+        "height": 1508,
+        "dim_strict_pass": false,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (733x1508) < (1000x600)"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 42979,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "id": "container",
+          "width": "733.2161254882812",
+          "class": "statediagram",
+          "height": "1508",
+          "viewBox": "4 4 733.2161254882812 1508",
+          "role": "graphics-document document",
+          "aria-roledescription": "stateDiagram"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": true
+    },
+    {
+      "stt": 71,
+      "fig_num": "Hình 4.2. 5",
+      "title": "Sơ đồ máy trạng thái chu trình xử lý phiếu bảo trì và Kiểm soát nghiệm thu",
+      "engine": "mermaid",
+      "target_png": "hinh_4_3_state_phieu_bao_tri.png",
+      "target_svg": "hinh_4_3_state_phieu_bao_tri.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 80169,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 590,
+        "height": 1228,
+        "dim_strict_pass": false,
+        "dim_orient_pass": false,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": [
+          "Strict dimensions (590x1228) < (1000x600)",
+          "Oriented dimensions (590x1228): max=1228, min=590"
+        ]
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 35996,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "id": "container",
+          "width": "590.3333740234375",
+          "class": "statediagram",
+          "height": "1228",
+          "viewBox": "4 4 590.3333740234375 1228",
+          "role": "graphics-document document",
+          "aria-roledescription": "stateDiagram"
+        },
+        "errors": []
+      },
+      "strict_pass": false,
+      "orient_pass": false
+    },
+    {
+      "stt": 72,
+      "fig_num": "Hình 4.2. 6",
+      "title": "Sơ đồ quy trình thực thi Entity Framework Core Migrations qua các mốc phát triển",
+      "engine": "matplotlib",
+      "target_png": "hinh_4_4_migration_timeline.png",
+      "target_svg": "hinh_4_4_migration_timeline.svg",
+      "png": {
+        "exists": true,
+        "size_bytes": 405898,
+        "dpi": [
+          299.9994,
+          299.9994
+        ],
+        "dpi_pass": true,
+        "width": 1860,
+        "height": 2340,
+        "dim_strict_pass": true,
+        "dim_orient_pass": true,
+        "mode": "RGB",
+        "mean_rgb_diff": 0.0,
+        "max_rgb_diff": 0.0,
+        "grayscale_pass": true,
+        "errors": []
+      },
+      "svg": {
+        "exists": true,
+        "size_bytes": 186609,
+        "well_formed": true,
+        "has_svg_tag": true,
+        "tag": "{http://www.w3.org/2000/svg}svg",
+        "attrib": {
+          "width": "446.4pt",
+          "height": "561.6pt",
+          "viewBox": "0 0 446.4 561.6",
+          "version": "1.1"
+        },
+        "errors": []
+      },
+      "strict_pass": true,
+      "orient_pass": true
+    }
+  ]
+}

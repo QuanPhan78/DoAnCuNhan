@@ -1,0 +1,90 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+participant "Giao diện:\nSignContractView" as View
+participant "Điều khiển:\nCartController" as Ctrl
+actor "Nhân viên\nKinh doanh" as Sales
+participant "Quản lý HĐ:\nHopDongController" as HdCtrl
+actor "Kỹ thuật viên" as Tech
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+participant "Văn bản:\nDocumentController" as DocCtrl
+
+User -> View : Ký tay trên Canvas & Đính kèm 2 mặt CCCD
+activate View
+
+View -> Ctrl : POST SignContract(id, base64Signature, cccdFiles)
+activate Ctrl
+
+Ctrl -> Ctrl : Kiểm tra Magic Bytes PNG (0x89 0x50 0x4E 0x47) & CCCD (JPG/PNG)
+Ctrl -> DB : Lưu ChuKyKhachHang & Đường dẫn ảnh CCCD vào HopDong
+activate DB
+Ctrl -> DB : await SaveChangesAsync()
+DB --> Ctrl : Cập nhật hợp đồng thành công
+deactivate DB
+
+Ctrl --> View : Chuyển hướng thông báo hoàn tất ký số
+deactivate Ctrl
+View --> User : Hiển thị hợp đồng đã ký & Chờ bàn giao
+deactivate View
+
+Sales -> HdCtrl : Xem chi tiết hồ sơ & Duyệt hợp đồng
+activate HdCtrl
+HdCtrl -> DB : Ký số đại diện công ty & HopDong.TrangThai = DaDuyet
+activate DB
+DB --> HdCtrl : Lưu phê duyệt
+deactivate DB
+deactivate HdCtrl
+
+Tech -> HdCtrl : Xuất kho, quét Barcode Serial & Giao máy
+activate Tech
+activate HdCtrl
+HdCtrl -> DB : Cập nhật ThietBi.TrangThai = 1 (DangThue)
+activate DB
+HdCtrl -> DB : Thêm LichSuThietBi (NhatKyBanGiao)
+DB --> HdCtrl : Hoàn tất cập nhật kho
+deactivate DB
+deactivate HdCtrl
+
+Tech -> DocCtrl : InBienBanBanGiao(hopDongId)
+activate DocCtrl
+DocCtrl --> Tech : Kết xuất PDF Biên bản bàn giao thiết bị
+deactivate DocCtrl
+
+Tech -> User : Đồng kiểm máy, ký nhận Biên bản bàn giao
+Tech --> User : Bàn giao thiết bị cho khách hàng sử dụng
+deactivate Tech
+
+@enduml

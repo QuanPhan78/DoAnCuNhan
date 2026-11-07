@@ -1,0 +1,44 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+rectangle ":ContractDetailView" as View
+actor "Kinh doanh" as Sales
+rectangle ":HopDongController" as HdCtrl
+rectangle ":DebtCalculationHelper" as Calc
+rectangle ":CongNoController" as CnCtrl
+rectangle ":ApplicationDbContext" as DB
+
+User -- View : 1: Gửi yêu cầu gia hạn ngày thuê >\n8: Xem sổ nợ & Quét VietQR <
+View -- HdCtrl : 2: POST YeuCauGiaHan(data) >
+HdCtrl -- DB : 3: HopDong.YeuCauGiaHan = true >
+Sales -- CnCtrl : 4: Kiểm tra cấp độ tuổi nợ >
+CnCtrl -- Calc : 4.1: CalculateAgingTier() >
+Sales -- HdCtrl : 5: DuyetGiaHan(contractId) >
+HdCtrl -- Calc : 6: RecalculateAmortization() >
+HdCtrl -- DB : 7: KyHanThanhToans.AddRange() & Save() >
+
+@enduml

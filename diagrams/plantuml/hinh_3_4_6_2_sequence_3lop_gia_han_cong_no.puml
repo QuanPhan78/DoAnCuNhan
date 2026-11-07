@@ -1,0 +1,85 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Khách hàng" as User
+actor "Nhân viên Kinh doanh (KinhDoanh)" as Staff
+participant "Giao diện: Extension & Debt View\n(Presentation Layer)" as View
+participant "Điều khiển: HopDong & CongNo\n(Business Controller)" as Ctrl
+participant "Thuật toán: DebtCalculationHelper\n(Business Logic Service)" as Helper
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+User -> View : 1: Chọn hợp đồng & Điền số ngày gia hạn thêm
+activate View
+View -> Ctrl : 2: POST /Account/RequestExtension(hopDongId, soNgayGiaHan, lyDo)
+activate Ctrl
+
+group Tiếp nhận yêu cầu gia hạn
+    Ctrl -> DB : 3: Tạo YeuCauGiaHan (TrangThai = 0: Chờ duyệt)
+    activate DB
+    DB --> Ctrl : 4: Lưu thành công
+    deactivate DB
+end
+
+Ctrl --> View : 5: Thông báo yêu cầu đã được chuyển tới bộ phận Kinh doanh
+deactivate Ctrl
+View --> User : 6: Chờ thẩm định hồ sơ
+deactivate View
+
+== Giai đoạn Thẩm định Công nợ & Phê duyệt ==
+
+Staff -> View : 7: Mở giao diện thẩm định yêu cầu gia hạn
+activate View
+View -> Ctrl : 8: POST /Admin/HopDong/ApproveExtension(yeuCauId)
+activate Ctrl
+
+group Thẩm định tuổi nợ theo 4 cấp độ (Debt Aging Tiers)
+    Ctrl -> DB : 9: Lấy lịch sử nợ các kỳ: KyHanThanhToans.Where(MaHopDong)
+    activate DB
+    DB --> Ctrl : 10: Danh sách kỳ hạn nợ
+    deactivate DB
+    
+    Ctrl -> Helper : 11: CalculateAgingTier(maxOverdueDays)
+    activate Helper
+    Helper --> Ctrl : 12: Trả về Nhóm tuổi nợ (Tier 0..4)
+    deactivate Helper
+
+    alt Thuộc diện Nợ xấu (Tier 4: >90 ngày hoặc nợ > 3.000.000đ)
+        Ctrl --> View : 13: Từ chối gia hạn: Tài khoản thuộc danh sách hạn chế Blacklist
+    else Đủ điều kiện gia hạn (Tier 0 - 2)
+        Ctrl -> DB : 14: Cập nhật YeuCauGiaHan (TrangThai = 1: Đã duyệt, MaNguoiDuyet)
+        Ctrl -> DB : 15: Kéo dài HopDong.NgayKetThuc += soNgayGiaHan
+        Ctrl -> DB : 16: Tạo mới KyHanThanhToan cho chu kỳ gia hạn bổ sung
+        activate DB
+        Ctrl -> DB : 17: await SaveChangesAsync()
+        DB --> Ctrl : 18: Cập nhật CSDL thành công
+        deactivate DB
+        Ctrl --> View : 19: Thông báo duyệt gia hạn & tạo kỳ nợ thành công
+    end
+end
+
+deactivate Ctrl
+View --> Staff : 20: Hoàn tất phê duyệt gia hạn hợp đồng
+deactivate View
+
+@enduml

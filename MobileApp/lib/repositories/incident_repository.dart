@@ -12,4 +12,12 @@ class IncidentRepository {
   Future<IncidentModel> createIncident(IncidentModel incident) {
     return _dataSource.createIncident(incident);
   }
+
+  Future<IncidentModel> getIncident(String id) => _dataSource.getIncident(id);
+
+  Future<IncidentReview> acceptIncident(String id, bool accepted, String feedback) =>
+      _dataSource.acceptIncident(id, accepted, feedback);
+
+  Future<IncidentReview> rateIncident(String id, int rating, String feedback) =>
+      _dataSource.rateIncident(id, rating, feedback);
 }

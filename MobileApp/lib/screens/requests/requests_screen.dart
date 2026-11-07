@@ -19,14 +19,16 @@ class RequestsScreen extends StatefulWidget {
 class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<String> _tabs = [
-    'Tất cả',
-    'Chờ xác nhận',
-    'Đã xác nhận',
-    'Đang thuê',
-    'Hoàn thành',
-    'Đã hủy',
+  static const _filters = [
+    RentalStatus.pending,
+    RentalStatus.cancellationRequested,
+    RentalStatus.renting,
+    RentalStatus.returnedPendingSettlement,
+    RentalStatus.completed,
+    RentalStatus.cancelled,
   ];
+
+  List<String> get _tabs => ['Tất cả', ..._filters.map((status) => status.displayName)];
 
   @override
   void initState() {
@@ -43,24 +45,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  List<RentalRequestModel> _filterRequests(List<RentalRequestModel> list, int tabIndex) {
-    switch (tabIndex) {
-      case 0:
-        return list;
-      case 1:
-        return list.where((r) => r.status == RentalStatus.pending).toList();
-      case 2:
-        return list.where((r) => r.status == RentalStatus.confirmed || r.status == RentalStatus.preparing || r.status == RentalStatus.delivering || r.status == RentalStatus.installed).toList();
-      case 3:
-        return list.where((r) => r.status == RentalStatus.renting).toList();
-      case 4:
-        return list.where((r) => r.status == RentalStatus.completed).toList();
-      case 5:
-        return list.where((r) => r.status == RentalStatus.cancelled || r.status == RentalStatus.rejected).toList();
-      default:
-        return list;
-    }
-  }
+  List<RentalRequestModel> _filterRequests(List<RentalRequestModel> list, int tabIndex) =>
+      tabIndex == 0 ? list : list.where((request) => request.status == _filters[tabIndex - 1]).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +190,8 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
   Color _getStatusColor(RentalStatus status) {
     switch (status) {
       case RentalStatus.pending:
+      case RentalStatus.cancellationRequested:
+      case RentalStatus.returnedPendingSettlement:
         return Colors.orange;
       case RentalStatus.confirmed:
         return Colors.blue;
@@ -217,6 +205,7 @@ class _RequestsScreenState extends State<RequestsScreen> with SingleTickerProvid
         return Colors.green;
       case RentalStatus.completed:
         return Colors.teal;
+      case RentalStatus.unknown:
       case RentalStatus.rejected:
       case RentalStatus.cancelled:
         return Colors.red;

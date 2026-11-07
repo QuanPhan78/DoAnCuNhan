@@ -1,0 +1,19 @@
+digraph Collab_TraMayHoanCoc {
+    graph [rankdir="LR", splines=ortho, nodesep=0.9, ranksep=1.1, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, fontname="Segoe UI", fontsize=10.5, style="rounded,filled", fillcolor="#ffffff", color="#000000", penwidth=1.3];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    User [label="Khách hàng\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    Tech [label="Kỹ thuật viên\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    View [label=":NghiemThuView\n(Boundary)"];
+    Sales [label="Kinh doanh\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    Ctrl [label=":HopDongController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    DB [label=":ApplicationDbContext\n(Entity/Data)"];
+
+    User -> Tech [label="1: Mang trả thiết bị tại kho"];
+    Tech -> View [label="2: Nhập nghiệm thu (phiDenBu)"];
+    Sales -> View [label="3: Quyết toán hoàn cọc"];
+    Sales -> Ctrl [label="4: POST HoanCoc()"];
+    Ctrl -> DB [label="5: Tạo PhieuChi, đóng HĐ\n6: ThietBi về kho Sẵn sàng"];
+    Ctrl -> User [label="7: Chuyển khoản hoàn cọc", style=dashed];
+}

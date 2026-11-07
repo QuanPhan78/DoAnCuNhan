@@ -1,13 +1,15 @@
-﻿# Build results
+# Build results
 [Bb]in/
 [Oo]bj/
 
-# Visual Studio
+# Visual Studio & IDEs
 .vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+.idea/
+*.iml
 
 # Word lock files & temp
 ~$*
@@ -19,9 +21,29 @@ ChallengerTests/
 /RentalSystem/wwwroot/uploads/cmnd/
 /RentalSystem/wwwroot/uploads/signatures/
 
-# Generated demo databases' snapshots, browser profiles and portable tools
-/outputs/demo/
-/outputs/demo-check/
-/outputs/database-cutover/
-/tools/demo/__pycache__/
-/tools/database/__pycache__/
+# Generated demo databases, browser profiles, test outputs and scratch
+/outputs/
+/scratch/
+/backups/
+/work/
+/output/
+/VE TAY/
+
+# Binary, large office, and visual paradigm assets
+*.apk
+*.zip
+*.docx
+*.pptx
+*.vpp
+*.vpp.*
+*.png.bak
+final-montage.png
+source-montage.png
+
+# Python & Environment caches
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Local agents scratch
+.agents/

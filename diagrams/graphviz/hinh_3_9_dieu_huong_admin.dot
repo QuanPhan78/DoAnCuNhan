@@ -1,0 +1,114 @@
+digraph Sitemap_Admin {
+    graph [rankdir="TB", splines=ortho, nodesep=0.35, ranksep=0.75, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, style="filled,rounded", fontname="Segoe UI", fontsize=10, penwidth=1.2];
+    edge [fontname="Segoe UI", fontsize=9, color="#000000", penwidth=1.2];
+
+    // Nút gốc - Phân hệ Quản trị & Điều hành
+    Root [label="PHÂN HỆ QUẢN TRỊ & ĐIỀU HÀNH (ADMIN PORTAL)\n/Admin/Home/Index", fillcolor="#27272a", fontcolor="#ffffff", fontsize=11, fontname="Segoe UI Bold"];
+
+    // Phân hệ 1: Dashboard & Chỉ số KPI
+    subgraph cluster_dash {
+        label="";
+        color="#ffffff";
+        Cat_Dash [label="DASHBOARD & THỐNG KÊ\nTổng quan vận hành", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_Home [label="Thẻ chỉ số tài chính & Tồn kho\n/Admin/Home/Index", fillcolor="#ffffff"];
+        Page_BI [label="Trung tâm phân tích BI 9 chỉ số\n/Admin/ThongKe/Index", fillcolor="#ffffff"];
+        Page_ExportReport [label="Xuất báo cáo ClosedXML\n/Admin/ThongKe/ExportExcel", fillcolor="#ffffff"];
+    }
+
+    // Phân hệ 2: Quản lý Hợp đồng & Thẩm định
+    subgraph cluster_contract {
+        label="";
+        color="#ffffff";
+        Cat_HopDong [label="QUẢN LÝ HỢP ĐỒNG\nVòng đời & Pháp lý", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_HDIndex [label="Danh sách & Lọc trạng thái\n/Admin/HopDong/Index", fillcolor="#ffffff"];
+        Page_HDCreate [label="Tạo hợp đồng tại quầy (Lock)\n/Admin/HopDong/Create", fillcolor="#ffffff"];
+        Page_HDDetail [label="Thẩm định hồ sơ & Duyệt cọc\n/Admin/HopDong/Details/{id}", fillcolor="#ffffff"];
+        Page_HDKy [label="Ký số đại diện công ty\n/Admin/HopDong/KyHopDong (POST)", fillcolor="#ffffff"];
+        Page_HDHoanCoc [label="Quyết toán & Hoàn tiền cọc\n/Admin/HopDong/HoanCoc", fillcolor="#ffffff"];
+    }
+
+    // Phân hệ 3: Kho thiết bị Serial & Danh mục
+    subgraph cluster_inventory {
+        label="";
+        color="#ffffff";
+        Cat_ThietBi [label="KHO MÁY SERIAL & DANH MỤC\nQuản lý tài sản vật lý", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_TBIndex [label="Quản lý kho 5 trạng thái Serial\n/Admin/ThietBi/Index", fillcolor="#ffffff"];
+        Page_TBCreate [label="Nhập kho Serial thiết bị mới\n/Admin/ThietBi/Create", fillcolor="#ffffff"];
+        Page_TBLichSu [label="Nhật ký luân chuyển thiết bị\n/Admin/ThietBi/LichSu/{id}", fillcolor="#ffffff"];
+        Page_SanPham [label="Bảng giá thuê & Định mức cọc\n/Admin/SanPham/Index", fillcolor="#ffffff"];
+    }
+
+    // Phân hệ 4: Quản lý Công nợ & Thu hồi nợ
+    subgraph cluster_debt {
+        label="";
+        color="#ffffff";
+        Cat_CongNo [label="QUẢN LÝ CÔNG NỢ\nĐối soát & Thu nợ", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_CNIndex [label="Phân loại 4 nhóm tuổi nợ\n/Admin/CongNo/Index", fillcolor="#ffffff"];
+        Page_CNNhacNo [label="Nhắc nợ tự động đa kênh\n/Admin/CongNo/NhacNo (POST)", fillcolor="#ffffff"];
+        Page_CNExcel [label="Xuất sổ nợ 17 cột ClosedXML\n/Admin/CongNo/ExportExcel", fillcolor="#ffffff"];
+    }
+
+    // Phân hệ 5: Điều phối Kỹ thuật & Bảo trì SLA
+    subgraph cluster_maintenance {
+        label="";
+        color="#ffffff";
+        Cat_BaoTri [label="BẢO TRÌ & ĐIỀU PHỐI KỸ THUẬT\nGiám sát SLA hiện trường", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_BTIndex [label="Hàng đợi tiếp nhận sự cố SLA\n/Admin/BaoTri/Index", fillcolor="#ffffff"];
+        Page_PCAssign [label="Giao việc KTV (Bàn giao/Sửa)\n/Admin/PhanCong/Assign", fillcolor="#ffffff"];
+        Page_KTVTasks [label="Giao diện xử lý của KTV\n/Admin/PhanCong/MyTasks", fillcolor="#ffffff"];
+        Page_BTDetails [label="Nghiệm thu kỹ thuật & Phí bù\n/Admin/BaoTri/Details/{id}", fillcolor="#ffffff"];
+    }
+
+    // Phân hệ 6: Quản trị Hệ thống & Phân quyền RBAC
+    subgraph cluster_system {
+        label="";
+        color="#ffffff";
+        Cat_System [label="QUẢN TRỊ HỆ THỐNG\nCấu hình & Bảo mật", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_UserIndex [label="Quản lý tài khoản & 4 Role RBAC\n/Admin/NguoiDung/Index", fillcolor="#ffffff"];
+        Page_Voucher [label="Cấu hình mã khuyến mãi\n/Admin/KhuyenMai/Index", fillcolor="#ffffff"];
+        Page_Backup [label="Sao lưu dữ liệu CSDL (.bak)\n/Admin/Database/Backup", fillcolor="#ffffff"];
+    }
+
+    // Liên kết từ Root đến các nhóm chức năng
+    Root -> Cat_Dash;
+    Root -> Cat_HopDong;
+    Root -> Cat_ThietBi;
+    Root -> Cat_CongNo;
+    Root -> Cat_BaoTri;
+    Root -> Cat_System;
+
+    // Phân rã Dashboard
+    Cat_Dash -> Page_Home;
+    Cat_Dash -> Page_BI;
+    Page_BI -> Page_ExportReport;
+
+    // Phân rã Hợp đồng
+    Cat_HopDong -> Page_HDIndex;
+    Cat_HopDong -> Page_HDCreate;
+    Page_HDIndex -> Page_HDDetail;
+    Page_HDDetail -> Page_HDKy;
+    Page_HDDetail -> Page_HDHoanCoc;
+
+    // Phân rã Thiết bị
+    Cat_ThietBi -> Page_TBIndex;
+    Cat_ThietBi -> Page_SanPham;
+    Page_TBIndex -> Page_TBCreate;
+    Page_TBIndex -> Page_TBLichSu;
+
+    // Phân rã Công nợ
+    Cat_CongNo -> Page_CNIndex;
+    Page_CNIndex -> Page_CNNhacNo;
+    Page_CNIndex -> Page_CNExcel;
+
+    // Phân rã Bảo trì
+    Cat_BaoTri -> Page_BTIndex;
+    Cat_BaoTri -> Page_PCAssign;
+    Page_PCAssign -> Page_KTVTasks;
+    Page_BTIndex -> Page_BTDetails;
+
+    // Phân rã Hệ thống
+    Cat_System -> Page_UserIndex;
+    Cat_System -> Page_Voucher;
+    Cat_System -> Page_Backup;
+}

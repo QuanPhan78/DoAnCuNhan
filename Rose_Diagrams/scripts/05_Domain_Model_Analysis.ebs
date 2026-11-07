@@ -1,0 +1,315 @@
+' ==============================================================================
+' RATIONAL ROSE SCRIPT: HINH 2.4.1 - SO DO LOP MUC PHAN TICH (DOMAIN MODEL)
+' CHUAN HUIT: HOP CHU NHAT, THUOC TINH, PHUONG THUC & BAN SO 1 - n
+' ==============================================================================
+Option Explicit
+
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, docStr As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    aCls.Stereotype = ""
+                    If docStr <> "" Then aCls.Documentation = docStr
+                    Set GetOrCreateClass = aCls
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            aCls.Stereotype = ""
+            If docStr <> "" Then aCls.Documentation = docStr
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Sub SafeAddAttr(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOp(theCls As Class, opName As String, retType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, retType)
+        If Not anOp Is Nothing Then
+            anOp.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddRel(clientCls As Class, supplierName As String, mult1 As String, mult2 As String)
+    On Error Resume Next
+    Dim anAssoc As Association
+    Dim r1 As Role
+    Dim r2 As Role
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+        If Not anAssoc Is Nothing Then
+            Set r1 = anAssoc.Role1
+            If Not r1 Is Nothing Then
+                r1.Cardinality = mult1
+            End If
+            Set r2 = anAssoc.Role2
+            If Not r2 Is Nothing Then
+                r2.Cardinality = mult2
+            End If
+        End If
+    End If
+End Sub
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgDomain As Category
+    Dim diagDomain As Diagram
+    
+    Dim cAcc As Class
+    Dim cCust As Class
+    Dim cCont As Class
+    Dim cDetail As Class
+    Dim cDev As Class
+    Dim cMod As Class
+    Dim cCat As Class
+    Dim cPay As Class
+    Dim cDebt As Class
+    Dim cHand As Class
+    Dim cTicket As Class
+    Dim cMaint As Class
+    Dim cRef As Class
+    
+    Set theModel = RoseApp.CurrentModel
+    Set rootLog = theModel.RootCategory
+    
+    ' 1. Tao goi 02_Domain_Model_Analysis
+    Set pkgDomain = GetOrCreateCategory(rootLog, "02_Domain_Model_Analysis")
+    
+    ' 2. Khoi tao cac thuc the nghiep vu
+    ' Accounts
+    Set cAcc = GetOrCreateClass(pkgDomain, "Accounts", "Tai khoan he thong")
+    Call SafeAddAttr(cAcc, "AccountId", "int")
+    Call SafeAddAttr(cAcc, "Username", "string")
+    Call SafeAddAttr(cAcc, "Email", "string")
+    Call SafeAddAttr(cAcc, "PasswordHash", "string")
+    Call SafeAddAttr(cAcc, "Role", "string")
+    Call SafeAddAttr(cAcc, "Status", "string")
+    Call SafeAddAttr(cAcc, "CreatedAt", "datetime")
+    Call SafeAddOp(cAcc, "login()", "bool")
+    Call SafeAddOp(cAcc, "register()", "bool")
+    Call SafeAddOp(cAcc, "changePassword()", "void")
+    Call SafeAddOp(cAcc, "updateProfile()", "void")
+
+    ' Customers
+    Set cCust = GetOrCreateClass(pkgDomain, "Customers", "Khach hang ca nhan va to chuc")
+    Call SafeAddAttr(cCust, "CustomerId", "int")
+    Call SafeAddAttr(cCust, "AccountId", "int")
+    Call SafeAddAttr(cCust, "FullName", "string")
+    Call SafeAddAttr(cCust, "IdentityCardNumber", "string")
+    Call SafeAddAttr(cCust, "PhoneNumber", "string")
+    Call SafeAddAttr(cCust, "Address", "string")
+    Call SafeAddAttr(cCust, "ReputationScore", "int")
+    Call SafeAddAttr(cCust, "DigitalSignatureUrl", "string")
+    Call SafeAddOp(cCust, "uploadKYC()", "void")
+    Call SafeAddOp(cCust, "signContract()", "bool")
+    Call SafeAddOp(cCust, "viewDebtHistory()", "void")
+    Call SafeAddOp(cCust, "requestDeviceReturn()", "void")
+
+    ' Contracts
+    Set cCont = GetOrCreateClass(pkgDomain, "Contracts", "Hop dong thue may")
+    Call SafeAddAttr(cCont, "ContractId", "int")
+    Call SafeAddAttr(cCont, "ContractCode", "string")
+    Call SafeAddAttr(cCont, "CustomerId", "int")
+    Call SafeAddAttr(cCont, "StartDate", "datetime")
+    Call SafeAddAttr(cCont, "EndDate", "datetime")
+    Call SafeAddAttr(cCont, "TotalAmount", "decimal")
+    Call SafeAddAttr(cCont, "DepositAmount", "decimal")
+    Call SafeAddAttr(cCont, "Status", "string")
+    Call SafeAddAttr(cCont, "CreatedAt", "datetime")
+    Call SafeAddOp(cCont, "createContract()", "void")
+    Call SafeAddOp(cCont, "approveContract()", "bool")
+    Call SafeAddOp(cCont, "renewContract()", "void")
+    Call SafeAddOp(cCont, "terminateContract()", "void")
+
+    ' ContractDetails
+    Set cDetail = GetOrCreateClass(pkgDomain, "ContractDetails", "Chi tiet thiet bi thue")
+    Call SafeAddAttr(cDetail, "DetailId", "int")
+    Call SafeAddAttr(cDetail, "ContractId", "int")
+    Call SafeAddAttr(cDetail, "DeviceId", "int")
+    Call SafeAddAttr(cDetail, "RentalPrice", "decimal")
+    Call SafeAddAttr(cDetail, "DepositPrice", "decimal")
+    Call SafeAddAttr(cDetail, "ConditionBefore", "string")
+    Call SafeAddAttr(cDetail, "ConditionAfter", "string")
+    Call SafeAddOp(cDetail, "addDeviceToContract()", "void")
+    Call SafeAddOp(cDetail, "updateCondition()", "void")
+
+    ' Devices
+    Set cDev = GetOrCreateClass(pkgDomain, "Devices", "Thiet bi phan cung vat ly theo Serial")
+    Call SafeAddAttr(cDev, "DeviceId", "int")
+    Call SafeAddAttr(cDev, "SerialNumber", "string")
+    Call SafeAddAttr(cDev, "DeviceModelId", "int")
+    Call SafeAddAttr(cDev, "BatteryHealth", "int")
+    Call SafeAddAttr(cDev, "ConditionGrade", "string")
+    Call SafeAddAttr(cDev, "Status", "string")
+    Call SafeAddAttr(cDev, "ImportDate", "datetime")
+    Call SafeAddOp(cDev, "assignSerial()", "void")
+    Call SafeAddOp(cDev, "updateStatus()", "void")
+    Call SafeAddOp(cDev, "checkBatteryHealth()", "int")
+
+    ' DeviceModels
+    Set cMod = GetOrCreateClass(pkgDomain, "DeviceModels", "Mau thiet bi va cau hinh")
+    Call SafeAddAttr(cMod, "ModelId", "int")
+    Call SafeAddAttr(cMod, "CategoryId", "int")
+    Call SafeAddAttr(cMod, "ModelName", "string")
+    Call SafeAddAttr(cMod, "Manufacturer", "string")
+    Call SafeAddAttr(cMod, "Specifications", "string")
+    Call SafeAddAttr(cMod, "DailyRentalPrice", "decimal")
+    Call SafeAddAttr(cMod, "DepositRate", "decimal")
+    Call SafeAddOp(cMod, "getAvailableCount()", "int")
+    Call SafeAddOp(cMod, "updatePrice()", "void")
+
+    ' Categories
+    Set cCat = GetOrCreateClass(pkgDomain, "Categories", "Danh muc dong may thue")
+    Call SafeAddAttr(cCat, "CategoryId", "int")
+    Call SafeAddAttr(cCat, "CategoryName", "string")
+    Call SafeAddAttr(cCat, "Description", "string")
+    Call SafeAddOp(cCat, "addCategory()", "void")
+    Call SafeAddOp(cCat, "getModelsByCategory()", "void")
+
+    ' PaymentTransactions
+    Set cPay = GetOrCreateClass(pkgDomain, "PaymentTransactions", "Giao dich thanh toan VietQR")
+    Call SafeAddAttr(cPay, "TransactionId", "int")
+    Call SafeAddAttr(cPay, "ContractId", "int")
+    Call SafeAddAttr(cPay, "TransactionCode", "string")
+    Call SafeAddAttr(cPay, "Amount", "decimal")
+    Call SafeAddAttr(cPay, "PaymentType", "string")
+    Call SafeAddAttr(cPay, "Status", "string")
+    Call SafeAddAttr(cPay, "PaymentDate", "datetime")
+    Call SafeAddAttr(cPay, "VietQRPayload", "string")
+    Call SafeAddOp(cPay, "generateVietQR()", "string")
+    Call SafeAddOp(cPay, "confirmWebhook()", "bool")
+    Call SafeAddOp(cPay, "exportReceipt()", "void")
+
+    ' DebtSchedules
+    Set cDebt = GetOrCreateClass(pkgDomain, "DebtSchedules", "Lich trinh cong no va phan ky")
+    Call SafeAddAttr(cDebt, "DebtId", "int")
+    Call SafeAddAttr(cDebt, "ContractId", "int")
+    Call SafeAddAttr(cDebt, "PeriodNumber", "int")
+    Call SafeAddAttr(cDebt, "DueDate", "datetime")
+    Call SafeAddAttr(cDebt, "DueAmount", "decimal")
+    Call SafeAddAttr(cDebt, "PaidAmount", "decimal")
+    Call SafeAddAttr(cDebt, "PenaltyFee", "decimal")
+    Call SafeAddAttr(cDebt, "Status", "string")
+    Call SafeAddOp(cDebt, "calculatePenalty()", "decimal")
+    Call SafeAddOp(cDebt, "recordInstallment()", "void")
+    Call SafeAddOp(cDebt, "notifyOverdue()", "void")
+
+    ' HandoverRecords
+    Set cHand = GetOrCreateClass(pkgDomain, "HandoverRecords", "Bien ban ban giao va nghiem thu")
+    Call SafeAddAttr(cHand, "HandoverId", "int")
+    Call SafeAddAttr(cHand, "ContractId", "int")
+    Call SafeAddAttr(cHand, "StaffId", "int")
+    Call SafeAddAttr(cHand, "HandoverDate", "datetime")
+    Call SafeAddAttr(cHand, "DeviceSerial", "string")
+    Call SafeAddAttr(cHand, "CustomerSignatureUrl", "string")
+    Call SafeAddAttr(cHand, "StaffSignatureUrl", "string")
+    Call SafeAddAttr(cHand, "Status", "string")
+    Call SafeAddOp(cHand, "exportHandoverDocx()", "void")
+    Call SafeAddOp(cHand, "confirmHandover()", "bool")
+
+    ' IncidentTickets
+    Set cTicket = GetOrCreateClass(pkgDomain, "IncidentTickets", "Phieu bao su co thiet bi")
+    Call SafeAddAttr(cTicket, "TicketId", "int")
+    Call SafeAddAttr(cTicket, "ContractId", "int")
+    Call SafeAddAttr(cTicket, "DeviceId", "int")
+    Call SafeAddAttr(cTicket, "CustomerId", "int")
+    Call SafeAddAttr(cTicket, "Title", "string")
+    Call SafeAddAttr(cTicket, "Description", "string")
+    Call SafeAddAttr(cTicket, "Severity", "string")
+    Call SafeAddAttr(cTicket, "Status", "string")
+    Call SafeAddAttr(cTicket, "CreatedAt", "datetime")
+    Call SafeAddOp(cTicket, "reportIncident()", "void")
+    Call SafeAddOp(cTicket, "assignTechnician()", "void")
+    Call SafeAddOp(cTicket, "resolveTicket()", "void")
+
+    ' MaintenanceAssignments
+    Set cMaint = GetOrCreateClass(pkgDomain, "MaintenanceAssignments", "Phan cong xu ly su co ky thuat SLA")
+    Call SafeAddAttr(cMaint, "AssignmentId", "int")
+    Call SafeAddAttr(cMaint, "TicketId", "int")
+    Call SafeAddAttr(cMaint, "TechnicianId", "int")
+    Call SafeAddAttr(cMaint, "AssignedDate", "datetime")
+    Call SafeAddAttr(cMaint, "CompletedDate", "datetime")
+    Call SafeAddAttr(cMaint, "SolutionDescription", "string")
+    Call SafeAddAttr(cMaint, "CostAmount", "decimal")
+    Call SafeAddAttr(cMaint, "Status", "string")
+    Call SafeAddOp(cMaint, "startRepair()", "void")
+    Call SafeAddOp(cMaint, "requestReplacement()", "void")
+    Call SafeAddOp(cMaint, "completeMaintenance()", "void")
+
+    ' RefundVouchers
+    Set cRef = GetOrCreateClass(pkgDomain, "RefundVouchers", "Phieu chi hoan tra tien coc")
+    Call SafeAddAttr(cRef, "VoucherId", "int")
+    Call SafeAddAttr(cRef, "ContractId", "int")
+    Call SafeAddAttr(cRef, "CustomerId", "int")
+    Call SafeAddAttr(cRef, "InitialDeposit", "decimal")
+    Call SafeAddAttr(cRef, "DeductionAmount", "decimal")
+    Call SafeAddAttr(cRef, "NetRefundAmount", "decimal")
+    Call SafeAddAttr(cRef, "RefundDate", "datetime")
+    Call SafeAddAttr(cRef, "Status", "string")
+    Call SafeAddOp(cRef, "calculateDeduction()", "decimal")
+    Call SafeAddOp(cRef, "approveRefund()", "bool")
+    Call SafeAddOp(cRef, "disburseBankTransfer()", "void")
+
+    ' 3. THIET LAP CAC QUAN HE 1 - n CHUAN XAC
+    Call SafeAddRel(cAcc, "Customers", "1", "1")
+    Call SafeAddRel(cCust, "Contracts", "1", "n")
+    Call SafeAddRel(cCont, "ContractDetails", "1", "n")
+    Call SafeAddRel(cDev, "ContractDetails", "1", "n")
+    Call SafeAddRel(cMod, "Devices", "1", "n")
+    Call SafeAddRel(cCat, "DeviceModels", "1", "n")
+    Call SafeAddRel(cCont, "PaymentTransactions", "1", "n")
+    Call SafeAddRel(cCont, "DebtSchedules", "1", "n")
+    Call SafeAddRel(cCont, "HandoverRecords", "1", "n")
+    Call SafeAddRel(cCont, "IncidentTickets", "1", "n")
+    Call SafeAddRel(cTicket, "MaintenanceAssignments", "1", "n")
+    Call SafeAddRel(cCont, "RefundVouchers", "1", "1")
+
+    ' 4. Tao va mo Class Diagram
+    Set diagDomain = pkgDomain.AddClassDiagram("Hinh_2_4_1_So_Do_Lop_Phan_Tich")
+    If Not diagDomain Is Nothing Then
+        diagDomain.Activate
+    End If
+    
+    MsgBox "DA TAO XONG SO DO LOP PHAN TICH CHUAN HUIT!" & Chr(10) & "Cach hien thi: Vao menu Query -> Add Classes... -> Bam All >> -> Bam OK.", 64, "RentalSystem Rose Automation"
+End Sub

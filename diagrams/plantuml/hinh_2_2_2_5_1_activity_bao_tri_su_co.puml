@@ -1,0 +1,70 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Phát hiện sự cố kỹ thuật trong quá trình thuê;
+:Vào giao diện Sự Cố (MyTickets) & Điền biểu mẫu;\n(Mã hợp đồng, Thiết bị, Mô tả lỗi, Đính kèm ảnh);
+:Gửi yêu cầu hỗ trợ kỹ thuật;
+
+|Hệ thống RentalSystem|
+:Tiếp nhận sự cố & Khởi tạo bản ghi PhieuBaoTri;\n- TrangThai = 0 (Chờ tiếp nhận)\n- Ghi nhận thời điểm phát sinh sự cố;
+
+|Quản trị / Điều phối|
+:Tiếp nhận phiếu sự cố trên Admin Dashboard;
+:Đánh giá mức độ khẩn cấp & Thời gian xử lý dự kiến;
+
+if (Sự cố kéo dài vượt ngưỡng SLA (> 24 giờ)?) then (Vượt ngưỡng)
+    :Kích hoạt tính năng "Tạm Dừng Tính Tiền";\n(Miễn trừ tiền thuê trong thời gian thiết bị ngưng trệ);
+else (Trong ngưỡng)
+endif
+
+:Phân công Kỹ thuật viên phụ trách hiện trường;\n(Gán MaNhanVienKyThuat qua PhanCongController);
+
+|Kỹ thuật viên|
+:Nhận thông báo nhiệm vụ trên cổng cá nhân (MyTasks);
+:Liên hệ khách hàng & Đến hiện trường kiểm tra thiết bị;
+
+if (Mức độ hư hỏng thiết bị?) then (Có thể khắc phục tại chỗ)
+    :Tiến hành sửa chữa, cài đặt hoặc thay linh kiện;
+else (Hư hỏng nặng)
+    :Thu hồi máy hỏng về kho (ThietBi.TrangThai = 2 Bảo trì);\n:Xuất kho máy dự phòng cấu hình tương đương thay thế;
+endif
+
+:Lập biên bản kiểm định & Cập nhật kết quả sửa chữa;\n:Nhập chi phí phụ tùng / bồi thường (nếu lỗi do người dùng);
+
+|Hệ thống RentalSystem|
+:Cập nhật PhieuBaoTri.TrangThai = 2 (Hoàn tất);\n:Khôi phục chu kỳ tính tiền thuê hợp đồng;\n:Lưu CSDL & Gửi thông báo hoàn tất cho khách hàng;
+
+|Khách hàng|
+:Nghiệm thu thiết bị hoạt động bình thường & Đánh giá chất lượng;
+stop
+
+@enduml

@@ -77,7 +77,7 @@ class LocalAuthDataSource implements AuthDataSource {
     required String email,
     required String password,
     String? address,
-    String? cccd,
+    required String cccd,
   }) async {
     await Future.delayed(const Duration(seconds: 1));
 
@@ -89,6 +89,8 @@ class LocalAuthDataSource implements AuthDataSource {
       throw Exception('Email này đã được sử dụng.');
     }
 
+    final identity = cccd.trim();
+    _validateIdentity(identity);
     final newUser = {
       'id': (_mockUsers.length + 1).toString(),
       'name': name,
@@ -96,7 +98,7 @@ class LocalAuthDataSource implements AuthDataSource {
       'email': email,
       'password': password,
       'address': address,
-      'cccd': cccd,
+      'cccd': identity,
       'role': 'Khách hàng',
     };
     _mockUsers.add(newUser);
@@ -152,7 +154,10 @@ class LocalAuthDataSource implements AuthDataSource {
   @override
   Future<UserModel> updateProfile(String userId, {String? name, String? phone, String? address, String? cccd}) async {
     final currentUser = await getCurrentUser();
-    if (currentUser != null) {
+    if (currentUser != null && currentUser.id == userId) {
+      final candidate = cccd?.trim() ?? '';
+      final changed = cccd != null && candidate != (currentUser.cccd?.trim() ?? '');
+      if (changed) _validateIdentity(candidate, exceptId: userId);
       final updated = UserModel(
         id: currentUser.id,
         name: name ?? currentUser.name,
@@ -160,13 +165,34 @@ class LocalAuthDataSource implements AuthDataSource {
         phone: phone ?? currentUser.phone,
         role: currentUser.role,
         address: address ?? currentUser.address,
-        cccd: cccd ?? currentUser.cccd,
+        cccd: changed ? candidate : currentUser.cccd,
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_userKey, jsonEncode(updated.toJson()));
+      final index = _mockUsers.indexWhere((u) => u['id'] == userId);
+      if (index >= 0) _mockUsers[index].addAll(updated.toJson());
       return updated;
     }
     throw Exception('Không tìm thấy người dùng');
+  }
+
+  void _validateIdentity(String cccd, {String? exceptId}) {
+    if (!RegExp(r'^[0-9]{12}$').hasMatch(cccd)) {
+      throw Exception('Số CCCD phải có đúng 12 chữ số.');
+    }
+    if (_mockUsers.any((u) => u['id'] != exceptId && u['cccd'] == cccd)) {
+      throw Exception('Số CCCD đã được sử dụng.');
+    }
+  }
+
+  @override
+  Future<void> changePassword(String userId, String current, String next, String confirmation) async {
+    final user = _mockUsers.firstWhere((u) => u['id'] == userId, orElse: () => {});
+    if (user.isEmpty) throw Exception('Không tìm thấy người dùng.');
+    if (user['password'] != current) throw Exception('Mật khẩu hiện tại không đúng.');
+    if (next.trim().isEmpty || next.length < 6) throw Exception('Mật khẩu mới cần ít nhất 6 ký tự.');
+    if (next != confirmation) throw Exception('Mật khẩu nhập lại không khớp.');
+    user['password'] = next;
   }
 
   @override

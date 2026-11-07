@@ -1,0 +1,69 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam boundary {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam control {
+    BorderColor #000000
+    BackgroundColor #f4f4f5
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam entity {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 10
+}
+
+actor "Khách hàng" as ActorKH
+actor "Nhân viên Kinh doanh\n(KinhDoanh)" as ActorKD
+boundary "Giao diện Yêu cầu gia hạn\n(ExtensionRequestView)" as BoundaryExt
+boundary "Giao diện Quản lý công nợ\n(CongNoAdminView)" as BoundaryDebt
+control "Điều khiển Hợp đồng\n(HopDongController)" as ControlHD
+control "Thuật toán Tính nợ & Lãi phạt\n(DebtCalculationHelper)" as ControlDebtHelper
+entity "Yêu cầu gia hạn\n(YeuCauGiaHan)" as EntityExt
+entity "Hợp đồng thuê\n(HopDong)" as EntityHopDong
+entity "Kỳ hạn thanh toán\n(KyHanThanhToan)" as EntityKyHan
+entity "Cơ sở dữ liệu\n(ApplicationDbContext)" as EntityDB
+
+ActorKH --> BoundaryExt : 1. Gửi đơn xin gia hạn số ngày thuê
+ActorKD --> BoundaryDebt : 2. Thẩm định lịch sử nợ & Duyệt gia hạn
+
+BoundaryExt --> ControlHD : 3. POST /Account/RequestExtension
+BoundaryDebt --> ControlHD : 4. POST /Admin/HopDong/ApproveExtension
+
+ControlHD --> ControlDebtHelper : 5. Kiểm tra tuổi nợ 4 cấp & Blacklist
+ControlDebtHelper --> ControlHD : 6. Xác nhận không nợ xấu (Tier 0-2)
+
+ControlHD --> EntityDB : 7. Lưu yêu cầu & Phân kỳ nợ bổ sung
+EntityDB --> EntityExt : 8. Tạo bản ghi YeuCauGiaHan (TrangThai = 1: Đã duyệt)
+EntityDB --> EntityHopDong : 9. Kéo dài HopDong.NgayKetThuc
+EntityDB --> EntityKyHan : 10. Sinh thêm kỳ hạn thanh toán mới
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+rectangle ":RegisterView" as View
+rectangle ":AccountController" as Ctrl
+rectangle ":PasswordHasher" as Hasher
+rectangle ":ApplicationDbContext" as DB
+rectangle ":CookieAuthHandler" as Auth
+
+User -- View : 1: Nhập thông tin đăng ký >\n7: Hiển thị giao diện đăng nhập thành công <
+View -- Ctrl : 2: POST Register(model) >
+Ctrl -- DB : 3: AnyAsync(Email) >\n5: NguoiDungs.AddAsync(user) & SaveChanges() >
+Ctrl -- Hasher : 4: HashPassword(pbkdf2) >
+Ctrl -- Auth : 6: SignInAsync(CookieAuthClaims) >
+
+@enduml

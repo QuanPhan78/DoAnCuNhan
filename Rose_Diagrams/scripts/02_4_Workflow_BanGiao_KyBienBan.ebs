@@ -1,0 +1,199 @@
+' ==============================================================================
+' ROSESCRIPT 02_4: QUY TRINH NGHIEP VU 2.2.2.4 - QUY TRINH 4 - BAN GIAO & KY BIEN BAN BAN GIAO MAY
+' (02_4_Workflow_Quy_trinh_4_-_Ban_giao_Va_Ky_bien_ban_ban_giao_may.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Quy chuan: Activity Diagram, Sequence Diagram & Collaboration Diagram
+' Ngon ngu: 100% Tieng Viet khong dau (Pure ASCII)
+' ==============================================================================
+Option Explicit
+
+
+' ------------------------------------------------------------------------------
+' TIEN ICH TRO GIUP MO HINH HOA (MODELING HELPER FUNCTIONS)
+' ------------------------------------------------------------------------------
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, doc As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    Set GetOrCreateClass = aCls
+                    If st <> "" Then aCls.Stereotype = st
+                    If doc <> "" Then aCls.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If doc <> "" Then aCls.Documentation = doc
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Function GetOrCreateUseCase(parentCat As Category, ucName As String, st As String, doc As String) As UseCase
+    On Error Resume Next
+    Dim aUc As UseCase
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.UseCases.Count
+            Set aUc = parentCat.UseCases.GetAt(i)
+            If Not aUc Is Nothing Then
+                If aUc.Name = ucName Then
+                    Set GetOrCreateUseCase = aUc
+                    If st <> "" Then aUc.Stereotype = st
+                    If doc <> "" Then aUc.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aUc = parentCat.AddUseCase(ucName)
+        If Not aUc Is Nothing Then
+            If st <> "" Then aUc.Stereotype = st
+            If doc <> "" Then aUc.Documentation = doc
+        End If
+        Set GetOrCreateUseCase = aUc
+    End If
+End Function
+
+Sub SafeAddAssociation(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        clientCls.AddAssociation "", supplierName
+    End If
+End Sub
+
+Sub SafeAddAttribute(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOperation(theCls As Class, opName As String, returnType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, returnType)
+    End If
+End Sub
+
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootUC As Category
+    Dim rootLog As Category
+    Dim pkgWorkflows As Category
+    Dim targetCat As Category
+    
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo Model trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Set rootUC = theModel.RootUseCaseCategory
+    Set rootLog = theModel.RootCategory
+    Set pkgWorkflows = GetOrCreateCategory(rootUC, "02_Business_Workflows")
+    Set targetCat = GetOrCreateCategory(pkgWorkflows, "Quy trinh 4 - Ban giao & Ky bien ban ban giao may")
+    
+    ' 1. Dinh nghia cac phan vung hoat dong (Activity Swimlanes & Steps)
+    ' Swimlane: Ky thuat vien
+    ' Swimlane: Khach hang
+    ' Swimlane: HopDongControl
+    ' Swimlane: Kho may
+    Dim actSteps As Class
+    Set actSteps = GetOrCreateClass(targetCat, "Activity_Workflow_Steps", "utility", "Danh sach cac buoc hoat dong trong Quy trinh 4 - Ban giao & Ky bien ban ban giao may")
+    SafeAddAttribute actSteps, "Step_1", "Quet barcode serial xuat kho [Ky thuat vien]"
+    SafeAddAttribute actSteps, "Step_2", "Van chuyen may den dia chi khach [Ky thuat vien]"
+    SafeAddAttribute actSteps, "Step_3", "Dong kiem tra tinh trang thiet bi [Khach hang]"
+    SafeAddAttribute actSteps, "Step_4", "Ca bien Khach khong nhan - Lap bien ban huy [Ky thuat vien]"
+    SafeAddAttribute actSteps, "Step_5", "Xu ly huy - Hoan kho TrangThai=0 & PhieuChi hoan coc [HopDongControl]"
+    SafeAddAttribute actSteps, "Step_6", "Ky Canvas HTML5 & Xuat PDF bien ban [Khach hang]"
+    SafeAddAttribute actSteps, "Step_7", "Cap nhat may - TrangThai = 1 (Dang thue) [Kho may]"
+
+    ' 2. Khoi tao cac thuc the Lifelines trong so do Tuan tu va Cong tac
+    Dim ll_0 As Class
+    Set ll_0 = GetOrCreateClass(targetCat, "ktv:KyThuatVien", "business worker", "Ky thuat vien giao may va kiem tra")
+    Dim ll_1 As Class
+    Set ll_1 = GetOrCreateClass(targetCat, "kh:KhachHang", "business actor", "Khach hang tiep nhan va dong kiem")
+    Dim ll_2 As Class
+    Set ll_2 = GetOrCreateClass(targetCat, "v:BanGiaoView", "boundary", "Giao dien ky bien ban giao nhan")
+    Dim ll_3 As Class
+    Set ll_3 = GetOrCreateClass(targetCat, "c:HopDongControl", "control", "Dieu phoi bien ban va hoan kho")
+    Dim ll_4 As Class
+    Set ll_4 = GetOrCreateClass(targetCat, "bb:BienBanBanGiao", "entity", "Thuc the bien ban giao nhan")
+    Dim ll_5 As Class
+    Set ll_5 = GetOrCreateClass(targetCat, "tb:ThietBi", "entity", "Thuc the thiet bi serial")
+    Dim ll_6 As Class
+    Set ll_6 = GetOrCreateClass(targetCat, "pc:PhieuChi", "entity", "Thuc the phieu chi hoan tien")
+
+    ' 3. Dang ky danh sach Thong diep (Messages Sequence)
+    Dim msgRegistry As Class
+    Set msgRegistry = GetOrCreateClass(targetCat, "Interaction_Messages_Registry", "utility", "Chuoi thong diep tuong tac trong Quy trinh 4 - Ban giao & Ky bien ban ban giao may")
+    SafeAddAttribute msgRegistry, "Msg_1", "1: QuetBarcodeXuatKho(soSerial)"
+    SafeAddAttribute msgRegistry, "Msg_2", "2: DongKiemThietBi(cauHinh, ngoaiQuan)"
+    SafeAddAttribute msgRegistry, "Msg_3", "3: [Ca bien - Khach khong nhan] YeuCauHuyVaHoanKho(lyDoKhongNhan)"
+    SafeAddAttribute msgRegistry, "Msg_4", "4: [Khach khong nhan] CapNhatKhoTrangThai0(sanSang)"
+    SafeAddAttribute msgRegistry, "Msg_5", "5: [Khach khong nhan] LapPhieuChiHoanCoc(truPhiVanChuyen)"
+    SafeAddAttribute msgRegistry, "Msg_6", "6: [Khach nhan] KyCanvasHTML5(chuKyDienTu)"
+    SafeAddAttribute msgRegistry, "Msg_7", "7: LuuBienBanXuatPDF(maBienBan)"
+    SafeAddAttribute msgRegistry, "Msg_8", "8: ChuyenMayTrangThaiDangThue1(maThietBi)"
+
+    ' ==========================================================================
+    ' XU LY CA BIEN TRONG YEU (EDGE CASE MODELING): Khach_Khong_Nhan_May_DeliveryRejection
+    ' ==========================================================================
+    Dim edgeCaseClass As Class
+    Set edgeCaseClass = GetOrCreateClass(targetCat, "EdgeCase_Khach_Khong_Nhan_May_DeliveryRejection", "utility", "Khach tu choi nhan hoac khong lien lac duoc: Hoan kho TrangThai=0, huy hop dong TrangThai=3, lap PhieuChi hoan coc khau tru phi van chuyen")
+    SafeAddAttribute edgeCaseClass, "TenCaBien", "Khach_Khong_Nhan_May_DeliveryRejection"
+    SafeAddAttribute edgeCaseClass, "MoTaXuLy", "Khach tu choi nhan hoac khong lien lac duoc: Hoan kho TrangThai=0, huy hop dong TrangThai=3, lap PhieuChi hoan coc khau tru phi van chuyen"
+    SafeAddOperation edgeCaseClass, "XuLyNgoaiLe_Khach_Khong_Nhan_May_DeliveryRejection", "void"
+
+    ' 4. Khoi tao cac so do truc quan
+    Dim diagAct As Diagram, diagSeq As Diagram, diagCollab As Diagram
+    Set diagAct = targetCat.AddClassDiagram("Activity Diagram - Quy trinh 4 - Ban giao & Ky bien ban ban giao may")
+    If Not diagAct Is Nothing Then diagAct.Open
+    
+    Set diagSeq = targetCat.AddClassDiagram("Sequence Diagram - Quy trinh 4 - Ban giao & Ky bien ban ban giao may")
+    If Not diagSeq Is Nothing Then diagSeq.Open
+    
+    Set diagCollab = targetCat.AddClassDiagram("Collaboration Diagram - Quy trinh 4 - Ban giao & Ky bien ban ban giao may")
+    If Not diagCollab Is Nothing Then diagCollab.Open
+    
+    MsgBox "DA TAO XONG MO HINH QUY TRINH NGHIEP VU: 2.2.2.4!" & vbCrLf & vbCrLf & _
+           "- Ten quy trinh: Quy trinh 4 - Ban giao & Ky bien ban ban giao may" & vbCrLf & _
+           "- So buoc hoat dong: 7" & vbCrLf & _
+           "- So doi tuong Lifeline: 7" & vbCrLf & _
+           "- So thong diep Messages: 8" & vbCrLf & _
+           "- Ca bien mo hinh hoa: Khach_Khong_Nhan_May_DeliveryRejection", 64, "Hoan thanh Script 02_4"
+End Sub

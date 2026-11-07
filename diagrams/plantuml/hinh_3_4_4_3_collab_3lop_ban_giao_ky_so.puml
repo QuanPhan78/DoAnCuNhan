@@ -1,0 +1,35 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 9.5
+}
+
+rectangle "1. Tác nhân\nKhách hàng" as User
+rectangle "2. Giao diện\nSignContractView" as View
+rectangle "3. Bộ điều khiển\nCartController" as Ctrl
+rectangle "4. Trình kiểm định\nMagic Bytes Validator" as Val
+rectangle "5. Cơ sở dữ liệu\nApplicationDbContext" as DB
+rectangle "6. Thực thể\nHopDong & ThietBi" as Entity
+
+User -right-> View : 1: Ký Canvas & Tải CCCD\n10: Nhận xác nhận ký thành công
+View -right-> Ctrl : 2: POST /Cart/SignContract\n9: Chuyển hướng PaymentSuccess
+Ctrl -down-> Val : 3: Kiểm tra PNG Signature (<256KB)\n4: Kiểm tra CCCD Magic Bytes (JPG/PNG/WEBP)
+Ctrl -right-> DB : 5: Lưu đường dẫn file ảnh\n7: await SaveChangesAsync()
+DB -down-> Entity : 6: Cập nhật ChuKyKhachHang & CCCD\n8: Chuyển HopDong & ThietBi sang Đang thuê (1)
+
+@enduml

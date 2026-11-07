@@ -1,0 +1,282 @@
+' ==============================================================================
+' RATIONAL ROSE SCRIPT: HINH 3.3.1 - SO DO LOP MUC THIET KE 3 TANG (DESIGN CLASS DIAGRAM)
+' KIEN TRUC 3 TANG: PRESENTATION (CONTROLLERS) - BUSINESS (SERVICES) - DATA ACCESS (DBCONTEXT & ENTITIES)
+' ==============================================================================
+Option Explicit
+
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, docStr As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    aCls.Stereotype = ""
+                    If docStr <> "" Then aCls.Documentation = docStr
+                    Set GetOrCreateClass = aCls
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            aCls.Stereotype = ""
+            If docStr <> "" Then aCls.Documentation = docStr
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Sub SafeAddAttr(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOp(theCls As Class, opName As String, retType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, retType)
+        If Not anOp Is Nothing Then
+            anOp.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddRel(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    Dim anAssoc As Association
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+    End If
+End Sub
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgDesign As Category
+    Dim diagDesign As Diagram
+    
+    Dim cAccCtrl As Class
+    Dim cHopDongCtrl As Class
+    Dim cPayCtrl As Class
+    Dim cBaoTriCtrl As Class
+    Dim cCongNoCtrl As Class
+    
+    Dim cInvSvc As Class
+    Dim cInvImpl As Class
+    Dim cVietQrSvc As Class
+    Dim cSlaSvc As Class
+    Dim cPenaltySvc As Class
+    Dim cExcelSvc As Class
+    
+    Dim cDbContext As Class
+    Dim eHopDong As Class
+    Dim eThietBi As Class
+    Dim eNguoiDung As Class
+    Dim ePhieuThu As Class
+    Dim ePhieuBaoTri As Class
+    Dim eKyHan As Class
+    
+    Set theModel = RoseApp.CurrentModel
+    Set rootLog = theModel.RootCategory
+    
+    ' 1. Tao goi 03_Design_Class_Diagram_3_Layers
+    Set pkgDesign = GetOrCreateCategory(rootLog, "03_Design_Class_Diagram_3_Layers")
+    
+    ' --------------------------------------------------------------------------
+    ' TANG 1: PRESENTATION LAYER (CONTROLLERS)
+    ' --------------------------------------------------------------------------
+    Set cAccCtrl = GetOrCreateClass(pkgDesign, "AccountController", "Dieu khien dang nhap, dang ky va phan quyen")
+    Call SafeAddAttr(cAccCtrl, "- _context", "ApplicationDbContext")
+    Call SafeAddAttr(cAccCtrl, "- _logger", "ILogger")
+    Call SafeAddOp(cAccCtrl, "+ Login(model: LoginDto)", "Task<IActionResult>")
+    Call SafeAddOp(cAccCtrl, "+ Register(model: RegisterDto)", "Task<IActionResult>")
+    Call SafeAddOp(cAccCtrl, "+ Logout()", "Task<IActionResult>")
+
+    Set cHopDongCtrl = GetOrCreateClass(pkgDesign, "HopDongController", "Dieu khien tao don thue, duyet don va ky so Canvas")
+    Call SafeAddAttr(cHopDongCtrl, "- _context", "ApplicationDbContext")
+    Call SafeAddAttr(cHopDongCtrl, "- _inventoryService", "IInventoryService")
+    Call SafeAddOp(cHopDongCtrl, "+ TaoDonThue(dto: CreateContractDto)", "Task<IActionResult>")
+    Call SafeAddOp(cHopDongCtrl, "+ DuyetHopDong(id: int)", "Task<IActionResult>")
+    Call SafeAddOp(cHopDongCtrl, "+ LuuChuKyCanvas(id: int, signData: string)", "Task<IActionResult>")
+
+    Set cPayCtrl = GetOrCreateClass(pkgDesign, "PaymentController", "Dieu khien VietQR dong NAPAS 247 va Banking Webhook")
+    Call SafeAddAttr(cPayCtrl, "- _context", "ApplicationDbContext")
+    Call SafeAddAttr(cPayCtrl, "- _vietQrService", "IVietQRService")
+    Call SafeAddOp(cPayCtrl, "+ TaoMaVietQR(contractId: int)", "Task<IActionResult>")
+    Call SafeAddOp(cPayCtrl, "+ BankingWebhook(payload: WebhookDto)", "Task<IActionResult>")
+    Call SafeAddOp(cPayCtrl, "+ GachNoTuDong(refCode: string)", "Task<bool>")
+
+    Set cBaoTriCtrl = GetOrCreateClass(pkgDesign, "BaoTriController", "Tiep nhan su co thiet bi va phan cong ky thuat vien SLA")
+    Call SafeAddAttr(cBaoTriCtrl, "- _context", "ApplicationDbContext")
+    Call SafeAddAttr(cBaoTriCtrl, "- _slaService", "ISlaTimerService")
+    Call SafeAddOp(cBaoTriCtrl, "+ GuiYeuCauSuCo(dto: IncidentDto)", "Task<IActionResult>")
+    Call SafeAddOp(cBaoTriCtrl, "+ PhanCongKTV(dto: AssignDto)", "Task<IActionResult>")
+    Call SafeAddOp(cBaoTriCtrl, "+ HoanTatSuaChua(ticketId: int)", "Task<IActionResult>")
+
+    Set cCongNoCtrl = GetOrCreateClass(pkgDesign, "CongNoController", "Giam sat phan ky cong no, tinh phat 0.1%/ngay va xuat Excel")
+    Call SafeAddAttr(cCongNoCtrl, "- _context", "ApplicationDbContext")
+    Call SafeAddAttr(cCongNoCtrl, "- _penaltyService", "LatePenaltyService")
+    Call SafeAddAttr(cCongNoCtrl, "- _excelService", "ExportExcelService")
+    Call SafeAddOp(cCongNoCtrl, "+ LayDanhSachCongNo()", "Task<IActionResult>")
+    Call SafeAddOp(cCongNoCtrl, "+ TinhPhatTreHan01PhanTram()", "void")
+    Call SafeAddOp(cCongNoCtrl, "+ ExportExcelCongNo()", "IActionResult")
+
+    ' --------------------------------------------------------------------------
+    ' TANG 2: BUSINESS LOGIC LAYER (SERVICES & ENGINES)
+    ' --------------------------------------------------------------------------
+    Set cInvSvc = GetOrCreateClass(pkgDesign, "IInventoryService", "Interface kiem tra ton kho va khoa giu cho")
+    Call SafeAddOp(cInvSvc, "+ KiemTraTonKhoGiaoThoaNgay(modelId: int, fromDate: DateTime, toDate: DateTime)", "Task<bool>")
+    Call SafeAddOp(cInvSvc, "+ KhoaGiuChoThietBiAsync(modelId: int)", "Task<bool>")
+    Call SafeAddOp(cInvSvc, "+ GiaiPhongKhoa()", "void")
+
+    Set cInvImpl = GetOrCreateClass(pkgDesign, "InventorySemaphoreService", "Cai dat kiem soat tuong tranh SemaphoreSlim chong Overbooking")
+    Call SafeAddAttr(cInvImpl, "- _semaphore", "SemaphoreSlim")
+    Call SafeAddAttr(cInvImpl, "- _context", "ApplicationDbContext")
+    Call SafeAddOp(cInvImpl, "+ KiemTraTonKhoGiaoThoaNgay(modelId: int, fromDate: DateTime, toDate: DateTime)", "Task<bool>")
+    Call SafeAddOp(cInvImpl, "+ KhoaGiuChoThietBiAsync(modelId: int)", "Task<bool>")
+    Call SafeAddOp(cInvImpl, "+ GiaiPhongKhoa()", "void")
+
+    Set cVietQrSvc = GetOrCreateClass(pkgDesign, "IVietQRService", "Dich vu sinh ma QR NAPAS 247 va xac thuc chu ky so Webhook")
+    Call SafeAddAttr(cVietQrSvc, "- _bankConfig", "BankConfig")
+    Call SafeAddOp(cVietQrSvc, "+ TaoPayloadVietQR(contractId: int, amount: decimal)", "string")
+    Call SafeAddOp(cVietQrSvc, "+ XacThucChuKyNapas(payload: string, sign: string)", "bool")
+
+    Set cSlaSvc = GetOrCreateClass(pkgDesign, "ISlaTimerService", "Dich vu dem gio cam ket SLA va canh bao tre han sua chua")
+    Call SafeAddAttr(cSlaSvc, "- _context", "ApplicationDbContext")
+    Call SafeAddOp(cSlaSvc, "+ TinhThoiGianSLAConLai(ticketId: int)", "TimeSpan")
+    Call SafeAddOp(cSlaSvc, "+ KichHoatCanhBaoQuaHanSLA()", "void")
+
+    Set cPenaltySvc = GetOrCreateClass(pkgDesign, "LatePenaltyService", "Dong co tinh lai phat 0.1%/ngay va phan ky no gia han")
+    Call SafeAddOp(cPenaltySvc, "+ TinhLaiPhatQuaHan(dueAmount: decimal, overdueDays: int)", "decimal")
+    Call SafeAddOp(cPenaltySvc, "+ PhanKyNoGiaHan(contractId: int, months: int)", "List<KyHanThanhToan>")
+
+    Set cExcelSvc = GetOrCreateClass(pkgDesign, "ExportExcelService", "Xuat bao cao quan tri bang thu vien ClosedXML")
+    Call SafeAddOp(cExcelSvc, "+ ExportBaoCaoCongNo(data: List<CongNoDto>)", "byte[]")
+    Call SafeAddOp(cExcelSvc, "+ ExportBaoCaoThongKeKPI()", "byte[]")
+
+    ' --------------------------------------------------------------------------
+    ' TANG 3: DATA ACCESS LAYER (DBCONTEXT & ENTITIES)
+    ' --------------------------------------------------------------------------
+    Set cDbContext = GetOrCreateClass(pkgDesign, "ApplicationDbContext", "Entity Framework Core 9 DbContext quan ly 18 bang CSDL")
+    Call SafeAddAttr(cDbContext, "+ NguoiDungs", "DbSet<NguoiDung>")
+    Call SafeAddAttr(cDbContext, "+ HopDongs", "DbSet<HopDong>")
+    Call SafeAddAttr(cDbContext, "+ ChiTietHopDongs", "DbSet<ChiTietHopDong>")
+    Call SafeAddAttr(cDbContext, "+ ThietBis", "DbSet<ThietBi>")
+    Call SafeAddAttr(cDbContext, "+ KyHanThanhToans", "DbSet<KyHanThanhToan>")
+    Call SafeAddAttr(cDbContext, "+ PhieuThus", "DbSet<PhieuThu>")
+    Call SafeAddAttr(cDbContext, "+ PhieuChis", "DbSet<PhieuChi>")
+    Call SafeAddAttr(cDbContext, "+ PhieuBaoTris", "DbSet<PhieuBaoTri>")
+    Call SafeAddAttr(cDbContext, "+ BienBanBanGiaos", "DbSet<BienBanBanGiao>")
+    Call SafeAddOp(cDbContext, "# OnModelCreating(modelBuilder: ModelBuilder)", "void")
+    Call SafeAddOp(cDbContext, "+ SaveChangesAsync()", "Task<int>")
+    Call SafeAddOp(cDbContext, "+ BeginTransactionAsync()", "Task<IDbContextTransaction>")
+
+    Set eHopDong = GetOrCreateClass(pkgDesign, "HopDong", "Entity Hop dong cho thue")
+    Call SafeAddAttr(eHopDong, "+ MaHopDong", "int")
+    Call SafeAddAttr(eHopDong, "+ SoHopDong", "string")
+    Call SafeAddAttr(eHopDong, "+ TongTien", "decimal")
+    Call SafeAddAttr(eHopDong, "+ TienCoc", "decimal")
+    Call SafeAddAttr(eHopDong, "+ TrangThai", "string")
+
+    Set eThietBi = GetOrCreateClass(pkgDesign, "ThietBi", "Entity Thiet bi phan cung vat ly theo Serial")
+    Call SafeAddAttr(eThietBi, "+ MaThietBi", "int")
+    Call SafeAddAttr(eThietBi, "+ SoSerial", "string")
+    Call SafeAddAttr(eThietBi, "+ PinHealth", "int")
+    Call SafeAddAttr(eThietBi, "+ TrangThai", "string")
+
+    Set eNguoiDung = GetOrCreateClass(pkgDesign, "NguoiDung", "Entity Tai khoan nguoi dung")
+    Call SafeAddAttr(eNguoiDung, "+ MaNguoiDung", "int")
+    Call SafeAddAttr(eNguoiDung, "+ HoTen", "string")
+    Call SafeAddAttr(eNguoiDung, "+ Email", "string")
+    Call SafeAddAttr(eNguoiDung, "+ SoDienThoai", "string")
+
+    Set ePhieuThu = GetOrCreateClass(pkgDesign, "PhieuThu", "Entity Chung tu thu tien coc va tien thue")
+    Call SafeAddAttr(ePhieuThu, "+ MaPhieuThu", "int")
+    Call SafeAddAttr(ePhieuThu, "+ SoTien", "decimal")
+    Call SafeAddAttr(ePhieuThu, "+ MaGiaoDichNganHang", "string")
+
+    Set ePhieuBaoTri = GetOrCreateClass(pkgDesign, "PhieuBaoTri", "Entity Phieu tiep nhan su co va bao tri SLA")
+    Call SafeAddAttr(ePhieuBaoTri, "+ MaPhieuBaoTri", "int")
+    Call SafeAddAttr(ePhieuBaoTri, "+ MoTaLoi", "string")
+    Call SafeAddAttr(ePhieuBaoTri, "+ MucDoUuTien", "string")
+
+    Set eKyHan = GetOrCreateClass(pkgDesign, "KyHanThanhToan", "Entity Ky han thanh toan va phan ky cong no")
+    Call SafeAddAttr(eKyHan, "+ MaKyHan", "int")
+    Call SafeAddAttr(eKyHan, "+ SoTienPhaiTra", "decimal")
+    Call SafeAddAttr(eKyHan, "+ HanChotThanhToan", "DateTime")
+
+    ' --------------------------------------------------------------------------
+    ' THIET LAP CAC LIEN KET PHU THUOC GIUA 3 TANG KIEN TRUC
+    ' --------------------------------------------------------------------------
+    ' Presentation -> Business / Data
+    Call SafeAddRel(cAccCtrl, "ApplicationDbContext")
+    Call SafeAddRel(cHopDongCtrl, "IInventoryService")
+    Call SafeAddRel(cHopDongCtrl, "ApplicationDbContext")
+    Call SafeAddRel(cPayCtrl, "IVietQRService")
+    Call SafeAddRel(cPayCtrl, "ApplicationDbContext")
+    Call SafeAddRel(cBaoTriCtrl, "ISlaTimerService")
+    Call SafeAddRel(cBaoTriCtrl, "ApplicationDbContext")
+    Call SafeAddRel(cCongNoCtrl, "LatePenaltyService")
+    Call SafeAddRel(cCongNoCtrl, "ExportExcelService")
+    Call SafeAddRel(cCongNoCtrl, "ApplicationDbContext")
+
+    ' Business -> Implementation / Data
+    Call SafeAddRel(cInvImpl, "IInventoryService")
+    Call SafeAddRel(cInvImpl, "ApplicationDbContext")
+    Call SafeAddRel(cSlaSvc, "ApplicationDbContext")
+    Call SafeAddRel(cPenaltySvc, "KyHanThanhToan")
+
+    ' Data Access -> Entities
+    Call SafeAddRel(cDbContext, "HopDong")
+    Call SafeAddRel(cDbContext, "ThietBi")
+    Call SafeAddRel(cDbContext, "NguoiDung")
+    Call SafeAddRel(cDbContext, "PhieuThu")
+    Call SafeAddRel(cDbContext, "PhieuBaoTri")
+    Call SafeAddRel(cDbContext, "KyHanThanhToan")
+
+    ' Entities Association
+    Call SafeAddRel(eHopDong, "ThietBi")
+    Call SafeAddRel(eHopDong, "KyHanThanhToan")
+    Call SafeAddRel(eHopDong, "PhieuThu")
+    Call SafeAddRel(eHopDong, "PhieuBaoTri")
+    Call SafeAddRel(eNguoiDung, "HopDong")
+
+    ' --------------------------------------------------------------------------
+    ' TAO VA MO CLASS DIAGRAM
+    ' --------------------------------------------------------------------------
+    Set diagDesign = pkgDesign.AddClassDiagram("Hinh_3_3_1_Design_Class_Diagram")
+    If Not diagDesign Is Nothing Then
+        diagDesign.Activate
+    End If
+    
+    MsgBox "DA TAO XONG SO DO LOP THIET KE 3 TANG (HINH 3.3. 1)!" & Chr(10) & "Cach hien thi: Vao menu Query -> Add Classes... -> Bam All >> -> Bam OK.", 64, "RentalSystem Design Class Diagram"
+End Sub

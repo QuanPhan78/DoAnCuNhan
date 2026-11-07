@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,18 +23,21 @@ namespace RentalSystem.Areas.Admin.Controllers
             _context = context;
         }
 
-        // Màn hình Dashboard chính: thống kê chỉ số tổng quan, biểu đồ doanh thu và các kỳ hạn nợ cần theo dõi
-        public IActionResult Index()
+        // Màn hình Dashboard chính:
+        // thống kê chỉ số tổng quan, biểu đồ doanh thu và các kỳ hạn nợ cần theo dõi
+        public async Task<IActionResult> Index(string? timeFilter)
         {
-            // Thống kê các chỉ số tổng quan
-            // Doanh thu thực tế: Chỉ tính các hợp đồng đã hoàn tất chu kỳ thuê (TrangThai = 2)
-            ViewBag.TotalRevenue = _context.HopDongs
-                .Where(h => h.TrangThai == 2)
-                .Sum(h => (decimal?)h.TongTien) ?? 0;
+            var today = DateTime.Today;
+            var period = RevenuePeriod.Resolve(timeFilter, today);
+            var revenue = await RevenueReport.LoadAsync(_context, period, today);
+            ViewBag.TotalRevenue = revenue.Total;
+            ViewBag.TimeFilter = period.Key;
 
-            // Tổng số hợp đồng: Đếm tất cả đơn ngoại trừ những đơn đã bị hủy (TrangThai != 3)
-            ViewBag.TotalContracts = _context.HopDongs.Count(h => h.TrangThai != 3); 
-            
+            var contracts = _context.HopDongs.Where(h => h.TrangThai != 3);
+            if (period.Start is DateTime start && period.End is DateTime end)
+                contracts = contracts.Where(h => h.NgayBatDau >= start && h.NgayBatDau < end);
+            ViewBag.TotalContracts = await contracts.CountAsync();
+
             // Thiết bị đang hoạt động: Đếm các máy vật lý đang cho khách thuê (TrangThai = 1)
             ViewBag.RentedDevices = _context.ThietBis.Count(t => t.TrangThai == 1);
             
@@ -45,34 +49,14 @@ namespace RentalSystem.Areas.Admin.Controllers
             ViewBag.OverduePayments = _context.KyHanThanhToans
                 .Count(k => (k.TrangThai == 0 || k.TrangThai == 2) && k.NgayDenHan.Date < DateTime.Now.Date && (k.HopDong.TrangThai == 0 || k.HopDong.TrangThai == 1));
 
-            // Dữ liệu biểu đồ doanh thu 6 tháng gần nhất
-            var allCompletedOrders = _context.HopDongs
-                .Where(h => h.TrangThai == 2)
-                .ToList();
-
-            var chartLabels = new List<string>();
-            var chartData = new List<decimal>();
-
-            for (int i = 5; i >= 0; i--)
-            {
-                var d = DateTime.Now.AddMonths(-i);
-                chartLabels.Add("Tháng " + d.Month + "/" + d.Year);
-                
-                var sum = allCompletedOrders
-                    .Where(x => x.NgayBatDau.Month == d.Month && x.NgayBatDau.Year == d.Year)
-                    .Sum(x => x.TongTien);
-                    
-                chartData.Add(sum);
-            }
-            
             // Cấu hình không escape ký tự Unicode tiếng Việt khi xuất JSON ra HTML
             var jsonOptions = new JsonSerializerOptions
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
 
-            ViewBag.ChartLabels = JsonSerializer.Serialize(chartLabels, jsonOptions);
-            ViewBag.ChartData = JsonSerializer.Serialize(chartData, jsonOptions);
+            ViewBag.ChartLabels = JsonSerializer.Serialize(revenue.Chart.Select(point => point.Label), jsonOptions);
+            ViewBag.ChartData = JsonSerializer.Serialize(revenue.Chart.Select(point => point.Value), jsonOptions);
 
             // Top 5 hợp đồng mới nhất
             ViewBag.RecentOrders = _context.HopDongs

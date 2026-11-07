@@ -1,0 +1,61 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Khách hàng" as User
+participant "Giao diện: LoginView\n(Presentation)" as View
+participant "Điều khiển: AccountController\n(Business/Controller)" as Ctrl
+participant "Xác thực: CookieAuthentication\n(Security Service)" as Auth
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+User -> View : 1: Nhập email/SĐT và mật khẩu, bấm Đăng nhập
+activate View
+View -> Ctrl : 2: POST /Account/Login(model)
+activate Ctrl
+
+group Kiểm soát tần suất truy cập (RateLimiter)
+    Ctrl -> Ctrl : 3: Kiểm tra giới hạn 5 lần/phút theo IP/Email
+end
+
+Ctrl -> DB : 4: NguoiDungs.Include(u => u.VaiTro).FirstOrDefaultAsync(Email)
+activate DB
+DB --> Ctrl : 5: Trả về thực thể NguoiDung kèm VaiTro
+deactivate DB
+
+group Xác thực mật khẩu & Chuẩn hóa Role
+    Ctrl -> Ctrl : 6: BCrypt.Verify(password, user.MatKhau)
+    Ctrl -> Ctrl : 7: Chuẩn hóa canonicalRole ("KhachHang" / "Admin" / "KinhDoanh" / "KyThuat")
+    Ctrl -> Ctrl : 8: Khởi tạo danh sách Claims (NameIdentifier, Role, Name)
+end
+
+Ctrl -> Auth : 9: HttpContext.SignInAsync(CookieAuthenticationDefaults, claimsPrincipal)
+activate Auth
+Auth --> Ctrl : 10: Thiết lập Authentication Ticket & Session Cookie
+deactivate Auth
+
+Ctrl --> View : 11: RedirectToAction("Index", "Home")
+deactivate Ctrl
+View --> User : 12: Chuyển hướng tới Cổng Khách hàng (Đăng nhập thành công)
+deactivate View
+
+@enduml

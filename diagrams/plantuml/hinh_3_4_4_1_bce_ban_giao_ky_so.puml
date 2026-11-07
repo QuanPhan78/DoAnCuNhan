@@ -1,0 +1,69 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam boundary {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam control {
+    BorderColor #000000
+    BackgroundColor #f4f4f5
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam entity {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 10
+}
+
+actor "Khách hàng" as ActorKH
+actor "Kỹ thuật viên\n(KyThuat)" as ActorKT
+boundary "Giao diện Ký hợp đồng\n(SignContractView: Canvas)" as BoundarySign
+boundary "Giao diện Bàn giao thiết bị\n(HandoverView)" as BoundaryHandover
+control "Điều khiển Hợp đồng\n(CartController / HopDongController)" as ControlHD
+control "Xác thực tệp nhị phân\n(Magic Bytes Validator)" as ControlValidator
+entity "Hợp đồng thuê\n(HopDong)" as EntityHopDong
+entity "Biên bản bàn giao\n(BienBanBanGiao)" as EntityBienBan
+entity "Thiết bị Serial\n(ThietBi)" as EntityThietBi
+entity "Cơ sở dữ liệu\n(ApplicationDbContext)" as EntityDB
+
+ActorKH --> BoundarySign : 1. Vẽ chữ ký Canvas & Tải ảnh CCCD
+ActorKT --> BoundaryHandover : 2. Kiểm tra máy & Bàn giao tại chỗ
+
+BoundarySign --> ControlHD : 3. POST /Cart/SignContract
+BoundaryHandover --> ControlHD : 4. Lập biên bản bàn giao
+
+ControlHD --> ControlValidator : 5. Kiểm tra Magic Bytes PNG chữ ký & JPG/WEBP CCCD
+ControlValidator --> ControlHD : 6. Tệp hợp lệ, lưu vào wwwroot/uploads
+
+ControlHD --> EntityDB : 7. Lưu trữ đường dẫn ảnh & Chuyển trạng thái
+EntityDB --> EntityHopDong : 8. Gán ChuKyKhachHang, AnhCCCD_Truoc, AnhCCCD_Sau
+EntityDB --> EntityBienBan : 9. Tạo BienBanBanGiao (LoaiBienBan = 0)
+EntityDB --> EntityThietBi : 10. Chuyển ThietBi.TrangThai = 1 (Đang thuê)
+
+@enduml

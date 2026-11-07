@@ -1,0 +1,23 @@
+digraph Collab_BanGiaoKySo {
+    graph [rankdir="LR", splines=ortho, nodesep=0.9, ranksep=1.1, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, fontname="Segoe UI", fontsize=10.5, style="rounded,filled", fillcolor="#ffffff", color="#000000", penwidth=1.3];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    User [label="Khách hàng\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    View [label=":SignContractView\n(Boundary)"];
+    Ctrl [label=":CartController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    Sales [label="Kinh doanh\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    HdCtrl [label=":HopDongController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    Tech [label="Kỹ thuật viên\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    DB [label=":ApplicationDbContext\n(Entity/Data)"];
+    Doc [label=":DocumentController\n(Export/PDF)"];
+
+    User -> View [label="1: Ký số Canvas & Upload CCCD"];
+    View -> Ctrl [label="2: POST SignContract(data)"];
+    Ctrl -> DB [label="3: Check Magic Bytes\nLưu ChuKy, CCCD"];
+    Sales -> HdCtrl [label="4: Duyệt HĐ & Ký số công ty"];
+    Tech -> HdCtrl [label="5: Quét Barcode Serial kho"];
+    HdCtrl -> DB [label="6: Update ThietBi: DangThue\nGhi LichSuThietBi"];
+    Tech -> Doc [label="7: In biên bản bàn giao PDF"];
+    Tech -> User [label="8: Đồng kiểm & Bàn giao máy", style=dashed];
+}

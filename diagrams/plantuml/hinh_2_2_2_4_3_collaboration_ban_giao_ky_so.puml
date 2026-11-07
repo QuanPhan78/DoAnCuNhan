@@ -1,0 +1,45 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+rectangle ":SignContractView" as View
+rectangle ":CartController" as Ctrl
+actor "Kinh doanh" as Sales
+rectangle ":HopDongController" as HdCtrl
+actor "Kỹ thuật viên" as Tech
+rectangle ":ApplicationDbContext" as DB
+rectangle ":DocumentController" as Doc
+
+User -- View : 1: Vẽ chữ ký Canvas & Upload CCCD >
+View -- Ctrl : 2: POST SignContract(data) >
+Ctrl -- DB : 3: Check Magic Bytes & Lưu ChuKy >
+Sales -- HdCtrl : 4: Thẩm định & Ký số công ty >
+Tech -- HdCtrl : 5: Quét Serial & Cập nhật kho >
+HdCtrl -- DB : 6: ThietBi.TrangThai = 1 & LichSu >
+Tech -- Doc : 7: InBienBanBanGiao() >
+Tech -- User : 8: Đồng kiểm & Nghiệm thu bàn giao >
+
+@enduml

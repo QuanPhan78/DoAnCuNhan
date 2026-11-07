@@ -1,0 +1,71 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Cổng Ngân hàng\n(NAPAS 247 / MBBank)" as Bank
+participant "Giao diện Webhook: /Payment/BankingWebhook\n(Presentation Layer)" as Endpoint
+participant "Điều khiển: PaymentController\n(Business Controller)" as Ctrl
+participant "Khóa đối soát: PaymentLock\n(SemaphoreSlim(1,1))" as Lock
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+Bank -> Endpoint : 1: POST /Payment/BankingWebhook (Payload biến động số dư)
+activate Endpoint
+Endpoint -> Ctrl : 2: BankingWebhook(payload)
+activate Ctrl
+
+Ctrl -> Lock : 3: await HopDongController.PaymentLock.WaitAsync()
+activate Lock
+Lock --> Ctrl : 4: Cấp quyền vào vùng găng đối soát tài chính
+
+group Vùng găng xử lý thanh toán tự động (Serializable Transaction)
+    Ctrl -> DB : 5: BeginTransactionAsync(IsolationLevel.Serializable)
+    activate DB
+    
+    Ctrl -> DB : 6: PhieuThus.AnyAsync(MaGiaoDichNganHang == referenceCode)
+    DB --> Ctrl : 7: false (Chưa xử lý - Idempotency Guard thông qua)
+
+    Ctrl -> Ctrl : 8: Regex bóc tách mã hợp đồng HD{id} & kỳ hạn KY{k}
+
+    group Giải thuật Gạch nợ Thác nước 4 tầng (Waterfall Allocation)
+        Ctrl -> DB : 9: Tầng 1: Thanh toán kỳ hạn chỉ định & Xóa phạt trễ hạn
+        Ctrl -> DB : 10: Tầng 2: Thác nước các kỳ nợ cũ theo SoKyHan tăng dần
+        Ctrl -> DB : 11: Tầng 3: Khấu trừ chi phí bồi thường sửa chữa (PhiDenBu)
+        Ctrl -> DB : 12: Tầng 4: Số tiền dôi dư tích lũy vào HopDong.TienTraThua
+    end
+
+    Ctrl -> DB : 13: Tạo PhieuThu (MaNhanVienThu = null - Hệ thống tự động thu)
+    Ctrl -> DB : 14: SyncTrangThaiThanhToanHopDong() (Cập nhật Đã cọc / Tất toán)
+    Ctrl -> DB : 15: Tạo ThongBao thanh toán thành công cho khách hàng
+    Ctrl -> DB : 16: await SaveChangesAsync() & tx.CommitAsync()
+    deactivate DB
+end
+
+Ctrl -> Lock : 17: PaymentLock.Release() (trong khối finally)
+deactivate Lock
+
+Ctrl --> Endpoint : 18: Trả về Ok(new { success = true, processed = true })
+deactivate Ctrl
+Endpoint --> Bank : 19: HTTP 200 OK (Xác nhận nhận webhook thành công trong 1-3s)
+deactivate Endpoint
+
+@enduml

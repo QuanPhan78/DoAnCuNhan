@@ -1,0 +1,28 @@
+stateDiagram-v2
+    direction TB
+
+    [*] --> SanSang: Nhập kho thiết bị Serial mới
+
+    state "0. SẴN SÀNG (Available)<br/>Thiết bị sẵn sàng trong kho" as SanSang
+    state "3. GIỮ CHỖ (Reserved)<br/>Khóa giữ chỗ Cart / InventoryLock" as GiuCho
+    state "1. ĐANG THUÊ (Rented)<br/>Đang bàn giao khách hàng sử dụng" as DangThue
+    state "2. BẢO TRÌ (Maintenance)<br/>Kỹ thuật viên đang xử lý sự cố SLA" as BaoTri
+    state "4. HỎNG / THANH LÝ (Decommissioned)<br/>Hư hỏng nặng / Hết khấu hao" as ThanhLy
+
+    SanSang --> GiuCho: 1. Đặt thuê qua Web (CartController.InventoryLock)
+    GiuCho --> SanSang: 2. Quá hạn giữ chỗ 24h (ReservationCleanupService)
+    GiuCho --> DangThue: 3. Ký HĐ điện tử & Thanh toán cọc VietQR thành công
+    DangThue --> BaoTri: 4. Phát sinh sự cố kỹ thuật SLA / Tạo PhieuBaoTri
+    BaoTri --> DangThue: 5. KTV khắc phục xong sự cố, tiếp tục hợp đồng
+    DangThue --> SanSang: 6. Khách trả máy, nghiệm thu nguyên vẹn, hoàn cọc
+    BaoTri --> SanSang: 7. Nghiệm thu sửa xong sau khi thu hồi máy về kho
+    DangThue --> ThanhLy: 8. Hư hỏng nghiêm trọng không thể khắc phục
+    BaoTri --> ThanhLy: 9. Giám định kỹ thuật xác định không thể sửa
+
+    ThanhLy --> [*]: Hoàn tất thủ tục thanh lý tài sản
+
+    classDef stateNode fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000;
+    classDef terminalNode fill:#f4f4f5,stroke:#000000,stroke-width:1.5px,color:#000000;
+
+    class SanSang,GiuCho,DangThue,BaoTri stateNode
+    class ThanhLy terminalNode

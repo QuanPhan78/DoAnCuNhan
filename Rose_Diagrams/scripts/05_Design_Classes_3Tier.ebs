@@ -1,0 +1,294 @@
+' ==============================================================================
+' ROSESCRIPT 05: SINH CAC LOP THIET KE KIEN TRUC 3 TANG (3-TIER DESIGN)
+' (05_Design_Classes_3Tier.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Quy chuan: Presentation Tier, Business Logic Tier & Data Access Tier
+' Ngon ngu: 100% Tieng Viet khong dau (Pure ASCII)
+' ==============================================================================
+Option Explicit
+
+
+' ------------------------------------------------------------------------------
+' TIEN ICH TRO GIUP MO HINH HOA (MODELING HELPER FUNCTIONS)
+' ------------------------------------------------------------------------------
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, doc As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    Set GetOrCreateClass = aCls
+                    If st <> "" Then aCls.Stereotype = st
+                    If doc <> "" Then aCls.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If doc <> "" Then aCls.Documentation = doc
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Function GetOrCreateUseCase(parentCat As Category, ucName As String, st As String, doc As String) As UseCase
+    On Error Resume Next
+    Dim aUc As UseCase
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.UseCases.Count
+            Set aUc = parentCat.UseCases.GetAt(i)
+            If Not aUc Is Nothing Then
+                If aUc.Name = ucName Then
+                    Set GetOrCreateUseCase = aUc
+                    If st <> "" Then aUc.Stereotype = st
+                    If doc <> "" Then aUc.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aUc = parentCat.AddUseCase(ucName)
+        If Not aUc Is Nothing Then
+            If st <> "" Then aUc.Stereotype = st
+            If doc <> "" Then aUc.Documentation = doc
+        End If
+        Set GetOrCreateUseCase = aUc
+    End If
+End Function
+
+Sub SafeAddAssociation(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        clientCls.AddAssociation "", supplierName
+    End If
+End Sub
+
+Sub SafeAddAttribute(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOperation(theCls As Class, opName As String, returnType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, returnType)
+    End If
+End Sub
+
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkg3Tier As Category
+    Dim pkgPres As Category, pkgBus As Category, pkgData As Category
+    
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo Model trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Set rootLog = theModel.RootCategory
+    Set pkg3Tier = GetOrCreateCategory(rootLog, "02_Design_Classes_3Tier")
+    Set pkgPres = GetOrCreateCategory(pkg3Tier, "Presentation Tier")
+    Set pkgBus = GetOrCreateCategory(pkg3Tier, "Business Logic Tier")
+    Set pkgData = GetOrCreateCategory(pkg3Tier, "Data Access Tier")
+    
+    ' --------------------------------------------------------------------------
+    ' 1. TANG PRESENTATION (CONTROLLERS & VIEWMODELS)
+    ' --------------------------------------------------------------------------
+    Dim cAcc As Class, cCart As Class, cHD As Class, cPay As Class, cCN As Class
+    Dim cTB As Class, cBT As Class, cPC As Class, cDoc As Class, cSP As Class, cTK As Class
+    
+    Set cAcc = GetOrCreateClass(pkgPres, "AccountController", "class", "Dieu khien dang ky, dang nhap va Cookie Claims")
+    SafeAddOperation cAcc, "Register", "Task<IActionResult>"
+    SafeAddOperation cAcc, "Login", "Task<IActionResult>"
+    SafeAddOperation cAcc, "Logout", "Task<IActionResult>"
+    
+    Set cCart = GetOrCreateClass(pkgPres, "CartController", "class", "Dieu khien gio hang va InventoryLock SemaphoreSlim")
+    SafeAddOperation cCart, "AddToCart", "IActionResult"
+    SafeAddOperation cCart, "Checkout", "Task<IActionResult>"
+    SafeAddOperation cCart, "SignContract", "Task<IActionResult>"
+    
+    Set cHD = GetOrCreateClass(pkgPres, "HopDongController", "class", "Dieu khien hop dong, ky Canvas va hoan coc")
+    SafeAddOperation cHD, "Index", "Task<IActionResult>"
+    SafeAddOperation cHD, "Details", "Task<IActionResult>"
+    SafeAddOperation cHD, "KyHopDong", "Task<IActionResult>"
+    SafeAddOperation cHD, "HoanCoc", "Task<IActionResult>"
+    
+    Set cPay = GetOrCreateClass(pkgPres, "PaymentController", "class", "Dieu khien Webhook NAPAS 247 va VietQR")
+    SafeAddOperation cPay, "BankingWebhook", "Task<IActionResult>"
+    SafeAddOperation cPay, "GenerateVietQR", "IActionResult"
+    
+    Set cCN = GetOrCreateClass(pkgPres, "CongNoController", "class", "Dieu khien cong no 4 cap va xuat Excel")
+    SafeAddOperation cCN, "Index", "Task<IActionResult>"
+    SafeAddOperation cCN, "NhacNo", "Task<IActionResult>"
+    SafeAddOperation cCN, "PayInstallment", "Task<IActionResult>"
+    SafeAddOperation cCN, "ExportExcel", "Task<IActionResult>"
+    
+    Set cTB = GetOrCreateClass(pkgPres, "ThietBiController", "class", "Dieu khien may serial va kho")
+    SafeAddOperation cTB, "Index", "Task<IActionResult>"
+    SafeAddOperation cTB, "Details", "Task<IActionResult>"
+    SafeAddOperation cTB, "Create", "Task<IActionResult>"
+    
+    Set cBT = GetOrCreateClass(pkgPres, "BaoTriController", "class", "Dieu khien ticket su co va SLA")
+    SafeAddOperation cBT, "CreateTicket", "Task<IActionResult>"
+    SafeAddOperation cBT, "CompleteMaintenance", "Task<IActionResult>"
+    SafeAddOperation cBT, "MyTasks", "Task<IActionResult>"
+    
+    Set cPC = GetOrCreateClass(pkgPres, "PhanCongController", "class", "Dieu khien phan cong KTV")
+    SafeAddOperation cPC, "Index", "Task<IActionResult>"
+    SafeAddOperation cPC, "AssignTask", "Task<IActionResult>"
+    
+    Set cDoc = GetOrCreateClass(pkgPres, "DocumentController", "class", "Dieu khien xuat PDF bien ban hop dong")
+    SafeAddOperation cDoc, "DownloadContractPdf", "Task<IActionResult>"
+    
+    Set cSP = GetOrCreateClass(pkgPres, "SanPhamController", "class", "Dieu khien danh muc san pham")
+    SafeAddOperation cSP, "Index", "Task<IActionResult>"
+    SafeAddOperation cSP, "Details", "Task<IActionResult>"
+    
+    Set cTK = GetOrCreateClass(pkgPres, "ThongKeController", "class", "Dieu khien Dashboard BI va ClosedXML")
+    SafeAddOperation cTK, "Index", "Task<IActionResult>"
+    SafeAddOperation cTK, "ExportBIExcel", "Task<IActionResult>"
+    
+    ' ViewModels
+    Dim vmNames(1 To 8) As String
+    vmNames(1) = "RegisterVM"
+    vmNames(2) = "LoginVM"
+    vmNames(3) = "CheckoutVM"
+    vmNames(4) = "CreateContractVM"
+    vmNames(5) = "HoanCocVM"
+    vmNames(6) = "AssignTaskVM"
+    vmNames(7) = "CreateTicketVM"
+    vmNames(8) = "ThietBiVM"
+    Dim j As Integer
+    For j = 1 To 8
+        GetOrCreateClass pkgPres, vmNames(j), "class", "ViewModel du lieu truyen tai View"
+    Next j
+    
+    Dim diagPres As Diagram
+    Set diagPres = pkgPres.AddClassDiagram("Presentation Tier Design Class Diagram")
+    If Not diagPres Is Nothing Then diagPres.Open
+    
+    ' --------------------------------------------------------------------------
+    ' 2. TANG BUSINESS LOGIC (SERVICES & THUAT TOAN)
+    ' --------------------------------------------------------------------------
+    Dim sInv As Class, sVQR As Class, sDebt As Class, sMagic As Class
+    Dim sSLA As Class, sPdf As Class, sAuth As Class, sLock1 As Class, sLock2 As Class
+    
+    Set sInv = GetOrCreateClass(pkgBus, "InventoryReservationBackgroundService", "class", "Dich vu nen giai phong giu cho qua 24h")
+    SafeAddOperation sInv, "ExecuteAsync", "Task"
+    SafeAddOperation sInv, "ScanAndReleaseExpiredReservations", "Task"
+    
+    Set sVQR = GetOrCreateClass(pkgBus, "VietQRService", "class", "Dich vu sinh ma VietQR chuan EMVCo CRC16")
+    SafeAddOperation sVQR, "GenerateEMVCoPayload", "string"
+    SafeAddOperation sVQR, "ComputeCRC16CCITT", "string"
+    
+    Set sDebt = GetOrCreateClass(pkgBus, "DebtCalculationHelper", "class", "Thuat toan tuoi no 4 cap va quyet toan hoan coc")
+    SafeAddOperation sDebt, "CalculateAgingTier", "int"
+    SafeAddOperation sDebt, "CalculateLateFee", "decimal"
+    SafeAddOperation sDebt, "CalculateDepositSettlement", "decimal"
+    SafeAddOperation sDebt, "IsCustomerBlacklisted", "bool"
+    
+    Set sMagic = GetOrCreateClass(pkgBus, "MagicBytesValidator", "class", "Xac thuc magic bytes file anh CCCD va chu ky")
+    SafeAddOperation sMagic, "IsValidImageFile", "bool"
+    SafeAddOperation sMagic, "InspectHeaderBytes", "bool"
+    
+    Set sSLA = GetOrCreateClass(pkgBus, "SLATimerService", "class", "Dich vu dem gio tam dung tinh tien su co")
+    SafeAddOperation sSLA, "StartTimer", "void"
+    SafeAddOperation sSLA, "PauseTimer", "void"
+    SafeAddOperation sSLA, "ResumeTimer", "void"
+    
+    Set sPdf = GetOrCreateClass(pkgBus, "PdfExportService", "class", "Dich vu ket xuat hop dong PDF")
+    SafeAddOperation sPdf, "GenerateHandoverContractPdf", "byte[]"
+    
+    Set sAuth = GetOrCreateClass(pkgBus, "CookieAuthHandler", "class", "Dich vu cap va xac minh Cookie Authentication")
+    SafeAddOperation sAuth, "SignInAsync", "Task"
+    SafeAddOperation sAuth, "SignOutAsync", "Task"
+    
+    Set sLock1 = GetOrCreateClass(pkgBus, "CartInventoryLock", "class", "Co che SemaphoreSlim(1,1) ngan chan race condition giu cho")
+    SafeAddOperation sLock1, "WaitAsync", "Task"
+    SafeAddOperation sLock1, "Release", "void"
+    
+    Set sLock2 = GetOrCreateClass(pkgBus, "PaymentIdempotencyLock", "class", "Co che SemaphoreSlim(1,1) ngan chan duplicate Webhook")
+    SafeAddOperation sLock2, "WaitAsync", "Task"
+    SafeAddOperation sLock2, "Release", "void"
+    
+    Dim diagBus As Diagram
+    Set diagBus = pkgBus.AddClassDiagram("Business Logic Tier Design Class Diagram")
+    If Not diagBus Is Nothing Then diagBus.Open
+    
+    ' --------------------------------------------------------------------------
+    ' 3. TANG DATA ACCESS (DBCONTEXT)
+    ' --------------------------------------------------------------------------
+    Dim cDb As Class
+    Set cDb = GetOrCreateClass(pkgData, "ApplicationDbContext", "class", "DbContext Entity Framework Core 9 anh xa SQL Server")
+    SafeAddOperation cDb, "SaveChangesAsync", "Task<int>"
+    SafeAddOperation cDb, "BeginTransactionAsync", "Task<IDbContextTransaction>"
+    
+    Dim diagData As Diagram
+    Set diagData = pkgData.AddClassDiagram("Data Access Tier Design Class Diagram")
+    If Not diagData Is Nothing Then diagData.Open
+    
+    ' --------------------------------------------------------------------------
+    ' 4. LIEN KET GIUA CAC TANG (INTER-TIER DEPENDENCIES)
+    ' --------------------------------------------------------------------------
+    SafeAddAssociation cCart, "CartInventoryLock"
+    SafeAddAssociation cPay, "PaymentIdempotencyLock"
+    SafeAddAssociation cPay, "VietQRService"
+    SafeAddAssociation cHD, "DebtCalculationHelper"
+    SafeAddAssociation cCN, "DebtCalculationHelper"
+    SafeAddAssociation cHD, "PdfExportService"
+    SafeAddAssociation cBT, "SLATimerService"
+    SafeAddAssociation cAcc, "CookieAuthHandler"
+    
+    SafeAddAssociation sInv, "ApplicationDbContext"
+    SafeAddAssociation cHD, "ApplicationDbContext"
+    SafeAddAssociation cCart, "ApplicationDbContext"
+    SafeAddAssociation cPay, "ApplicationDbContext"
+    SafeAddAssociation cCN, "ApplicationDbContext"
+    
+    ' So do kien truc 3 tang tong the
+    Dim diag3Tier As Diagram
+    Set diag3Tier = pkg3Tier.AddClassDiagram("3-Tier Architecture Class Diagram")
+    If Not diag3Tier Is Nothing Then diag3Tier.Open
+    
+    MsgBox "DA TAO XONG CAC LOP THIET KE KIEN TRUC 3 TANG!" & vbCrLf & vbCrLf & _
+           "- Presentation Tier: 11 Controllers + 8 ViewModels" & vbCrLf & _
+           "- Business Logic Tier: 9 Services, Helpers & SemaphoreLocks" & vbCrLf & _
+           "- Data Access Tier: ApplicationDbContext" & vbCrLf & _
+           "- Inter-tier dependencies da duoc ket noi san.", 64, "Hoan thanh Script 05"
+End Sub

@@ -1,0 +1,193 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam class {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    HeaderBackgroundColor #27272a
+    FontColor #000000
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam stereotypeCBackgroundColor #27272a
+skinparam stereotypeCFontColor #ffffff
+
+' ==============================================================================
+' NHÓM 1: TÀI KHOẢN & PHÂN QUYỀN RBAC (USER & SECURITY)
+' ==============================================================================
+class VaiTro <<entity>> {
+    - MaVaiTro: int
+    - TenVaiTro: string
+    + LayDanhSachQuyen(): List<string>
+}
+
+class NguoiDung <<entity>> {
+    - MaNguoiDung: int
+    - HoTen: string
+    - Email: string
+    - SoDienThoai: string
+    - MatKhauHash: string
+    - SoCCCD: string
+    - MaVaiTro: int
+    + DangNhap(): bool
+    + DoiMatKhau(): bool
+    + KiemTraQuyen(): bool
+}
+
+class ThongBao <<entity>> {
+    - MaThongBao: int
+    - MaNguoiDung: int
+    - TieuDe: string
+    - NoiDung: string
+    - DaDoc: bool
+    - NgayTao: DateTime
+    + DanhDauDaDoc(): void
+}
+
+class KhuyenMai <<entity>> {
+    - MaKhuyenMai: int
+    - Code: string
+    - PhanTramGiam: decimal
+    - NgayHetHan: DateTime
+    - SoLuongConLai: int
+    + KiemTraHopLe(): bool
+    + TinhSoTienGiam(): decimal
+}
+
+' ==============================================================================
+' NHÓM 2: DANH MỤC & KHO MÁY SERIAL (EQUIPMENT & INVENTORY)
+' ==============================================================================
+class LoaiThietBi <<entity>> {
+    - MaLoai: int
+    - TenLoai: string
+    - MoTa: string
+    + LayDanhSachSanPham(): List<SanPham>
+}
+
+class SanPham <<entity>> {
+    - MaSanPham: int
+    - TenSanPham: string
+    - DonGiaNgay: decimal
+    - DonGiaThang: decimal
+    - TienCoc: decimal
+    - MaLoai: int
+    + TinhGiaThue(): decimal
+    + KiemTraSoLuongTon(): int
+}
+
+class ThietBi <<entity>> {
+    - MaThietBi: int
+    - MaSanPham: int
+    - SoSerial: string
+    - TrangThai: int
+    - ViTriKho: string
+    + CapNhatTrangThai(): void
+    + KiemTraKhaDung(): bool
+}
+
+class LichSuThietBi <<entity>> {
+    - MaLichSu: int
+    - MaThietBi: int
+    - HanhDong: string
+    - NgayTao: DateTime
+    - GhiChu: string
+    + GhiNhatKy(): void
+}
+
+' ==============================================================================
+' NHÓM 3: HỢP ĐỒNG, TÀI CHÍNH & BẢO TRÌ (CONTRACTS, PAYMENTS & MAINTENANCE)
+' ==============================================================================
+class HopDong <<entity>> {
+    - MaHopDong: int
+    - MaKhachHang: int
+    - NgayBatDau: DateTime
+    - NgayKetThuc: DateTime
+    - TongTien: decimal
+    - TienDaCoc: decimal
+    - TrangThai: int
+    - NhomTuoiNo: int
+    - ChuKyKhachHang: string
+    + DuyetHopDong(): void
+    + TinhTongTien(): decimal
+    + ThanhLy(): void
+}
+
+class ChiTietHopDong <<entity>> {
+    - MaChiTiet: int
+    - MaHopDong: int
+    - MaThietBi: int
+    - GiaChotThu: decimal
+}
+
+class KyHanThanhToan <<entity>> {
+    - MaKyHan: int
+    - MaHopDong: int
+    - SoKyHan: int
+    - SoTienPhai: decimal
+    - SoTienDaTra: decimal
+    - TienPhat: decimal
+    - NgayDenHan: DateTime
+    - TrangThai: int
+    + TinhPhatTreHan(): decimal
+    + GachNo(): void
+}
+
+class PhieuThu <<entity>> {
+    - MaPhieuThu: int
+    - MaHopDong: int
+    - MaKyHan: int
+    - SoTien: decimal
+    - NgayGiaoDich: DateTime
+    - MaGiaoDichNganHang: string
+    - MaNhanVienThu: int
+    + XacNhanThu(): void
+    + InPhieuThu(): void
+}
+
+class PhieuChi <<entity>> {
+    - MaPhieuChi: int
+    - MaHopDong: int
+    - SoTienHoanTra: decimal
+    - NgayChi: DateTime
+    - LyDoChi: string
+    + InPhieuChi(): void
+}
+
+class PhieuBaoTri <<entity>> {
+    - MaPhieu: int
+    - MaHopDong: int
+    - MaThietBi: int
+    - MaNhanVienKyThuat: int
+    - ChiPhi: decimal
+    - TrangThai: int
+    - NgayTao: DateTime
+    + TiepNhan(): void
+    + HoanTat(): void
+}
+
+' ==============================================================================
+' QUAN HỆ KẾT NỐI (ASSOCIATION & MULTIPLICITY)
+' ==============================================================================
+VaiTro "1" -- "0..*" NguoiDung : phân quyền
+NguoiDung "1" -- "0..*" ThongBao : nhận
+NguoiDung "1" -- "0..*" HopDong : ký kết
+LoaiThietBi "1" -- "0..*" SanPham : phân loại
+SanPham "1" -- "0..*" ThietBi : định danh
+ThietBi "1" -- "0..*" LichSuThietBi : ghi nhật ký
+HopDong "1" -- "1..*" ChiTietHopDong : bao gồm
+ThietBi "1" -- "0..*" ChiTietHopDong : cấp phát
+HopDong "1" -- "0..*" KyHanThanhToan : phân kỳ
+HopDong "1" -- "0..*" PhieuThu : thanh toán
+HopDong "1" -- "0..1" PhieuChi : hoàn cọc
+HopDong "1" -- "0..*" PhieuBaoTri : sự cố
+ThietBi "1" -- "0..*" PhieuBaoTri : sửa chữa
+
+@enduml

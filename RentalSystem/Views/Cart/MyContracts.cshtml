@@ -42,7 +42,7 @@
                         @foreach (var item in Model)
                         {
                             bool chuaKy = string.IsNullOrEmpty(item.ChuKyKhachHang);
-                            bool coTheChinhSua = chuaKy && item.TrangThai == 0;
+                            bool coTheChinhSua = chuaKy && item.TrangThai == 0 && !item.YeuCauHuy;
                             <tr>
                                 <td class="fw-bold">#@item.MaHopDong</td>
                                 <td>@item.NgayBatDau.ToString("dd/MM/yyyy")</td>
@@ -51,13 +51,13 @@
                                 <td class="fw-bold text-warning">@item.TienDaCoc.ToString("N0") đ</td>
                                 <td><span class="badge-soft-neutral font-monospace">@item.SoKyHan kỳ</span></td>
                                 <td>
-                                    @if (item.TrangThai == 0)
+                                    @if (item.TrangThai == 0 && item.YeuCauHuy)
+                                    {
+                                        <span class="status-pill"><span class="status-dot dot-danger"></span> Yêu cầu hủy</span>
+                                    }
+                                    else if (item.TrangThai == 0)
                                     {
                                         <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
-                                        @if (item.YeuCauHuy)
-                                        {
-                                            <div class="mt-1"><span class="status-pill"><span class="status-dot dot-danger"></span> Đang chờ hủy</span></div>
-                                        }
                                     }
                                     else if (item.TrangThai == 1)
                                     {
@@ -73,7 +73,7 @@
                                     }
                                     else if (item.TrangThai == 2)
                                     {
-                                        <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span>
+                                        <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span>
                                         @if (item.TrangThaiHoanCoc == 1)
                                         {
                                             <div class="mt-1"><span class="status-pill"><span class="status-dot dot-navy"></span> Đã hoàn cọc</span></div>
@@ -101,7 +101,7 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (chuaKy)
+                                    @if (coTheChinhSua)
                                     {
                                         <a asp-action="SignContract" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-navy fw-bold mb-1">
                                             <i class="fas fa-pen-nib"></i> Ký HĐ
@@ -112,10 +112,6 @@
                                         <a asp-action="EditContract" asp-route-id="@item.MaHopDong" class="btn btn-sm btn-outline-dark fw-bold mb-1">
                                             <i class="fas fa-edit"></i> Sửa
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold mb-1"
-                                                data-bs-toggle="modal" data-bs-target="#modalXoa_@item.MaHopDong">
-                                            <i class="fas fa-trash"></i> Xóa
-                                        </button>
                                     }
                                     @if (item.TrangThai == 1)
                                     {
@@ -135,36 +131,3 @@
         </div>
     </div>
 </div>
-
-@foreach (var item in Model)
-{
-    bool chuaKy = string.IsNullOrEmpty(item.ChuKyKhachHang);
-    bool coTheChinhSua = chuaKy && item.TrangThai == 0;
-    @if (coTheChinhSua)
-    {
-        <!-- Modal Xác nhận Xóa cho HĐ #@item.MaHopDong -->
-                                        <div class="modal fade" id="modalXoa_@item.MaHopDong" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold text-danger">Xác nhận Xóa Đơn Hàng</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>Bạn có chắc muốn <strong>xóa đơn hàng #@item.MaHopDong</strong> không?</p>
-                                                        <p class="text-muted small">Thao tác này không thể hoàn tác. Toàn bộ thiết bị đang giữ chỗ sẽ được trả về kho.</p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy bỏ</button>
-                                                        <form asp-action="DeleteContract" method="post" style="display:inline">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="id" value="@item.MaHopDong" />
-                                                            <button type="submit" class="btn btn-danger fw-bold">Xác nhận Xóa</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    
-    }
-}

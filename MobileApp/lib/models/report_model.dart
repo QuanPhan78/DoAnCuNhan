@@ -18,6 +18,7 @@ class ReportModel {
   final int rentedDevices;
   final int maintenanceDevices;
   final int brokenDevices;
+  final int reservedDevices;
 
   final int totalContracts;
   final int activeContracts;
@@ -28,6 +29,8 @@ class ReportModel {
   final int completedMaintenances;
 
   final double? revenue;
+  final DateTime? fromDate;
+  final DateTime? throughDate;
   final List<ChartData> revenueChart;
 
   ReportModel({
@@ -36,6 +39,7 @@ class ReportModel {
     required this.rentedDevices,
     required this.maintenanceDevices,
     required this.brokenDevices,
+    this.reservedDevices = 0,
     required this.totalContracts,
     required this.activeContracts,
     required this.completedContracts,
@@ -43,6 +47,8 @@ class ReportModel {
     required this.processingMaintenances,
     required this.completedMaintenances,
     this.revenue,
+    this.fromDate,
+    this.throughDate,
     this.revenueChart = const [],
   });
 
@@ -57,6 +63,7 @@ class ReportModel {
       rentedDevices: dev['rented'] ?? 0,
       maintenanceDevices: dev['maintenance'] ?? 0,
       brokenDevices: dev['broken'] ?? 0,
+      reservedDevices: dev['reserved'] ?? 0,
       
       totalContracts: con['total'] ?? 0,
       activeContracts: con['active'] ?? 0,
@@ -67,6 +74,8 @@ class ReportModel {
       completedMaintenances: main['completed'] ?? 0,
       
       revenue: (json['revenue'] as num?)?.toDouble(),
+      fromDate: DateTime.tryParse(json['fromDate'] ?? ''),
+      throughDate: DateTime.tryParse(json['throughDate'] ?? ''),
       revenueChart: (json['revenueChart'] as List?)?.map((e) => ChartData.fromJson(e)).toList() ?? [],
     );
   }

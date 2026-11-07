@@ -1,0 +1,72 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Duyệt danh mục & Thêm thiết bị vào Giỏ hàng;
+:Chọn gói thời gian thuê [NgayBatDau, NgayKetThuc];
+:Bấm nút "Tiến Hành Đặt Thuê" (Checkout);
+
+|Hệ thống RentalSystem|
+:Tiếp nhận yêu cầu HTTP POST Cart/Checkout;
+:Yêu cầu khóa tương tranh:\nawait CartController.InventoryLock.WaitAsync();
+
+note right
+  Bảo vệ vùng găng (Critical Section)
+  Chống Overbooking khi nhiều khách
+  đặt cùng một cấu hình máy
+end note
+
+:Truy vấn số lượng máy Serial khả dụng trong kho:\n- Loại trừ máy đang bảo trì (TrangThai == 2)\n- Loại trừ máy đang thuộc hợp đồng khác còn hiệu lực;
+
+if (Số lượng máy khả dụng >= Số lượng yêu cầu?) then (Không đủ)
+    :Ghi nhận xung đột tồn kho;
+    :Tự động điều chỉnh số lượng trong giỏ hàng;
+    :Giải phóng khóa trong khối finally:\nInventoryLock.Release();
+    
+    |Khách hàng|
+    :Thông báo lỗi hết thiết bị khả dụng cho khung giờ chọn;
+    detach
+else (Đủ máy)
+    |Hệ thống RentalSystem|
+    :Áp dụng mã khuyến mãi (KhuyenMai) nếu có;
+    :Khởi tạo HopDong mới:\n- TrangThai = 0 (Chờ duyệt)\n- TrangThaiThanhToan = 0 (Chưa thanh toán)\n- HanChotKy = DateTime.Now.AddHours(24);
+    :Cấp phát danh sách thiết bị cụ thể (ThietBi):\n- Thêm ChiTietHopDong\n- Cập nhật ThietBi.TrangThai = 3 (Đang giữ chỗ 24h);
+    :Lưu thay đổi CSDL: await SaveChangesAsync();
+    :Xóa Session giỏ hàng của phiên làm việc;
+    :Giải phóng khóa trong khối finally:\nInventoryLock.Release();
+    :Chuyển hướng sang màn hình Ký hợp đồng (SignContract);
+    
+    |Khách hàng|
+    :Nhận giao diện ký số HTML5 Canvas & Upload CCCD;
+    stop
+endif
+
+@enduml

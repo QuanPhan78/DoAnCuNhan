@@ -1,0 +1,74 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+participant "Giao diện:\nRegisterView" as View
+participant "Điều khiển:\nAccountController" as Ctrl
+participant "Bảo mật:\nPasswordHasher" as Hasher
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+
+User -> View : Nhập thông tin đăng ký & Bấm xác nhận
+activate View
+
+View -> Ctrl : HTTP POST Register(RegisterViewModel model)
+activate Ctrl
+
+Ctrl -> DB : AnyAsync(u => u.Email == model.Email)
+activate DB
+DB --> Ctrl : false (Email khả dụng, chưa tồn tại)
+deactivate DB
+
+Ctrl -> Hasher : HashPassword(model.MatKhau)
+activate Hasher
+Hasher --> Ctrl : passwordHash (Chuỗi PBKDF2 salt)
+deactivate Hasher
+
+group Giao dịch tạo tài khoản người dùng
+    Ctrl -> DB : Khởi tạo NguoiDung(HoTen, Email, SĐT, Role=KhachHang)
+    activate DB
+    Ctrl -> DB : NguoiDungs.AddAsync(user)
+    Ctrl -> DB : await SaveChangesAsync()
+    DB --> Ctrl : Kết quả lưu thành công (RowsAffected = 1)
+    deactivate DB
+end
+
+Ctrl -> Ctrl : Thiết lập ClaimsIdentity & SignInAsync(CookieAuth)
+Ctrl --> View : Chuyển hướng RedirectToAction("Index", "Home")
+deactivate Ctrl
+
+View --> User : Hiển thị trang chủ với trạng thái đã đăng nhập
+deactivate View
+
+@enduml

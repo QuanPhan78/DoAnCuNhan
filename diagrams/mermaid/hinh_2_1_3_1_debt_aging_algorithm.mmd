@@ -1,0 +1,45 @@
+%% =============================================================================
+%% HÌNH 2.1.3. 1: SƠ ĐỒ THUẬT TOÁN PHÂN KỲ TRẢ GÓP VÀ CHUYỂN TRẠNG THÁI 4 CẤP ĐỘ TUỔI NỢ
+%% Dự án: RentalSystem - Khóa luận Tốt nghiệp HUIT 2025
+%% Tiêu chuẩn: Academic Grayscale (Mermaid Flowchart TD)
+%% =============================================================================
+
+flowchart TD
+    %% Khởi tạo thông số hợp đồng
+    subgraph S1 [1. Thuật toán Phân kỳ Thanh toán Trả góp Amortization]
+        direction TB
+        A[Hợp đồng: Tổng tiền T, Trả trước T_pre, Số kỳ N] --> B[Tính tiền còn lại: T_rem = T - T_pre]
+        B --> C["Tính tiền cơ sở mỗi kỳ: P_base = round(T_rem / (N * 1000)) * 1000"]
+        C --> D["Kỳ cuối cân đối số dư: P_N = T_rem - sum(P_1..P_N-1)"]
+        D --> E["Sinh lịch hạn kỳ D_i = D_1 + round((i-1)/(N-1) * Tổng ngày)"]
+        E --> F[Tạo N bản ghi KyHanThanhToan trong CSDL]
+    end
+
+    %% Đánh giá ngày quá hạn
+    F --> G{Kiểm tra ngày đến hạn: daysPastDue = Today - NgayDenHan}
+
+    %% Phân kỳ 4 cấp độ tuổi nợ
+    subgraph S2 [2. Chuyển trạng thái 4 Cấp độ Tuổi nợ Debt Aging Buckets]
+        direction TB
+        G -->|daysPastDue <= 0| T0["CẤP 0: ĐÚNG HẠN (Current)<br/>Trạng thái bình thường, cho phép thuê thêm, nhắc lịch định kỳ"]
+        G -->|1 <= daysPastDue <= 30| T1["CẤP 1: CẦN CHÚ Ý (Special Mention)<br/>Ân hạn phạt 3 ngày, gửi email/SMS nhắc nợ VietQR, tính phạt từ ngày 4"]
+        G -->|31 <= daysPastDue <= 60| T2["CẤP 2: DƯỚI TIÊU CHUẨN (Substandard)<br/>Phạt 0.1%/ngày nợ, kinh doanh gọi điện đôn đốc, cảnh báo khóa thuê"]
+        G -->|61 <= daysPastDue <= 90| T3["CẤP 3: NỢ NGHI NGỜ (Doubtful)<br/>Tạm dừng bảo trì SLA tại chỗ, chặn gia hạn, cảnh báo thu hồi máy"]
+        G -->|daysPastDue > 90 hoặc Nợ > 3tr| T4["CẤP 4: NỢ XẤU (Bad Debt / Blacklist)<br/>KHÓA TÀI KHOẢN TOÀN HỆ THỐNG, tự động Blacklist, xử lý pháp lý"]
+    end
+
+    %% Định dạng giao diện Grayscale
+    style S1 fill:#ffffff,stroke:#000000,stroke-width:1.5px
+    style S2 fill:#ffffff,stroke:#000000,stroke-width:1.5px
+    style A fill:#ffffff,stroke:#000000,stroke-width:1.2px
+    style B fill:#f4f4f5,stroke:#000000,stroke-width:1.2px
+    style C fill:#f4f4f5,stroke:#000000,stroke-width:1.2px
+    style D fill:#f4f4f5,stroke:#000000,stroke-width:1.2px
+    style E fill:#f4f4f5,stroke:#000000,stroke-width:1.2px
+    style F fill:#27272a,stroke:#000000,stroke-width:1.2px,color:#ffffff
+    style G fill:#e4e4e7,stroke:#000000,stroke-width:1.3px
+    style T0 fill:#ffffff,stroke:#000000,stroke-width:1.2px
+    style T1 fill:#f4f4f5,stroke:#000000,stroke-width:1.2px
+    style T2 fill:#e4e4e7,stroke:#000000,stroke-width:1.2px
+    style T3 fill:#d4d4d8,stroke:#000000,stroke-width:1.2px
+    style T4 fill:#a1a1aa,stroke:#000000,stroke-width:1.3px,color:#000000

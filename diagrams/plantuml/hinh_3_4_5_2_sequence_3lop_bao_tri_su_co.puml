@@ -1,0 +1,86 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+actor "Khách hàng" as User
+actor "Kỹ thuật viên (KyThuat)" as Tech
+participant "Giao diện: Ticket/Task View\n(Presentation Layer)" as View
+participant "Điều khiển: BaoTri & PhanCong\n(Business Controller)" as Ctrl
+participant "Cơ sở dữ liệu: ApplicationDbContext\n(Data Access Layer)" as DB
+
+User -> View : 1: Điền thông tin sự cố & Bấm gửi báo cáo lỗi
+activate View
+View -> Ctrl : 2: POST /Account/CreateTicket(model)
+activate Ctrl
+
+group Tiếp nhận sự cố & Kích hoạt SLA
+    Ctrl -> DB : 3: Tạo PhieuBaoTri (TrangThai = 0: Tiếp nhận, NgayBaoLoi = Now)
+    activate DB
+    DB --> Ctrl : 4: Lưu thành công MaPhieu
+    deactivate DB
+end
+
+Ctrl --> View : 5: Thông báo tiếp nhận sự cố thành công
+deactivate Ctrl
+View --> User : 6: Hiển thị mã phiếu và thời gian cam kết SLA
+deactivate View
+
+== Giai đoạn Điều phối & Xử lý Kỹ thuật ==
+
+Ctrl -> DB : 7: Tạo PhanCongCongViec (MaNhanVien = MaKTV, MaPhieuBaoTri)
+activate Ctrl
+activate DB
+DB --> Ctrl : 8: Gán việc hoàn tất
+deactivate DB
+deactivate Ctrl
+
+Tech -> View : 9: Xem danh sách nhiệm vụ /Admin/PhanCong/MyTasks
+activate View
+View -> Ctrl : 10: GET /Admin/PhanCong/MyTasks
+activate Ctrl
+Ctrl -> DB : 11: Lấy nhiệm vụ được phân công của KTV
+activate DB
+DB --> Ctrl : 12: Trả về danh sách nhiệm vụ
+deactivate DB
+Ctrl --> View : 13: Hiển thị giao diện xử lý nhiệm vụ
+deactivate Ctrl
+
+Tech -> View : 14: Cập nhật kết quả sửa chữa & Báo cáo hoàn tất
+View -> Ctrl : 15: POST /Admin/BaoTri/Details (BienPhapXuLy, PhiDenBu, TrangThai = 3)
+activate Ctrl
+
+group Khép phiếu bảo trì & Khôi phục trạng thái máy
+    Ctrl -> DB : 16: Cập nhật PhieuBaoTris (TrangThai = 3: Hoàn tất)
+    activate DB
+    Ctrl -> DB : 17: Cập nhật ThietBis.TrangThai = 1 (Đang thuê) hoặc 0 (Sẵn sàng)
+    Ctrl -> DB : 18: await SaveChangesAsync()
+    DB --> Ctrl : 19: Cập nhật CSDL thành công
+    deactivate DB
+end
+
+Ctrl --> View : 20: Thông báo nghiệm thu sửa chữa hoàn tất
+deactivate Ctrl
+View --> Tech : 21: Hoàn tất nhiệm vụ bảo trì SLA
+deactivate View
+
+@enduml

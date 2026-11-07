@@ -10,6 +10,7 @@ class DeviceModel {
   final String? condition;
   final String? rentalStatus;
   final double? rentalPrice;
+  final int? rentableQuantity;
   final String? description;
   final String? imageAsset;
   final String? imageUrl;
@@ -26,6 +27,7 @@ class DeviceModel {
     this.condition,
     this.rentalStatus,
     this.rentalPrice,
+    this.rentableQuantity,
     this.description,
     this.imageAsset,
     this.imageUrl,
@@ -44,6 +46,7 @@ class DeviceModel {
       condition: json['condition'],
       rentalStatus: json['rentalStatus'],
       rentalPrice: (json['rentalPrice'] as num?)?.toDouble(),
+      rentableQuantity: (json['rentableQuantity'] as num?)?.toInt(),
       description: json['description'],
       imageAsset: json['imageAsset'],
       imageUrl: json['imageUrl'],

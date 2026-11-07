@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RentalSystem.Common;
 using RentalSystem.Models;
 
 namespace RentalSystem.Services
@@ -24,11 +25,12 @@ namespace RentalSystem.Services
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                        await using var transaction = await RentalBooking.BeginInventoryAsync(context, stoppingToken);
                         var now = DateTime.Now;
 
                         // Tìm các hợp đồng ở trạng thái 0 (Chờ duyệt), có hạn chót giữ chỗ đã qua, chưa ký và chưa nộp cọc
                         var expiredContracts = await context.HopDongs
-                            .Where(h => h.TrangThai == 0 && h.HanChotKy != null && h.HanChotKy < now && string.IsNullOrEmpty(h.ChuKyKhachHang) && h.TienDaCoc == 0)
+                            .Where(h => h.TrangThai == 0 && !h.YeuCauHuy && h.HanChotKy != null && h.HanChotKy < now && string.IsNullOrEmpty(h.ChuKyKhachHang) && h.TienDaCoc == 0)
                             .ToListAsync(stoppingToken);
 
                         if (expiredContracts.Any())
@@ -53,6 +55,7 @@ namespace RentalSystem.Services
 
                             await context.SaveChangesAsync(stoppingToken);
                         }
+                        await transaction.CommitAsync(stoppingToken);
                     }
                 }
                 catch (Exception ex)

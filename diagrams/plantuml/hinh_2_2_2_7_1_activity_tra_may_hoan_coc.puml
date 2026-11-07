@@ -1,0 +1,61 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Hết hạn hợp đồng hoặc chủ động yêu cầu kết thúc thuê;
+:Mang thiết bị đến kho công ty hoặc bàn giao cho KTV thu hồi;
+
+|Kỹ thuật viên|
+:Tiếp nhận thiết bị vật lý & Đối chiếu số Serial;
+:Kiểm định ngoại quan, màn hình, bàn phím, pin và phụ kiện;
+
+if (Thiết bị có phát sinh hư hại do người dùng?) then (Có hư hại)
+    :Đánh giá mức độ tổn thất linh kiện;
+    :Xác định chi phí bồi thường (PhiDenBu);
+else (Nguyên vẹn)
+    :Xác nhận thiết bị đạt chuẩn nghiệm thu;\n:PhiDenBu = 0;
+endif
+
+:Lập Biên bản nghiệm thu thu hồi thiết bị;
+
+|Nhân viên Kinh doanh|
+:Mở hồ sơ hợp đồng tại Admin/HopDong/Details;
+:Tính toán quyết toán tài chính hoàn cọc:\nTienHoan = TienDaCoc - PhiDenBu - CongNoConLai;
+:Thực hiện hành động HoanCoc trên HopDongController;\n(Khởi tạo bản ghi PhieuChi với số tiền và lý do hoàn);
+
+|Hệ thống RentalSystem|
+:Cập nhật HopDong.TrangThai = 2 (Đã thanh lý);\n:Cập nhật các thiết bị ThietBi.TrangThai = 0 (Sẵn sàng);\n:Ghi nhận nhật ký thu hồi vào LichSuThietBi;\n:Lưu CSDL: await context.SaveChangesAsync();\n:Gửi thông báo quyết toán qua Email/SMS;
+
+|Khách hàng|
+:Nhận khoản tiền hoàn cọc qua tài khoản ngân hàng;\n:Hợp đồng chính thức kết thúc chu trình;
+stop
+
+@enduml

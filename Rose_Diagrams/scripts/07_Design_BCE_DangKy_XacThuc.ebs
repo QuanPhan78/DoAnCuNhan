@@ -1,0 +1,190 @@
+' ==============================================================================
+' RATIONAL ROSE SCRIPT: HINH 3.4.1.1 - SO DO 3 LOP MUC THIET KE (BCE)
+' CHUC NANG: DANG KY & XAC THUC NGUOI DUNG
+' DA SUA: KHONG DUP DAU VISIBILITY (+/-) & KHONG DUP NGOAC DON ()( )
+' ==============================================================================
+Option Explicit
+
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, docStr As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    If st <> "" Then aCls.Stereotype = st
+                    If docStr <> "" Then aCls.Documentation = docStr
+                    Set GetOrCreateClass = aCls
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If docStr <> "" Then aCls.Documentation = docStr
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+' Ham them thuoc tinh voi Visibility ro rang (Private / Public)
+Sub SafeAddAttr(theCls As Class, attrName As String, attrType As String, vis As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            If vis = "Private" Or vis = "Public" Or vis = "Protected" Then
+                anAttr.ExportControl.Name = vis
+            Else
+                anAttr.ExportControl.Name = "Public"
+            End If
+        End If
+    End If
+End Sub
+
+' Ham them phuong thuc voi Visibility ro rang (khong du ngoac don)
+Sub SafeAddOp(theCls As Class, opName As String, retType As String, vis As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, retType)
+        If Not anOp Is Nothing Then
+            If vis = "Private" Or vis = "Public" Or vis = "Protected" Then
+                anOp.ExportControl.Name = vis
+            Else
+                anOp.ExportControl.Name = "Public"
+            End If
+        End If
+    End If
+End Sub
+
+Sub SafeAddRel(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    Dim anAssoc As Association
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+    End If
+End Sub
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgRoot As Category
+    Dim pkgUC As Category
+    Dim diagBCE As Diagram
+    
+    Dim bLogin As Class
+    Dim bRegister As Class
+    Dim cAccount As Class
+    Dim cAuthHandler As Class
+    Dim eNguoiDung As Class
+    Dim eVaiTro As Class
+    
+    Set theModel = RoseApp.CurrentModel
+    Set rootLog = theModel.RootCategory
+    
+    ' 1. Tao cac goi quan ly
+    Set pkgRoot = GetOrCreateCategory(rootLog, "04_Design_3_Layers_UseCases")
+    Set pkgUC = GetOrCreateCategory(pkgRoot, "3_4_1_DangKy_XacThuc")
+    
+    ' --------------------------------------------------------------------------
+    ' 2. TANG BIEN (BOUNDARY CLASSES)
+    ' --------------------------------------------------------------------------
+    Set bLogin = GetOrCreateClass(pkgUC, "LoginView", "boundary", "Giao dien dang nhap he thong")
+    Call SafeAddAttr(bLogin, "txtEmail", "string", "Private")
+    Call SafeAddAttr(bLogin, "txtPassword", "string", "Private")
+    Call SafeAddAttr(bLogin, "chkRememberMe", "bool", "Private")
+    Call SafeAddOp(bLogin, "ShowLoginForm", "void", "Public")
+    Call SafeAddOp(bLogin, "SubmitLogin", "void", "Public")
+    Call SafeAddOp(bLogin, "DisplayErrorMessage", "void", "Public")
+
+    Set bRegister = GetOrCreateClass(pkgUC, "RegisterView", "boundary", "Giao dien dang ky tai khoan khach hang moi")
+    Call SafeAddAttr(bRegister, "txtFullName", "string", "Private")
+    Call SafeAddAttr(bRegister, "txtEmail", "string", "Private")
+    Call SafeAddAttr(bRegister, "txtPhoneNumber", "string", "Private")
+    Call SafeAddAttr(bRegister, "txtPassword", "string", "Private")
+    Call SafeAddAttr(bRegister, "txtConfirmPassword", "string", "Private")
+    Call SafeAddOp(bRegister, "ShowRegisterForm", "void", "Public")
+    Call SafeAddOp(bRegister, "SubmitRegister", "void", "Public")
+    Call SafeAddOp(bRegister, "DisplaySuccessMessage", "void", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 3. TANG DIEU KHIEN (CONTROL CLASSES)
+    ' --------------------------------------------------------------------------
+    Set cAccount = GetOrCreateClass(pkgUC, "AccountController", "control", "Bo dieu khien tiep nhan va dieu phoi xac thuc")
+    Call SafeAddAttr(cAccount, "_context", "ApplicationDbContext", "Private")
+    Call SafeAddAttr(cAccount, "_authHandler", "CookieAuthenticationHandler", "Private")
+    Call SafeAddOp(cAccount, "Login", "Task<IActionResult>", "Public")
+    Call SafeAddOp(cAccount, "Register", "Task<IActionResult>", "Public")
+    Call SafeAddOp(cAccount, "Logout", "Task<IActionResult>", "Public")
+
+    Set cAuthHandler = GetOrCreateClass(pkgUC, "CookieAuthenticationHandler", "control", "Xu ly bam mat khau va thiet lap Cookie Claims")
+    Call SafeAddAttr(cAuthHandler, "_httpContextAccessor", "IHttpContextAccessor", "Private")
+    Call SafeAddOp(cAuthHandler, "VerifyPassword", "bool", "Public")
+    Call SafeAddOp(cAuthHandler, "HashPassword", "string", "Public")
+    Call SafeAddOp(cAuthHandler, "CreateClaimsPrincipal", "ClaimsPrincipal", "Public")
+    Call SafeAddOp(cAuthHandler, "SignInAsync", "Task", "Public")
+    Call SafeAddOp(cAuthHandler, "SignOutAsync", "Task", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 4. TANG THUC THE (ENTITY CLASSES)
+    ' --------------------------------------------------------------------------
+    Set eNguoiDung = GetOrCreateClass(pkgUC, "NguoiDung", "entity", "Thuc the luu tru thong tin ho so nguoi dung")
+    Call SafeAddAttr(eNguoiDung, "MaNguoiDung", "int", "Public")
+    Call SafeAddAttr(eNguoiDung, "HoTen", "string", "Public")
+    Call SafeAddAttr(eNguoiDung, "Email", "string", "Public")
+    Call SafeAddAttr(eNguoiDung, "SoDienThoai", "string", "Public")
+    Call SafeAddAttr(eNguoiDung, "MatKhauHash", "string", "Public")
+    Call SafeAddAttr(eNguoiDung, "MaVaiTro", "int", "Public")
+    Call SafeAddAttr(eNguoiDung, "TrangThai", "string", "Public")
+    Call SafeAddOp(eNguoiDung, "IsActive", "bool", "Public")
+    Call SafeAddOp(eNguoiDung, "UpdateProfile", "void", "Public")
+
+    Set eVaiTro = GetOrCreateClass(pkgUC, "VaiTro", "entity", "Thuc the vai tro va phan quyen truy cap")
+    Call SafeAddAttr(eVaiTro, "MaVaiTro", "int", "Public")
+    Call SafeAddAttr(eVaiTro, "TenVaiTro", "string", "Public")
+    Call SafeAddAttr(eVaiTro, "MoTa", "string", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 5. THIET LAP LIEN KET TUONG TAC (ASSOCIATIONS)
+    ' --------------------------------------------------------------------------
+    Call SafeAddRel(bLogin, "AccountController")
+    Call SafeAddRel(bRegister, "AccountController")
+    Call SafeAddRel(cAccount, "CookieAuthenticationHandler")
+    Call SafeAddRel(cAccount, "NguoiDung")
+    Call SafeAddRel(cAuthHandler, "NguoiDung")
+    Call SafeAddRel(eNguoiDung, "VaiTro")
+
+    ' --------------------------------------------------------------------------
+    ' 6. TAO VA MO SO DO BCE
+    ' --------------------------------------------------------------------------
+    Set diagBCE = pkgUC.AddClassDiagram("Hinh_3_4_1_1_BCE_DangKy_XacThuc")
+    If Not diagBCE Is Nothing Then
+        diagBCE.Activate
+    End If
+    
+    MsgBox "DA CAP NHAT CHUAN XAC: KHONG DUP DAU (+/-) VA KHONG DUP NGOAC ()!", 64, "RentalSystem Rose Script"
+End Sub

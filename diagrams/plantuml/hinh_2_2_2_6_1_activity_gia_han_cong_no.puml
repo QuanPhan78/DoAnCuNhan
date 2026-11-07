@@ -1,0 +1,66 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Mở chi tiết Hợp đồng đang thuê (MyContracts/Details);
+:Bấm nút "Yêu Cầu Gia Hạn Hợp Đồng";
+:Chọn ngày kết thúc mới (NgayKetThucMoi) & Gửi yêu cầu;
+
+|Nhân viên Kinh doanh|
+:Tiếp nhận yêu cầu gia hạn trên Admin/CongNo;
+:Truy vấn lịch sử thanh toán & Phân cấp tuổi nợ của khách;
+:Kiểm tra thiết bị có bị xung đột lịch thuê tiếp theo không;
+
+if (Đủ điều kiện gia hạn & Không nợ xấu?) then (Không đủ)
+    :Từ chối yêu cầu gia hạn;
+    :Ghi rõ lý do (Nợ quá hạn / Thiết bị đã có lịch thuê kế);
+    
+    |Khách hàng|
+    :Nhận thông báo từ chối & Yêu cầu hoàn trả máy đúng hạn;
+    detach
+else (Đủ điều kiện)
+    |Nhân viên Kinh doanh|
+    :Bấm "Phê Duyệt Gia Hạn Hợp Đồng";
+    
+    |Hệ thống RentalSystem|
+    :Cập nhật HopDong.NgayKetThuc = NgayKetThucMoi;
+    :Tính toán lại tổng tiền thuê theo đơn giá ngày/tháng;
+    :Gọi DebtCalculationHelper tính lại lịch phân kỳ công nợ:\n- Xác định số tiền thuê phát sinh còn lại\n- Chia đều số tiền vào các kỳ hạn mới (KyHanThanhToan)\n- Áp dụng làm tròn chống lệch số lẻ;
+    :Phân loại lại 4 nhóm tuổi nợ (Current, 1-30d, 31-60d, >60d);
+    :Lưu CSDL: await context.SaveChangesAsync();
+    :Sinh chuỗi mã VietQR động đối soát cho từng kỳ mới;
+    
+    |Khách hàng|
+    :Xem sổ nợ cá nhân (MyDebt) với tiến độ phân kỳ mới;\n:Quét mã VietQR thanh toán kỳ hạn kế tiếp;
+    stop
+endif
+
+@enduml

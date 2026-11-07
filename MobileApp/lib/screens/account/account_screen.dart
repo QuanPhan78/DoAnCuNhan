@@ -1,3 +1,4 @@
+import '../../models/role_enum.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_config_provider.dart';
@@ -59,7 +60,7 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             StatusBadge(
-              text: '${config.tr('Vai trò:')} ${user.role.name.toUpperCase()}', 
+              text: '${config.tr('Vai trò:')} ${user.role.displayName}', 
               status: BadgeStatus.processing,
             ),
             const SizedBox(height: 32),

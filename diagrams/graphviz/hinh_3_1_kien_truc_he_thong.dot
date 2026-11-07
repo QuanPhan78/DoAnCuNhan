@@ -1,0 +1,109 @@
+digraph System_Architecture {
+    graph [rankdir="TB", splines=ortho, nodesep=0.45, ranksep=0.65, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, style="filled,rounded", fontname="Segoe UI", fontsize=10, penwidth=1.2];
+    edge [fontname="Segoe UI", fontsize=9, color="#000000", penwidth=1.2];
+
+    // ==========================================
+    // 1. TẦNG KHÁCH HÀNG (CLIENT TIER)
+    // ==========================================
+    subgraph cluster_client {
+        label="1. TẦNG KHÁCH HÀNG (CLIENT & INTEGRATION TIER)";
+        fontname="Segoe UI Bold";
+        fontsize=11;
+        bgcolor="#f8fafc";
+        color="#000000";
+        penwidth=1.2;
+
+        Client_Web [label="Trình duyệt Web Khách hàng\n(HTML5 Canvas, Razor Client, VietQR Modal)", fillcolor="#ffffff"];
+        Client_Admin [label="Trình duyệt Cổng Quản trị (Admin)\n(Classic Navy CSS, ClosedXML Report)", fillcolor="#ffffff"];
+        Client_Banking [label="Cổng Open Banking / Casso Webhook\n(Bản tin biến động số dư NAPAS 247)", fillcolor="#ffffff"];
+    }
+
+    // ==========================================
+    // 2. TẦNG TRÌNH DIỄN (PRESENTATION TIER)
+    // ==========================================
+    subgraph cluster_presentation {
+        label="2. TẦNG TRÌNH DIỄN (ASP.NET CORE 9 MVC - PRESENTATION TIER)";
+        fontname="Segoe UI Bold";
+        fontsize=11;
+        bgcolor="#f8fafc";
+        color="#000000";
+        penwidth=1.2;
+
+        subgraph cluster_auth {
+            label="Xác thực & Phân quyền RBAC (Cookie Authentication)";
+            fontname="Segoe UI Semibold";
+            fontsize=10;
+            bgcolor="#ffffff";
+            color="#52525b";
+            RBAC [label="4 Vai trò RBAC chuẩn:\nAdmin | KinhDoanh | KyThuat | KhachHang", fillcolor="#27272a", fontcolor="#ffffff"];
+        }
+
+        subgraph cluster_controllers {
+            label="Bộ điều khiển ứng dụng (MVC Controllers)";
+            fontname="Segoe UI Semibold";
+            fontsize=10;
+            bgcolor="#ffffff";
+            color="#52525b";
+            Ctrl_Root [label="Root Controllers:\nAccountController | CartController\nPaymentController | DocumentController", fillcolor="#ffffff"];
+            Ctrl_Admin [label="Areas/Admin Controllers:\nHopDongController | ThietBiController | CongNoController\nBaoTriController | PhanCongController | ThongKeController", fillcolor="#ffffff"];
+        }
+    }
+
+    // ==========================================
+    // 3. TẦNG NGHIỆP VỤ & DỊCH VỤ (BUSINESS LOGIC TIER)
+    // ==========================================
+    subgraph cluster_business {
+        label="3. TẦNG NGHIỆP VỤ & DỊCH VỤ HỆ THỐNG (APPLICATION CORE & SERVICES)";
+        fontname="Segoe UI Bold";
+        fontsize=11;
+        bgcolor="#f8fafc";
+        color="#000000";
+        penwidth=1.2;
+
+        Service_Lock [label="Kiểm soát tương tranh tĩnh:\nCartController.InventoryLock (SemaphoreSlim)\nHopDongController.PaymentLock (SemaphoreSlim)", fillcolor="#ffffff"];
+        Service_Waterfall [label="Đường ống gạch nợ thác nước:\nGiải thuật đối soát 4 tầng tự động\n(Gạch nợ kỳ, khấu trừ phạt, dôi dư)", fillcolor="#ffffff"];
+        Service_DebtHelper [label="Động cơ tài chính & Công nợ:\nDebtCalculationHelper\n(4 Nhóm tuổi nợ, Phạt trễ 0.1%/ngày, Blacklist)", fillcolor="#ffffff"];
+        Service_Cleanup [label="Dịch vụ dọn dẹp nền:\nReservationCleanupService\n(Quét 15 phút/lần, hủy đơn quá hạn 24h, hoàn kho)", fillcolor="#ffffff"];
+        Service_MagicBytes [label="Kiểm định an ninh nhị phân:\nDeep Byte Inspection\n(Magic Bytes PNG 89PNG, JPG FFD8FF, WEBP)", fillcolor="#ffffff"];
+    }
+
+    // ==========================================
+    // 4. TẦNG DỮ LIỆU & HẠ TẦNG (DATA ACCESS & INFRASTRUCTURE TIER)
+    // ==========================================
+    subgraph cluster_data {
+        label="4. TẦNG TRUY CẬP DỮ LIỆU & LƯU TRỮ (DATA ACCESS & STORAGE TIER)";
+        fontname="Segoe UI Bold";
+        fontsize=11;
+        bgcolor="#f8fafc";
+        color="#000000";
+        penwidth=1.2;
+
+        EF_DbContext [label="Entity Framework Core 9 ApplicationDbContext\n(18 Bảng DbSet quan hệ, LazyLoading/Include, Migrations)", fillcolor="#27272a", fontcolor="#ffffff"];
+        Storage_SQL [label="Hệ quản trị CSDL SQL Server 2022\n(18 Bảng quan hệ, Ràng buộc Khóa ngoại FK, Chỉ mục)", fillcolor="#ffffff"];
+        Storage_Files [label="Hệ thống tệp lưu trữ bảo mật (wwwroot/uploads):\nChữ ký số điện tử (.png) | Bản scan CCCD (.jpg)", fillcolor="#ffffff"];
+    }
+
+    // Liên kết giữa các tầng
+    Client_Web -> Ctrl_Root [label=" HTTP(S) Req"];
+    Client_Admin -> Ctrl_Admin [label=" HTTP(S) Req"];
+    Client_Banking -> Ctrl_Root [label=" Webhook POST"];
+
+    Ctrl_Root -> RBAC [style=dashed];
+    Ctrl_Admin -> RBAC [style=dashed];
+
+    Ctrl_Root -> Service_Lock;
+    Ctrl_Root -> Service_Waterfall;
+    Ctrl_Root -> Service_MagicBytes;
+    Ctrl_Admin -> Service_DebtHelper;
+    Ctrl_Admin -> Service_Lock;
+
+    Service_Cleanup -> EF_DbContext;
+    Service_Waterfall -> EF_DbContext;
+    Service_DebtHelper -> EF_DbContext;
+    Ctrl_Root -> EF_DbContext;
+    Ctrl_Admin -> EF_DbContext;
+
+    Service_MagicBytes -> Storage_Files [label=" Ghi tệp"];
+    EF_DbContext -> Storage_SQL [label=" T-SQL / ADO.NET"];
+}

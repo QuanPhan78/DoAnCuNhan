@@ -1,0 +1,234 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10
+skinparam backgroundColor #ffffff
+skinparam classFontSize 10.5
+skinparam classAttributeFontSize 9.5
+skinparam packageFontSize 11
+skinparam packageFontStyle bold
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #f8fafc
+}
+
+skinparam class {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    HeaderBackgroundColor #27272a
+    FontColor #ffffff
+    FontStyle bold
+    AttributeFontColor #000000
+    AttributeFontSize 9.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+' ==============================================================
+' 1. TẦNG TRÌNH DIỄN (PRESENTATION LAYER)
+' ==============================================================
+package "TẦNG TRÌNH DIỄN (PRESENTATION LAYER)" {
+    class AccountController {
+        + Register(model: RegisterVM): Task<IActionResult>
+        + Login(model: LoginVM): Task<IActionResult>
+        + Logout(): Task<IActionResult>
+        + MyDebt(): Task<IActionResult>
+        + MyTickets(): Task<IActionResult>
+        + Profile(): Task<IActionResult>
+    }
+
+    class CartController {
+        + {static} InventoryLock: SemaphoreSlim
+        + Index(): IActionResult
+        + AddToCart(sanPhamId: int): IActionResult
+        + Checkout(): Task<IActionResult>
+        + SignContract(id: int, signature: string, cccd: IFormFile): Task<IActionResult>
+        - ValidateAndSaveImageAsync(file: IFormFile): Task<string>
+    }
+
+    class PaymentController {
+        + BankingWebhook(payload: CassoWebhookPayload): Task<IActionResult>
+        + PayInstallment(kyHanId: int): Task<IActionResult>
+    }
+
+    class HopDongController {
+        + {static} PaymentLock: SemaphoreSlim
+        + Index(search: string, status: int?): Task<IActionResult>
+        + Create(model: CreateContractVM): Task<IActionResult>
+        + Details(id: int): Task<IActionResult>
+        + KyHopDong(id: int, signatureData: string): Task<IActionResult>
+        + HoanCoc(id: int, model: HoanCocVM): Task<IActionResult>
+        + {static} SyncTrangThaiThanhToanHopDong(hd: HopDong, db: ApplicationDbContext): Task
+    }
+
+    class CongNoController {
+        + Index(tier: int?, search: string): Task<IActionResult>
+        + NhacNo(id: int, channel: string): Task<IActionResult>
+        + ExportExcel(): Task<IActionResult>
+    }
+
+    class BaoTriController {
+        + Index(status: int?): Task<IActionResult>
+        + Details(id: int): Task<IActionResult>
+        + CreateTicket(model: CreateTicketVM): Task<IActionResult>
+        + CompleteMaintenance(id: int): Task<IActionResult>
+    }
+
+    class ThietBiController {
+        + Index(status: int?): Task<IActionResult>
+        + Create(model: ThietBiVM): Task<IActionResult>
+        + LichSu(id: int): Task<IActionResult>
+    }
+
+    class PhanCongController {
+        + Index(): Task<IActionResult>
+        + Assign(model: AssignTaskVM): Task<IActionResult>
+        + MyTasks(): Task<IActionResult>
+        + UpdateStatus(taskId: int, status: int): Task<IActionResult>
+    }
+}
+
+' ==============================================================
+' 2. TẦNG NGHIỆP VỤ & DỊCH VỤ (BUSINESS LOGIC LAYER)
+' ==============================================================
+package "TẦNG NGHIỆP VỤ & DỊCH VỤ (BUSINESS LOGIC LAYER)" {
+    class DebtCalculationHelper {
+        + {static} CalculateAgingTier(overdueDays: int): int
+        + {static} CalculateLateFee(unpaid: decimal, days: int): decimal
+        + {static} CalculateDepositSettlement(deposit: decimal, unpaidRent: decimal, damages: decimal): decimal
+        + {static} IsCustomerBlacklisted(customerId: int, db: ApplicationDbContext, out reason: string): bool
+    }
+
+    class ReservationCleanupService {
+        # ExecuteAsync(stoppingToken: CancellationToken): Task
+        - ScanAndReleaseExpiredReservations(): Task
+    }
+
+    class VietQRHelper {
+        + {static} GenerateEMVCoPayload(amount: decimal, refCode: string): string
+        + {static} ComputeCRC16CCITT(data: string): string
+    }
+
+    class RentalLockManager {
+        + {static} AcquireInventoryLockAsync(): Task<IDisposable>
+        + {static} AcquirePaymentLockAsync(): Task<IDisposable>
+    }
+}
+
+' ==============================================================
+' 3. TẦNG TRUY CẬP DỮ LIỆU & THỰC THỂ (DATA ACCESS LAYER)
+' ==============================================================
+package "TẦNG TRUY CẬP DỮ LIỆU & THỰC THỂ (DATA ACCESS LAYER)" {
+    class ApplicationDbContext {
+        + VaiTros: DbSet<VaiTro>
+        + NguoiDungs: DbSet<NguoiDung>
+        + ThongBaos: DbSet<ThongBao>
+        + PhanCongCongViecs: DbSet<PhanCongCongViec>
+        + LoaiThietBis: DbSet<LoaiThietBi>
+        + SanPhams: DbSet<SanPham>
+        + ThietBis: DbSet<ThietBi>
+        + LichSuThietBis: DbSet<LichSuThietBi>
+        + KhuyenMais: DbSet<KhuyenMai>
+        + HopDongs: DbSet<HopDong>
+        + ChiTietHopDongs: DbSet<ChiTietHopDong>
+        + YeuCauGiaHans: DbSet<YeuCauGiaHan>
+        + KyHanThanhToans: DbSet<KyHanThanhToan>
+        + PhieuThus: DbSet<PhieuThu>
+        + PhieuChis: DbSet<PhieuChi>
+        + BienBanBanGiaos: DbSet<BienBanBanGiao>
+        + LichSuNhacNos: DbSet<LichSuNhacNo>
+        + PhieuBaoTris: DbSet<PhieuBaoTri>
+        + SaveChangesAsync(): Task<int>
+    }
+
+    class HopDong {
+        + MaHopDong: int
+        + MaKhachHang: int
+        + MaNhanVien: int?
+        + TongTien: decimal
+        + TienDaCoc: decimal
+        + TrangThai: int
+        + TrangThaiThanhToan: int
+        + ChuKyKhachHang: string
+        + ChuKyNhanVien: string
+        + NhomTuoiNo: int
+    }
+
+    class ThietBi {
+        + MaThietBi: int
+        + MaSanPham: int
+        + SoSerial: string
+        + TrangThai: int
+        + TinhTrangMay: string
+    }
+
+    class KyHanThanhToan {
+        + MaKyHan: int
+        + MaHopDong: int
+        + SoKyHan: int
+        + NgayDenHan: DateTime
+        + SoTienPhai: decimal
+        + SoTienDaTra: decimal
+        + TienPhat: decimal
+        + TrangThai: int
+    }
+
+    class PhieuThu {
+        + MaPhieuThu: int
+        + MaHopDong: int
+        + SoTien: decimal
+        + LoaiPhieu: int
+        + MaNhanVienThu: int?
+        + MaGiaoDichNganHang: string
+    }
+
+    class PhieuBaoTri {
+        + MaPhieu: int
+        + MaThietBi: int
+        + MaHopDong: int?
+        + MaKyThuatVien: int?
+        + PhiDenBu: decimal
+        + TamDungTinhTien: bool
+        + TrangThai: int
+    }
+
+    class NguoiDung {
+        + MaNguoiDung: int
+        + MaVaiTro: int
+        + HoTen: string
+        + SoDienThoai: string
+        + Email: string
+        + CCCD: string
+    }
+}
+
+' Quan hệ giữa các tầng kiến trúc
+CartController ..> RentalLockManager : use Lock
+CartController ..> ApplicationDbContext : inject
+PaymentController ..> VietQRHelper : use QR
+PaymentController ..> HopDongController : use PaymentLock
+PaymentController ..> ApplicationDbContext : inject
+HopDongController ..> DebtCalculationHelper : use calculation
+HopDongController ..> ApplicationDbContext : inject
+CongNoController ..> DebtCalculationHelper : use aging tiers
+CongNoController ..> ApplicationDbContext : inject
+BaoTriController ..> ApplicationDbContext : inject
+ReservationCleanupService ..> ApplicationDbContext : inject
+AccountController ..> ApplicationDbContext : inject
+ThietBiController ..> ApplicationDbContext : inject
+PhanCongController ..> ApplicationDbContext : inject
+
+ApplicationDbContext o-- HopDong
+ApplicationDbContext o-- ThietBi
+ApplicationDbContext o-- KyHanThanhToan
+ApplicationDbContext o-- PhieuThu
+ApplicationDbContext o-- PhieuBaoTri
+ApplicationDbContext o-- NguoiDung
+
+HopDong "1" *-- "many" KyHanThanhToan
+HopDong "1" *-- "many" PhieuThu
+ThietBi "1" *-- "many" PhieuBaoTri
+NguoiDung "1" *-- "many" HopDong
+
+@enduml

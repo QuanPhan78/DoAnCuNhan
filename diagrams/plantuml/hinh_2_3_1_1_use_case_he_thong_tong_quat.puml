@@ -1,0 +1,113 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #f8fafc
+    FontSize 11
+    FontStyle bold
+}
+
+left to right direction
+
+' ==============================================================================
+' CÁC TÁC NHÂN HỆ THỐNG CHUẨN (4 ROLES RBAC & CỔNG THANH TOÁN TỰ ĐỘNG)
+' ==============================================================================
+actor "Khách hàng\n(KhachHang)" as ActKH
+actor "Nhân viên Kinh doanh\n(KinhDoanh)" as ActKD
+actor "Kỹ thuật viên\n(KyThuat)" as ActKT
+actor "Quản trị viên\n(Admin)" as ActAD
+actor "Cổng thanh toán\nVietQR / NAPAS 247" as ActBank <<Automated>>
+
+rectangle "SƠ ĐỒ CA SỬ DỤNG HỆ THỐNG TỔNG QUÁT (RENTALSYSTEM)" {
+
+    package "Phân hệ Khách hàng (Customer Portal)" {
+        usecase "SYS-UC01: Đăng ký & Xác thực tài khoản" as UC01
+        usecase "SYS-UC02: Đặt thuê & Giữ chỗ SemaphoreSlim" as UC02
+        usecase "SYS-UC03: Ký số hợp đồng Canvas HTML5" as UC03
+        usecase "SYS-UC04: Theo dõi lịch nợ cá nhân (MyDebt)" as UC04
+    }
+
+    package "Phân hệ Kinh doanh & Quản trị (Admin & Operations)" {
+        usecase "SYS-UC05: Thẩm định duyệt hợp đồng thuê" as UC05
+        usecase "SYS-UC06: Quản lý thiết bị Serial & Danh mục" as UC06
+        usecase "SYS-UC07: Quản trị phân quyền người dùng" as UC07
+        usecase "SYS-UC08: Giám sát công nợ & Tuổi nợ 4 cấp" as UC08
+    }
+
+    package "Phân hệ Kỹ thuật & Kho máy (Technical Portal)" {
+        usecase "SYS-UC09: Xuất kho bàn giao & Quét Barcode" as UC09
+        usecase "SYS-UC10: Tiếp nhận xử lý sự cố theo SLA" as UC10
+        usecase "SYS-UC11: Thu hồi, nghiệm thu & Đổi máy" as UC11
+    }
+
+    package "Phân hệ Tài chính & Thanh toán tự động" {
+        usecase "SYS-UC12: Thanh toán đặt cọc VietQR động" as UC12
+        usecase "SYS-UC13: Đối soát tự động Banking Webhook" as UC13
+        usecase "SYS-UC14: Lập phiếu chi hoàn tiền cọc" as UC14
+    }
+}
+
+' ==============================================================================
+' KẾT NỐI TRỰC TIẾP TÁC NHÂN TỚI CA SỬ DỤNG
+' ==============================================================================
+' Khách hàng
+ActKH --> UC01
+ActKH --> UC02
+ActKH --> UC03
+ActKH --> UC04
+ActKH --> UC10
+ActKH --> UC12
+
+' Kinh doanh
+ActKD --> UC05
+ActKD --> UC06
+ActKD --> UC08
+ActKD --> UC14
+
+' Kỹ thuật viên
+ActKT --> UC06
+ActKT --> UC09
+ActKT --> UC10
+ActKT --> UC11
+
+' Quản trị viên
+ActAD --> UC05
+ActAD --> UC06
+ActAD --> UC07
+ActAD --> UC08
+ActAD --> UC14
+
+' Cổng thanh toán VietQR / NAPAS 247
+ActBank --> UC12
+ActBank --> UC13
+
+@enduml

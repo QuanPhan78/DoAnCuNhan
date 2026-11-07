@@ -1,3 +1,4 @@
+@using RentalSystem.Common
 @model IEnumerable<RentalSystem.Models.HopDong>
 @{
     ViewData["Title"] = "Quản lý Đơn Thuê";
@@ -92,7 +93,7 @@
     </li>
     <li class="nav-item">
         <a class="nav-link @(currentFilter == "completed" ? "active" : "border text-secondary")" asp-action="Index" asp-route-filter="completed">
-            Hoàn tất
+            Hoàn thành
         </a>
     </li>
     <li class="nav-item">
@@ -158,19 +159,16 @@
                             </td>
                             <td>
                                 @if (isPaymentOverdue) { <span class="status-pill"><span class="status-dot dot-danger"></span> Nợ kỳ hạn</span> }
-                                else if (item.TrangThaiThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa TT</span> }
-                                else if (item.TrangThaiThanhToan == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đã cọc</span> }
-                                else if (item.TrangThaiThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Còn nợ</span> }
-                                else if (item.TrangThaiThanhToan == 3) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã TT đủ</span> }
+                                else { <span class="status-pill"><span class="status-dot dot-@ContractPaymentStatus.BadgeTone(item.TrangThaiThanhToan)"></span> @ContractPaymentStatus.Label(item.TrangThaiThanhToan)</span> }
                             </td>
                             <td>
-                                @if (item.TrangThai == 0)
+                                @if (item.TrangThai == 0 && item.YeuCauHuy)
+                                {
+                                    <span class="status-pill"><span class="status-dot dot-danger"></span> Yêu cầu hủy</span>
+                                }
+                                else if (item.TrangThai == 0)
                                 {
                                     <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span>
-                                    @if (item.YeuCauHuy)
-                                    {
-                                        <div class="mt-1"><span class="status-pill"><span class="status-dot dot-danger"></span> Xin hủy đơn</span></div>
-                                    }
                                 }
                                 else if (item.TrangThai == 1)
                                 {
@@ -184,7 +182,7 @@
                                 {
                                     <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span>
                                 }
-                                else if (item.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn tất</span> }
+                                else if (item.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Hoàn thành</span> }
                                 else if (item.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
                             </td>
                             <td>

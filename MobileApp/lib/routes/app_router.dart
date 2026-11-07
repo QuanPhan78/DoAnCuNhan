@@ -1,3 +1,7 @@
+import '../screens/requests/cart_screen.dart';
+import '../screens/contracts/debt_screen.dart';
+import '../screens/contracts/payment_result_screen.dart';
+import '../models/role_enum.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/permission_enum.dart';
@@ -42,12 +46,13 @@ import '../screens/requests/rental_form_screen.dart';
 import '../screens/requests/rental_confirm_screen.dart';
 import '../screens/requests/requests_screen.dart';
 import '../screens/requests/rental_detail_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     return MaterialPageRoute(
       builder: (context) {
-        final authProvider = context.read<AuthProvider>();
+        final authProvider = context.watch<AuthProvider>();
         final user = authProvider.currentUser;
 
         // Nếu truy cập các route không yêu cầu đăng nhập
@@ -57,6 +62,9 @@ class AppRouter {
            if (settings.name == '/login') return const LoginScreen();
            if (settings.name == '/register') return const RegisterScreen();
         }
+        if (settings.name != null && (settings.name == '/payment-result' || settings.name!.startsWith('/payment-result?'))) {
+          return PaymentResultScreen(rawUri: settings.name);
+        }
 
         // Từ đây trở xuống là yêu cầu phải đăng nhập
         if (!authProvider.isAuthenticated || user == null) {
@@ -64,7 +72,15 @@ class AppRouter {
           return const LoginScreen();
         }
 
+        if (user.role != Role.customer && user.role != Role.staff) {
+          return const UnauthorizedScreen();
+        }
+        if (const ['/cart', '/debts', '/rental_form', '/rental_confirm', '/requests', '/rental_detail'].contains(settings.name) && user.role != Role.customer) {
+          return const UnauthorizedScreen();
+        }
         switch (settings.name) {
+          case '/cart': return const CartScreen();
+          case '/debts': return const DebtScreen();
           case '/dashboard':
             return const DashboardScreen();
           
@@ -84,6 +100,11 @@ class AppRouter {
             return const Scaffold(
               appBar: CustomAppBar(title: 'Công việc'),
               body: TasksScreen(),
+            );
+          case '/notifications':
+            return const Scaffold(
+              appBar: CustomAppBar(title: 'Thông báo'),
+              body: NotificationsScreen(),
             );
           
           case '/contract_detail':

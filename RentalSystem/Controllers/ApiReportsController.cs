@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
+using RentalSystem.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +13,7 @@ namespace RentalSystem.Controllers
 {
     [Route("api/reports")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = ApiTokens.Scheme, Roles = ApiAccess.Managers)]
     public class ApiReportsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -23,73 +27,49 @@ namespace RentalSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetReports([FromQuery] string? timeFilter)
         {
-            var now = DateTime.Now;
+            var today = DateTime.Today;
+            var period = RevenuePeriod.Resolve(timeFilter, today);
+            var revenue = await RevenueReport.LoadAsync(_context, period, today);
 
-            // Thống kê Thiết bị
-            int totalDevices = await _context.ThietBis.CountAsync();
-            if (totalDevices == 0) totalDevices = 15; // default fallback
-            int availableDevices = await _context.ThietBis.CountAsync(t => t.TrangThai == 0);
-            int rentedDevices = await _context.ThietBis.CountAsync(t => t.TrangThai == 1);
-            int maintenanceDevices = await _context.ThietBis.CountAsync(t => t.TrangThai == 2);
-            int brokenDevices = 0;
-
-            // Thống kê Hợp đồng
-            int totalContracts = await _context.HopDongs.CountAsync();
-            int activeContracts = await _context.HopDongs.CountAsync(h => h.TrangThai == 1);
-            int completedContracts = await _context.HopDongs.CountAsync(h => h.TrangThai == 2);
-
-            // Thống kê Bảo trì
-            int totalMaintenances = await _context.PhieuBaoTris.CountAsync();
-            int processingMaintenances = await _context.PhieuBaoTris.CountAsync(p => p.TrangThai == 1 || p.TrangThai == 2);
-            int completedMaintenances = await _context.PhieuBaoTris.CountAsync(p => p.TrangThai == 3);
-
-            // Doanh thu
-            decimal revenue = await _context.HopDongs.SumAsync(h => h.TongTien);
-            if (revenue == 0)
+            var devices = await _context.ThietBis.GroupBy(t => t.TrangThai)
+                .Select(group => new { Status = group.Key, Count = group.Count() })
+                .ToDictionaryAsync(group => group.Status, group => group.Count);
+            var contracts = _context.HopDongs.Where(h => h.TrangThai != 3);
+            var maintenance = _context.PhieuBaoTris.AsQueryable();
+            if (period.Start is DateTime start && period.End is DateTime end)
             {
-                revenue = await _context.PhieuThus.SumAsync(p => p.SoTien);
-            }
-
-            // Biểu đồ doanh thu 6 tháng gần nhất
-            var chartList = new List<object>();
-            for (int i = 5; i >= 0; i--)
-            {
-                var targetMonth = now.AddMonths(-i);
-                var monthRevenue = await _context.HopDongs
-                    .Where(h => h.NgayBatDau.Year == targetMonth.Year && h.NgayBatDau.Month == targetMonth.Month)
-                    .SumAsync(h => (decimal?)h.TongTien) ?? 0;
-
-                chartList.Add(new
-                {
-                    label = $"T{targetMonth.Month}",
-                    value = (double)monthRevenue
-                });
+                contracts = contracts.Where(h => h.NgayBatDau >= start && h.NgayBatDau < end);
+                maintenance = maintenance.Where(p => p.NgayBaoLoi >= start && p.NgayBaoLoi < end);
             }
 
             var result = new
             {
+                timeFilter = period.Key,
+                fromDate = period.Start?.ToString("yyyy-MM-dd"),
+                throughDate = period.End?.AddDays(-1).ToString("yyyy-MM-dd"),
                 deviceStats = new
                 {
-                    total = totalDevices,
-                    available = availableDevices > 0 ? availableDevices : (totalDevices - rentedDevices),
-                    rented = rentedDevices,
-                    maintenance = maintenanceDevices,
-                    broken = brokenDevices
+                    total = devices.Values.Sum(),
+                    available = devices.GetValueOrDefault(0),
+                    rented = devices.GetValueOrDefault(1),
+                    maintenance = devices.GetValueOrDefault(2),
+                    reserved = devices.GetValueOrDefault(3),
+                    broken = devices.GetValueOrDefault(4)
                 },
                 contractStats = new
                 {
-                    total = totalContracts,
-                    active = activeContracts,
-                    completed = completedContracts
+                    total = await contracts.CountAsync(),
+                    active = await contracts.CountAsync(h => h.TrangThai == 1),
+                    completed = await contracts.CountAsync(h => h.TrangThai == 2)
                 },
                 maintenanceStats = new
                 {
-                    total = totalMaintenances,
-                    processing = processingMaintenances,
-                    completed = completedMaintenances
+                    total = await maintenance.CountAsync(),
+                    processing = await maintenance.CountAsync(p => p.TrangThai == 1 || p.TrangThai == 2 || p.TrangThai == 3),
+                    completed = await maintenance.CountAsync(p => p.TrangThai == 5)
                 },
-                revenue = (double)revenue,
-                revenueChart = chartList
+                revenue = revenue.Total,
+                revenueChart = revenue.Chart
             };
 
             return Ok(result);

@@ -1,0 +1,96 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+participant "Giao diện:\nPaymentView" as View
+participant "Điều khiển:\nPaymentController" as Ctrl
+participant "Khóa tương tranh:\nPaymentLock\n(SemaphoreSlim)" as Lock
+participant "Cổng thanh toán:\nVietQR / NAPAS 247" as Gateway
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+
+User -> View : Bấm chọn thanh toán cọc VietQR cho Hợp đồng
+activate View
+
+View -> Ctrl : ThanhToanCoc(hopDongId)
+activate Ctrl
+Ctrl -> View : Sinh chuỗi VietQR động EMVCo (Tag 00-63, CRC16)
+deactivate Ctrl
+
+View -> User : Hiển thị mã QR và cú pháp chuyển khoản "HD{MaHopDong}"
+deactivate View
+
+User -> Gateway : Quét QR & Thực hiện chuyển khoản trên Mobile Banking
+activate Gateway
+
+Gateway -> Ctrl : Webhook POST /Payment/BankingWebhook (Payload biến động số dư)
+activate Ctrl
+deactivate Gateway
+
+Ctrl -> Lock : await PaymentLock.WaitAsync()
+activate Lock
+Lock --> Ctrl : Cấp quyền thực thi vùng găng Idempotency
+
+group Vùng găng bảo vệ Idempotency & Gạch nợ thác nước (Waterfall Reconciliation)
+    Ctrl -> DB : Kiểm tra referenceCode đã tồn tại trong PhieuThus?
+    activate DB
+    DB --> Ctrl : false (Giao dịch mới, chưa xử lý)
+    deactivate DB
+    
+    Ctrl -> Ctrl : Regex bóc tách số hợp đồng: @"(?i)(?:HD)[\s\-_:#]*([0-9]{1,10})"
+    
+    Ctrl -> DB : Áp dụng thác nước: Gạch nợ cọc & Tạo PhieuThu (MaNhanVienThu = null)
+    activate DB
+    Ctrl -> DB : Cập nhật HopDong.TrangThai = DaDatCoc & HopDong.TienDaCoc
+    Ctrl -> DB : await SaveChangesAsync()
+    DB --> Ctrl : Ghi sổ CSDL thành công
+    deactivate DB
+end
+
+Ctrl -> Lock : PaymentLock.Release() (trong khối finally)
+deactivate Lock
+
+Ctrl --> Gateway : Phản hồi HTTP 200 OK (Xử lý hoàn tất trong 3 giây)
+deactivate Ctrl
+
+View -> DB : SignalR / Polling kiểm tra trạng thái thanh toán
+activate View
+activate DB
+DB --> View : HopDong.TrangThai == DaDatCoc
+deactivate DB
+
+View --> User : Cập nhật giao diện: Đã thanh toán tiền cọc thành công
+deactivate View
+
+@enduml

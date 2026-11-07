@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/incident_model.dart';
 import '../models/role_enum.dart';
 import '../repositories/incident_repository.dart';
-import '../providers/contract_provider.dart'; // Để tra cứu contract nếu cần
 
 class IncidentProvider with ChangeNotifier {
   final IncidentRepository _repository;
@@ -16,21 +15,13 @@ class IncidentProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  Future<void> fetchIncidents(String userId, Role role, ContractProvider contractProvider) async {
+  Future<void> fetchIncidents(String userId, Role role) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final all = await _repository.getIncidents(userId, role.toString());
-      if (role == Role.customer) {
-        // Chỉ lấy các sự cố thuộc về hợp đồng của customer này.
-        // Thực tế backend sẽ handle. Ở mock, ta filter thông qua contractProvider
-        final customerContractIds = contractProvider.contracts.where((c) => c.customerId == userId).map((c) => c.id).toList();
-        _incidents = all.where((i) => customerContractIds.contains(i.contractId)).toList();
-      } else {
-        _incidents = all;
-      }
+      _incidents = await _repository.getIncidents(userId, role.toString());
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -39,17 +30,28 @@ class IncidentProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> createIncident(IncidentModel incident) async {
-    try {
-      await _repository.createIncident(incident);
-      // add locally to avoid re-fetch if we want
-      _incidents.insert(0, incident);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    }
+  Future<void> createIncident(IncidentModel incident) async {
+    final saved = await _repository.createIncident(incident);
+    _errorMessage = null;
+    _incidents = [saved, ..._incidents];
+    notifyListeners();
+  }
+
+  Future<IncidentModel> getIncident(String id) async {
+    final incident = await _repository.getIncident(id);
+    _replace(incident);
+    return incident;
+  }
+
+  Future<IncidentModel> acceptIncident(IncidentModel incident, bool accepted, String feedback) async =>
+      _replace(incident.withReview(await _repository.acceptIncident(incident.id, accepted, feedback)));
+
+  Future<IncidentModel> rateIncident(IncidentModel incident, int rating, String feedback) async =>
+      _replace(incident.withReview(await _repository.rateIncident(incident.id, rating, feedback)));
+
+  IncidentModel _replace(IncidentModel incident) {
+    _incidents = _incidents.map((item) => item.id == incident.id ? incident : item).toList();
+    notifyListeners();
+    return incident;
   }
 }

@@ -1,3 +1,6 @@
+import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
+import '../../models/role_enum.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/device_provider.dart';
@@ -43,6 +46,9 @@ class DeviceDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final d = _resolveDevice(context);
+    final canChooseDates = d.rentableQuantity != null
+        ? d.rentableQuantity! > 0
+        : d.rentalStatus?.toLowerCase() == 'sẵn sàng';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -138,7 +144,7 @@ class DeviceDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: context.watch<AuthProvider>().currentUser?.role != Role.customer ? null : SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           decoration: BoxDecoration(
@@ -152,17 +158,24 @@ class DeviceDetailScreen extends StatelessWidget {
             ],
             border: const Border(top: BorderSide(color: AppColors.divider)),
           ),
-          child: CustomButton(
-            text: d.rentalStatus?.toLowerCase() == 'sẵn sàng' ? 'Thuê ngay' : 'Không khả dụng',
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            OutlinedButton.icon(onPressed: canChooseDates ? () {
+              context.read<CartProvider>().add(d);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Đã thêm vào giỏ hàng.'),
+                action: SnackBarAction(label: 'Xem giỏ', onPressed: () => Navigator.pushNamed(context, '/cart'))));
+            } : null, icon: const Icon(Icons.add_shopping_cart), label: const Text('Thêm vào giỏ hàng')),
+            CustomButton(
+            text: canChooseDates ? 'Chọn ngày thuê' : 'Không khả dụng',
             type: ButtonType.primary,
             isFullWidth: true,
-            onPressed: d.rentalStatus?.toLowerCase() == 'sẵn sàng'
+            onPressed: canChooseDates
                 ? () {
                     Navigator.pushNamed(context, '/rental_form', arguments: d);
                   }
                 : null,
             icon: Icons.shopping_cart_checkout,
           ),
+          ]),
         ),
       ),
     );

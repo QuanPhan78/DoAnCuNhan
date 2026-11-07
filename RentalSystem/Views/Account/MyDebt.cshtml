@@ -1,6 +1,8 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration BankConfiguration
 @model IEnumerable<RentalSystem.Models.HopDong>
 @using RentalSystem.Common
 @{
+    var bank = RentalSystem.Services.BankTransfer.From(BankConfiguration);
     ViewData["Title"] = "Sổ công nợ khách hàng";
     var user = ViewBag.User as RentalSystem.Models.NguoiDung;
     decimal totalDebt = (decimal)(ViewBag.TotalDebt ?? 0m);
@@ -15,6 +17,12 @@
     var unpaidKyHans = ViewBag.UnpaidKyHans as List<RentalSystem.Models.KyHanThanhToan> ?? new List<RentalSystem.Models.KyHanThanhToan>();
     var upcomingInstallments = ViewBag.UpcomingInstallments as List<RentalSystem.Models.KyHanThanhToan> ?? new List<RentalSystem.Models.KyHanThanhToan>();
     var overdueInstallments = ViewBag.OverdueInstallments as List<RentalSystem.Models.KyHanThanhToan> ?? new List<RentalSystem.Models.KyHanThanhToan>();
+    DateTime today = ViewBag.Today;
+    var installmentGroups = new[]
+    {
+        (Title: "Quá hạn", Installments: overdueInstallments),
+        (Title: "Chưa quá hạn", Installments: unpaidKyHans.Where(k => k.NgayDenHan.Date >= today).ToList())
+    };
     var damageTickets = ViewBag.DamageTickets as List<RentalSystem.Models.PhieuBaoTri> ?? new List<RentalSystem.Models.PhieuBaoTri>();
 }
 
@@ -69,13 +77,9 @@
                 </div>
                 <div>
                     <h5 class="fw-bold text-danger mb-1">
-                        <i class="fas fa-ban me-1"></i> TÀI KHOẢN ĐANG BỊ KHÓA ĐẶT THUÊ DO NỢ XẤU
+                        <i class="fas fa-ban me-1"></i> Đang hạn chế thuê tiếp
                     </h5>
                     <p class="mb-2 fs-6">@blacklistReason</p>
-                    <div class="badge badge-soft-danger p-2 fs-6 mb-2 text-wrap text-start">Quy định: Kỳ hạn quá hạn > 15 ngày HOẶC Tổng nợ quá hạn > 3.000.000đ sẽ bị chặn Checkout / Ký Hợp Đồng.</div>
-                    <p class="text-dark mb-0 fw-semibold">
-                        <i class="fas fa-info-circle text-primary me-1"></i> Quý khách vui lòng quét mã VietQR bên dưới để thanh toán tất toán các kỳ quá hạn. Hệ thống sẽ tự động gạch nợ và mở khóa tài khoản!
-                    </p>
                 </div>
             </div>
         </div>
@@ -186,32 +190,32 @@
                             quickAddInfo = $"HD{firstOverdue.MaHopDong} KY{firstOverdue.SoKyHan}";
                         }
                     }
-                    <img id="quickQrImg" src="https://img.vietqr.io/image/MB-0783406516-compact.png?amount=@quickAmount&addInfo=@quickAddInfo&accountName=PHAN%20MINH%20QUAN" 
-                         alt="VietQR MBBank" class="img-fluid border rounded p-2 bg-white shadow-sm" style="max-height: 180px;" />
+                    <img id="quickQrImg" src="@(bank.QrUrl(quickAmount, quickAddInfo))" 
+                         alt="VietQR @bank.BankName" class="img-fluid border rounded p-2 bg-white shadow-sm" style="max-height: 180px;" />
                     <div class="small text-muted mt-1 fw-bold"><i class="fas fa-qrcode me-1"></i>Quét QR thanh toán ngay</div>
                 </div>
                 <div class="col-md-9">
                     <h5 class="fw-bold text-primary mb-2">
-                        <i class="fas fa-university me-2"></i>Thanh Toán Qua Chuyển Khoản Ngân Hàng VietQR (MBBank)
+                        <i class="fas fa-university me-2"></i>Thanh Toán Qua Chuyển Khoản Ngân Hàng VietQR (@bank.BankName)
                     </h5>
                     <p class="text-muted small mb-3">Hệ thống hỗ trợ thanh toán linh hoạt từng kỳ hạn hoặc tất toán công nợ nhanh chóng qua chuẩn VietQR liên ngân hàng:</p>
                     <div class="row g-2">
                         <div class="col-sm-6">
                             <div class="p-2 bg-white rounded border">
                                 <span class="text-muted small d-block">Ngân hàng thụ hưởng:</span>
-                                <strong class="text-dark">MBBank (Ngân hàng Quân Đội)</strong>
+                                <strong class="text-dark">@bank.BankName</strong>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="p-2 bg-white rounded border">
                                 <span class="text-muted small d-block">Số tài khoản:</span>
-                                <strong class="text-danger fs-5 font-monospace">0783406516</strong>
+                                <strong class="text-danger fs-5 font-monospace">@bank.AccountNumber</strong>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="p-2 bg-white rounded border">
                                 <span class="text-muted small d-block">Chủ tài khoản:</span>
-                                <strong class="text-dark">PHAN MINH QUAN</strong>
+                                <strong class="text-dark">@bank.AccountName</strong>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -232,7 +236,6 @@
             <h5 class="mb-0 fw-bold text-dark">
                 <i class="fas fa-clock text-warning me-2"></i>Danh Sách Kỳ Hạn Cần Thanh Toán (@unpaidKyHans.Count kỳ)
             </h5>
-            <span class="badge badge-soft-neutral">Bao gồm kỳ sắp đến hạn &amp; quá hạn</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -245,7 +248,6 @@
                             <th>Nợ gốc (VNĐ)</th>
                             <th>Tiền phạt</th>
                             <th>Tổng phải trả</th>
-                            <th>Tuổi nợ</th>
                             <th>Trạng thái</th>
                             <th>Thao tác</th>
                         </tr>
@@ -254,85 +256,78 @@
                         @if (!unpaidKyHans.Any())
                         {
                             <tr>
-                                <td colspan="9" class="py-4 text-muted">
+                                <td colspan="8" class="py-4 text-muted">
                                     <i class="fas fa-check-circle text-success fs-3 d-block mb-2"></i>
-                                    Tuyệt vời! Quý khách không có kỳ hạn thanh toán nào đang còn nợ.
+                                    Không có kỳ cần thanh toán.
                                 </td>
                             </tr>
                         }
-                        @foreach (var k in unpaidKyHans)
+                        @foreach (var group in installmentGroups.Where(g => g.Installments.Count > 0))
                         {
-                            decimal gocConLai = Math.Max(0m, k.SoTienPhai - k.SoTienDaTra);
-                            decimal tongPhaiTra = gocConLai + k.TienPhat;
-                            bool isOverdue = k.TrangThai == 2 || (k.TrangThai == 0 && DateTime.Now.Date > k.NgayDenHan.Date);
-                            int overdueDays = Math.Max(k.SoNgayTreHan, (int)(DateTime.Now.Date - k.NgayDenHan.Date).TotalDays);
-                            int agingTier = isOverdue ? DebtCalculationHelper.CalculateAgingTier(overdueDays) : 0;
-                            string badgeClass = DebtCalculationHelper.GetAgingBadgeClass(agingTier);
-                            string tierName = DebtCalculationHelper.GetAgingTierName(agingTier);
-                            string addInfoParam = $"HD{k.MaHopDong} KY{k.SoKyHan}";
-                            long tongPhaiTraLong = (long)tongPhaiTra;
-
-                            <tr class="@(isOverdue ? "table-danger table-opacity-10" : "")">
-                                <td>
-                                    <a href="/Cart/ContractDetail/@k.MaHopDong" class="fw-bold text-decoration-none text-primary">
-                                        #HD@(k.MaHopDong)
-                                    </a>
-                                </td>
-                                <td>
-                                    <span class="badge-soft-neutral font-monospace">Kỳ @k.SoKyHan</span>
-                                </td>
-                                <td>
-                                    <span class="@(isOverdue ? "text-danger fw-bold" : "text-dark")">
-                                        @k.NgayDenHan.ToString("dd/MM/yyyy")
-                                    </span>
-                                    @if (isOverdue)
-                                    {
-                                        <div class="small text-danger fw-bold">Trễ @overdueDays ngày</div>
-                                    }
-                                </td>
-                                <td class="fw-bold text-dark">
-                                    @gocConLai.ToString("N0") đ
-                                </td>
-                                <td>
-                                    @if (k.TienPhat > 0)
-                                    {
-                                        <span class="text-danger fw-bold">+@k.TienPhat.ToString("N0") đ</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">0 đ</span>
-                                    }
-                                </td>
-                                <td class="fw-bold text-danger fs-6">
-                                    @tongPhaiTra.ToString("N0") đ
-                                </td>
-                                <td>
-                                    @if (isOverdue)
-                                    {
-                                        <span class="@badgeClass">@tierName</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="status-pill"><span class="status-dot dot-success"></span> Đúng hạn</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (isOverdue)
-                                    {
-                                        <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="status-pill"><span class="status-dot dot-warning"></span> Chưa trả</span>
-                                    }
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-outline-success fw-bold"
-                                            onclick="openVietQrModal(@k.MaHopDong, @k.SoKyHan, @tongPhaiTraLong, '@addInfoParam', 'Thanh toán Kỳ @k.SoKyHan Hợp đồng #HD@k.MaHopDong')">
-                                        <i class="fas fa-qrcode me-1"></i> Thanh toán VietQR
-                                    </button>
-                                </td>
+                            <tr class="table-light">
+                                <th colspan="8" scope="rowgroup" class="text-start">@group.Title</th>
                             </tr>
+                            @foreach (var k in group.Installments)
+                            {
+                                decimal gocConLai = Math.Max(0m, k.SoTienPhai - k.SoTienDaTra);
+                                decimal tongPhaiTra = gocConLai + k.TienPhat;
+                                int overdueDays = DebtCalculationHelper.DaysPastDue(k, today);
+                                bool isOverdue = overdueDays > 0;
+                                string addInfoParam = $"HD{k.MaHopDong} KY{k.SoKyHan}";
+                                long tongPhaiTraLong = (long)tongPhaiTra;
+
+                                <tr data-installment-id="@k.MaKyHan" class="@(isOverdue ? "table-danger table-opacity-10" : "")">
+                                    <td>
+                                        <a href="/Cart/ContractDetail/@k.MaHopDong" class="fw-bold text-decoration-none text-primary">
+                                            #HD@(k.MaHopDong)
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge-soft-neutral font-monospace">Kỳ @k.SoKyHan</span>
+                                    </td>
+                                    <td>
+                                        <span class="@(isOverdue ? "text-danger fw-bold" : "text-dark")">
+                                            @k.NgayDenHan.ToString("dd/MM/yyyy")
+                                        </span>
+                                        @if (isOverdue)
+                                        {
+                                            <div class="small text-danger fw-bold">Trễ @overdueDays ngày</div>
+                                        }
+                                    </td>
+                                    <td class="fw-bold text-dark">
+                                        @gocConLai.ToString("N0") đ
+                                    </td>
+                                    <td>
+                                        @if (k.TienPhat > 0)
+                                        {
+                                            <span class="text-danger fw-bold">+@k.TienPhat.ToString("N0") đ</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0 đ</span>
+                                        }
+                                    </td>
+                                    <td class="fw-bold text-danger fs-6">
+                                        @tongPhaiTra.ToString("N0") đ
+                                    </td>
+                                    <td>
+                                        @if (isOverdue)
+                                        {
+                                            <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill"><span class="status-dot dot-warning"></span> Chưa quá hạn</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-success fw-bold"
+                                                onclick="openVietQrModal(@k.MaHopDong, @k.SoKyHan, @tongPhaiTraLong, '@addInfoParam', 'Thanh toán Kỳ @k.SoKyHan Hợp đồng #HD@k.MaHopDong')">
+                                            <i class="fas fa-qrcode me-1"></i> Thanh toán VietQR
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
                         }
                     </tbody>
                 </table>
@@ -417,13 +412,8 @@
         </div>
     }
 
-    <!-- Tóm tắt công nợ theo hợp đồng -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3 border-bottom">
-            <h5 class="mb-0 fw-bold text-dark">
-                <i class="fas fa-list-alt text-primary me-2"></i>Tổng Hợp Công Nợ Theo Từng Hợp Đồng
-            </h5>
-        </div>
+    <details class="card shadow-sm border-0 mb-4">
+        <summary class="card-header bg-white py-3 fw-semibold">Tổng hợp theo hợp đồng</summary>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-center">
@@ -498,7 +488,7 @@
                 </table>
             </div>
         </div>
-    </div>
+    </details>
 </div>
 
 <!-- Modal quét mã VietQR -->
@@ -507,7 +497,7 @@
         <div class="modal-content shadow border-0">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title fw-bold" id="vietQrModalLabel">
-                    <i class="fas fa-qrcode me-2"></i>Thanh Toán VietQR - MBBank
+                    <i class="fas fa-qrcode me-2"></i>Thanh Toán VietQR - @bank.BankName
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -524,15 +514,15 @@
                 <div class="text-start bg-light p-3 rounded border mb-3">
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-muted">Ngân hàng:</span>
-                        <strong class="text-dark">MBBank (Ngân hàng Quân Đội)</strong>
+                        <strong class="text-dark">@bank.BankName</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-muted">Số tài khoản:</span>
-                        <strong class="text-brand font-monospace fs-5">0783406516</strong>
+                        <strong class="text-brand font-monospace fs-5">@bank.AccountNumber</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-muted">Chủ tài khoản:</span>
-                        <strong class="text-dark">PHAN MINH QUAN</strong>
+                        <strong class="text-dark">@bank.AccountName</strong>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">Nội dung chuyển khoản:</span>
@@ -566,7 +556,7 @@
             document.getElementById('modalAmountDisplay').innerText = formattedAmount;
             document.getElementById('modalAddInfo').innerText = addInfo;
 
-            var qrUrl = "https://img.vietqr.io/image/MB-0783406516-compact.png?amount=" + amount + "&addInfo=" + encodeURIComponent(addInfo) + "&accountName=PHAN%20MINH%20QUAN";
+            var qrUrl = "https://img.vietqr.io/image/" + encodeURIComponent(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(bank.BankCode))) + "-" + encodeURIComponent(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(bank.AccountNumber))) + "-compact.png?amount=" + amount + "&addInfo=" + encodeURIComponent(addInfo) + "&accountName=" + encodeURIComponent(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(bank.AccountName)));
             document.getElementById('modalQrImage').src = qrUrl;
 
             var modal = new bootstrap.Modal(document.getElementById('vietQrModal'));

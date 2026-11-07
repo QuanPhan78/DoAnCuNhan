@@ -14,7 +14,10 @@ class RentalRepository {
     return await _dataSource.createRental(request);
   }
 
-  Future<bool> cancelRental(String id) async {
-    return await _dataSource.cancelRental(id);
+  Future<RentalRequestModel> quoteRental(RentalRequestModel request) =>
+      _dataSource.quoteRental(request);
+
+  Future<void> requestCancellation(String id, String reason) async {
+    await _dataSource.requestCancellation(id, reason);
   }
 }

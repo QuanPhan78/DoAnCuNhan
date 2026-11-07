@@ -1,0 +1,59 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #f8fafc
+    FontSize 11.5
+    FontStyle bold
+}
+
+left to right direction
+
+actor "Khách hàng\n(Customer)" as ActKH
+actor "Cổng thanh toán\nVietQR / NAPAS 247" as GatewayBank <<Automated>>
+
+rectangle "PHÂN HỆ KHÁCH HÀNG (CUSTOMER PORTAL)" {
+    usecase "UC-KH01: Đăng ký & Đăng nhập tài khoản" as UC01
+    usecase "UC-KH02: Tìm kiếm & Lọc danh mục thiết bị" as UC02
+    usecase "UC-KH03: Đặt thuê & Giữ chỗ máy Serial" as UC03
+    usecase "UC-KH04: Ký hợp đồng điện tử Canvas & CCCD" as UC04
+    usecase "UC-KH05: Thanh toán đặt cọc VietQR động" as UC05
+    usecase "UC-KH06: Theo dõi lịch nợ & Trả góp kỳ hạn" as UC06
+    usecase "UC-KH07: Gửi yêu cầu báo sự cố kỹ thuật SLA" as UC07
+    usecase "UC-KH08: Yêu cầu gia hạn hợp đồng thuê" as UC08
+}
+
+ActKH --> UC01
+ActKH --> UC02
+ActKH --> UC03
+ActKH --> UC04
+ActKH --> UC05
+ActKH --> UC06
+ActKH --> UC07
+ActKH --> UC08
+
+UC05 <-- GatewayBank
+
+@enduml

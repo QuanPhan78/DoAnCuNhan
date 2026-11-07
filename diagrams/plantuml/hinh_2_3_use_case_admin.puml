@@ -1,0 +1,72 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #f8fafc
+    FontSize 11.5
+    FontStyle bold
+}
+
+left to right direction
+
+actor "Quản trị viên\n(Admin)" as ActAD
+actor "Nhân viên Kinh doanh\n(KinhDoanh)" as ActKD
+actor "Cổng Webhook\nNAPAS 247" as ActBank <<Automated>>
+
+rectangle "PHÂN HỆ QUẢN TRỊ & VẬN HÀNH (ADMIN & OPERATIONS)" {
+    usecase "UC-AD01: Quản trị người dùng & Phân quyền" as UCAD01
+    usecase "UC-AD02: Quản lý danh mục & Máy Serial" as UCAD02
+    usecase "UC-AD03: Thẩm định & Duyệt hợp đồng thuê" as UCAD03
+    usecase "UC-AD04: Cấu hình mã khuyến mãi (Voucher)" as UCAD04
+    usecase "UC-AD05: Giám sát công nợ & Tuổi nợ 4 cấp" as UCAD05
+    usecase "UC-AD06: Cấu hình chính sách lãi phạt & Ân hạn" as UCAD06
+    usecase "UC-AD07: Đối soát biến động số dư Webhook" as UCAD07
+    usecase "UC-AD08: Lập phiếu chi hoàn trả tiền cọc" as UCAD08
+    usecase "UC-AD09: Xuất báo cáo tài chính BI Excel" as UCAD09
+}
+
+' Liên kết Quản trị viên (Admin)
+ActAD --> UCAD01
+ActAD --> UCAD02
+ActAD --> UCAD03
+ActAD --> UCAD04
+ActAD --> UCAD05
+ActAD --> UCAD06
+ActAD --> UCAD07
+ActAD --> UCAD08
+ActAD --> UCAD09
+
+' Liên kết Nhân viên Kinh doanh (KinhDoanh) - Không trùng lặp lệnh
+ActKD --> UCAD02
+ActKD --> UCAD03
+ActKD --> UCAD04
+ActKD --> UCAD05
+ActKD --> UCAD08
+ActKD --> UCAD09
+
+' Cổng Webhook
+ActBank --> UCAD07
+
+@enduml

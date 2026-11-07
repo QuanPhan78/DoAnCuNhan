@@ -1,8 +1,6 @@
 @model IEnumerable<RentalSystem.Models.CartItem>
 @{
     ViewData["Title"] = "Thanh toán & Chốt ngày thuê";
-    decimal totalPerDay = Model != null ? Model.Sum(x => x.ThanhTien) : 0;
-    long totalPerDayLong = (long)totalPerDay;
 }
 
 <div class="row justify-content-center">
@@ -20,6 +18,7 @@
             <div class="card-body p-4">
                 <form asp-action="Checkout" method="post" id="checkoutForm">
                     @Html.AntiForgeryToken()
+                    <input type="hidden" name="ExpectedTotal" id="expectedTotal" />
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -53,11 +52,11 @@
                             <h5 class="fw-bold mb-3">Hóa đơn Tạm tính</h5>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Tổng tiền 1 ngày:</span>
-                                <span class="fw-bold">@totalPerDay.ToString("N0") đ</span>
+                                <span class="fw-bold" id="pricePerDay">—</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Số ngày thuê:</span>
-                                <span class="fw-bold text-brand fs-5" id="rentalDays">2 ngày</span>
+                                <span class="fw-bold text-brand fs-5" id="rentalDays">—</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2 d-none" id="discountRow">
                                 <span class="text-success"><i class="fas fa-tag me-1"></i> Giảm giá (<span id="discountPercentLabel">0</span>%):</span>
@@ -65,12 +64,12 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                                 <h5 class="fw-bold mb-0">TỔNG CỘNG:</h5>
-                                <h3 class="text-danger fw-bolder mb-0" id="finalTotal">@((totalPerDay * 2).ToString("N0")) đ</h3>
+                                <h3 class="text-danger fw-bolder mb-0" id="finalTotal">—</h3>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-brand btn-lg w-100 fw-bold shadow-sm">
+                    <button type="submit" id="submitRental" class="btn btn-brand btn-lg w-100 fw-bold shadow-sm">
                         <i class="fas fa-paper-plane me-2"></i> GỬI YÊU CẦU THUÊ MÁY
                     </button>
                 </form>
@@ -80,133 +79,90 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const startInput = document.getElementById("NgayBatDau");
-        const endInput = document.getElementById("NgayKetThuc");
-        const daysLabel = document.getElementById("rentalDays");
-        const finalTotal = document.getElementById("finalTotal");
-        const discountRow = document.getElementById("discountRow");
-        const discountPercentLabel = document.getElementById("discountPercentLabel");
-        const discountAmountLabel = document.getElementById("discountAmountLabel");
-        const btnApply = document.getElementById("btnApplyPromo");
-        const promoInput = document.getElementById("promoCodeInput");
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("checkoutForm");
+        const start = document.getElementById("NgayBatDau");
+        const end = document.getElementById("NgayKetThuc");
+        const promo = document.getElementById("promoCodeInput");
         const feedback = document.getElementById("promoFeedback");
+        const submit = document.getElementById("submitRental");
+        const expectedTotal = document.getElementById("expectedTotal");
+        const discountRow = document.getElementById("discountRow");
+        const money = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 });
+        let pending;
 
-        const pricePerDay = @totalPerDayLong;
-        let currentDiscountPercent = 0;
+        function clearQuote() {
+            pending?.abort();
+            expectedTotal.value = "";
+            submit.disabled = true;
+            document.getElementById("finalTotal").textContent = "—";
+            document.getElementById("pricePerDay").textContent = "—";
+            document.getElementById("rentalDays").textContent = "—";
+            discountRow.classList.add("d-none");
+        }
 
-        function updatePrice() {
-            if (!startInput.value || !endInput.value) {
-                daysLabel.innerText = "0 ngày";
-                finalTotal.innerText = "0 đ";
-                if (discountRow) discountRow.classList.add("d-none");
+        async function refreshQuote() {
+            clearQuote();
+            feedback.textContent = "";
+            end.min = start.value;
+            if (!start.value || !end.value || end.value < start.value) {
+                feedback.textContent = "Kiểm tra ngày nhận và ngày trả.";
                 return;
             }
 
-            // Chuyển sang Date theo ngày giờ cục bộ
-            let start = new Date(startInput.value + "T00:00:00");
-            let end = new Date(endInput.value + "T00:00:00");
-            
-            // Nếu ngày trả trước ngày nhận thì đặt lại ngày trả bằng ngày nhận
-            if (end < start) {
-                endInput.value = startInput.value;
-                end = start;
-            }
-            
-            let diffMs = end.getTime() - start.getTime();
-            let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-            
-            // Thuê trong ngày tính tròn 1 ngày
-            if (diffDays <= 0) {
-                diffDays = 1;
-            }
-            
-            daysLabel.innerText = diffDays + " ngày";
-            
-            let subtotal = pricePerDay * diffDays;
-            let discountAmount = 0;
-            if (currentDiscountPercent > 0) {
-                discountAmount = Math.round((subtotal * currentDiscountPercent) / 100);
-                if (discountRow) {
-                    discountRow.classList.remove("d-none");
-                    if (discountPercentLabel) discountPercentLabel.innerText = currentDiscountPercent;
-                    if (discountAmountLabel) discountAmountLabel.innerText = "-" + new Intl.NumberFormat('vi-VN').format(discountAmount) + " đ";
-                }
-            } else {
-                if (discountRow) discountRow.classList.add("d-none");
-            }
-
-            let finalAmount = Math.max(0, subtotal - discountAmount);
-            finalTotal.innerText = new Intl.NumberFormat('vi-VN').format(finalAmount) + " đ";
-        }
-
-        // Bắt cả sự kiện input (khi đang gõ) và change (khi chọn từ lịch popup)
-        startInput.addEventListener("input", function() {
-            endInput.setAttribute('min', startInput.value);
-            updatePrice();
-        });
-        startInput.addEventListener("change", function() {
-            endInput.setAttribute('min', startInput.value);
-            updatePrice();
-        });
-
-        endInput.addEventListener("input", updatePrice);
-        endInput.addEventListener("change", updatePrice);
-
-        // Xử lý nút áp dụng mã khuyến mãi
-        if (btnApply && promoInput) {
-            btnApply.addEventListener("click", async function() {
-                const code = promoInput.value.trim();
-                if (!code) {
-                    currentDiscountPercent = 0;
-                    feedback.className = "small mt-2 text-danger";
-                    feedback.innerText = "Vui lòng nhập mã khuyến mãi!";
-                    updatePrice();
+            const request = new AbortController();
+            pending = request;
+            const fields = new FormData(form);
+            try {
+                const response = await fetch('@Url.Action("Quote", "Cart")', {
+                    method: "POST",
+                    body: fields,
+                    signal: request.signal
+                });
+                const quote = await response.json();
+                if (request.signal.aborted) return;
+                if (!response.ok) {
+                    feedback.textContent = quote.message || "Không thể kiểm tra đơn thuê.";
                     return;
                 }
 
-                try {
-                    btnApply.disabled = true;
-                    btnApply.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang kiểm tra...';
-
-                    const formData = new FormData();
-                    formData.append("code", code);
-
-                    const response = await fetch("/Cart/CheckPromo", {
-                        method: "POST",
-                        body: formData
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        currentDiscountPercent = data.discountPercent || 0;
-                        feedback.className = "small mt-2 text-success fw-bold";
-                        feedback.innerHTML = '<i class="fas fa-check-circle me-1"></i> ' + data.message;
-                    } else {
-                        currentDiscountPercent = 0;
-                        feedback.className = "small mt-2 text-danger fw-bold";
-                        feedback.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> ' + data.message;
-                    }
-                } catch (err) {
-                    currentDiscountPercent = 0;
-                    feedback.className = "small mt-2 text-danger";
-                    feedback.innerText = "Lỗi khi kiểm tra mã khuyến mãi. Vui lòng thử lại!";
-                } finally {
-                    btnApply.disabled = false;
-                    btnApply.innerHTML = "Áp dụng";
-                    updatePrice();
+                document.getElementById("pricePerDay").textContent = money.format(quote.subtotal / quote.rentalDays) + " đ";
+                document.getElementById("rentalDays").textContent = quote.rentalDays + " ngày";
+                document.getElementById("finalTotal").textContent = money.format(quote.totalAmount) + " đ";
+                if (quote.promoCode) {
+                    discountRow.classList.remove("d-none");
+                    document.getElementById("discountPercentLabel").textContent = quote.discountPercent;
+                    document.getElementById("discountAmountLabel").textContent = "-" + money.format(quote.discountAmount) + " đ";
+                    feedback.textContent = "Đã áp dụng mã " + quote.promoCode + ".";
                 }
-            });
-
-            promoInput.addEventListener("keydown", function(e) {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    btnApply.click();
-                }
-            });
+                expectedTotal.value = String(quote.totalAmount);
+                submit.disabled = false;
+            } catch {
+                if (!request.signal.aborted) feedback.textContent = "Không thể tải giá thuê. Vui lòng thử lại.";
+            }
         }
-        
-        // Tính toán ngay khi trang vừa tải xong
-        updatePrice();
+
+        document.getElementById("btnApplyPromo").addEventListener("click", refreshQuote);
+        start.addEventListener("change", refreshQuote);
+        end.addEventListener("change", refreshQuote);
+        promo.addEventListener("input", () => {
+            clearQuote();
+            if (promo.value.trim()) {
+                feedback.textContent = "Bấm Áp dụng để kiểm tra mã.";
+            } else {
+                refreshQuote();
+            }
+        });
+        promo.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                refreshQuote();
+            }
+        });
+        form.addEventListener("submit", event => {
+            if (!expectedTotal.value) event.preventDefault();
+            else submit.disabled = true;
+        });
+        refreshQuote();
     });
 </script>

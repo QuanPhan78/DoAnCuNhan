@@ -1,0 +1,69 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Mở giao diện Ký hợp đồng điện tử (SignContract);
+:Vẽ chữ ký tay trực tiếp trên thẻ HTML5 Canvas\n(<canvas id="signature-pad">);
+:Tải lên tệp ảnh CCCD mặt trước & mặt sau;
+:Bấm nút "Xác Nhận Ký Hợp Đồng";
+
+|Hệ thống RentalSystem|
+:Tiếp nhận chữ ký số dạng Base64 DataURL;
+:Kiểm tra dung lượng (< 256 KB) & Xác thực Magic Bytes PNG\n(0x89 0x50 0x4E 0x47);
+:Kiểm tra Magic Bytes ảnh CCCD (PNG, JPG 0xFF 0xD8, WEBP);
+
+if (Tệp chữ ký & Ảnh CCCD hợp lệ?) then (Không hợp lệ)
+    |Khách hàng|
+    :Thông báo lỗi định dạng tệp chữ ký hoặc CCCD;
+    detach
+else (Hợp lệ)
+    |Hệ thống RentalSystem|
+    :Lưu tệp ảnh chữ ký PNG vào thư mục bảo mật wwwroot/signatures/;\n:Lưu ảnh CCCD vào wwwroot/cccd/;\n:Cập nhật HopDong (ChuKyKhachHang, AnhCccdMatTruoc, AnhCccdMatSau);
+
+    |Nhân viên Kinh doanh|
+    :Thẩm định thông tin pháp lý & Hồ sơ khách hàng;
+    :Ký số đại diện công ty xác nhận phê duyệt hợp đồng;
+
+    |Kỹ thuật viên|
+    :Kiểm tra thiết bị vật lý tại kho máy Serial;
+    :Quét mã vạch Barcode/QR Serial thiết bị cụ thể;
+    :Tiến hành vận chuyển & Bàn giao tận nơi cho khách;
+    :Đồng kiểm tình trạng ngoại quan & Khởi động máy;
+
+    |Hệ thống RentalSystem|
+    :Cập nhật ThietBi.TrangThai = 1 (Đang thuê);\n:Ghi nhận lịch sử luân chuyển thiết bị (LichSuThietBi);\n:Kết xuất Biên bản bàn giao máy PDF/In ấn (DocumentController);
+
+    |Khách hàng|
+    :Ký nhận Biên bản bàn giao & Tiếp nhận thiết bị sử dụng;
+    stop
+endif
+
+@enduml

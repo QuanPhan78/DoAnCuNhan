@@ -71,6 +71,9 @@ if (command is "prepare" or "reset")
     using var tx = await db.Database.BeginTransactionAsync();
     if (command == "reset" && await db.VaiTros.AnyAsync()) DbInitializer.ClearData(db);
     await Seed();
+    await db.Database.ExecuteSqlRawAsync(DatabaseSchema.ReadSql("002_MaintenanceAssignments.sql"));
+    await db.Database.ExecuteSqlRawAsync(DatabaseSchema.ReadSql("003_FirstContractPayment.sql"));
+    await db.Database.ExecuteSqlRawAsync(DatabaseSchema.ReadSql("004_ContractSettlements.sql"));
     await tx.CommitAsync();
     db.ChangeTracker.Clear();
     await Check();
@@ -302,6 +305,7 @@ async Task Export(string path)
         ChiTietHopDongs = await db.ChiTietHopDongs.AsNoTracking().ToListAsync(),
         PhieuThus = await db.PhieuThus.AsNoTracking().ToListAsync(),
         PhieuChis = await db.PhieuChis.AsNoTracking().ToListAsync(),
+        ContractSettlements = await db.ContractSettlements.AsNoTracking().ToListAsync(),
         PhieuBaoTris = await db.PhieuBaoTris.AsNoTracking().ToListAsync(),
         BienBanBanGiaos = await db.BienBanBanGiaos.AsNoTracking().ToListAsync(),
         ThongBaos = await db.ThongBaos.AsNoTracking().ToListAsync(),

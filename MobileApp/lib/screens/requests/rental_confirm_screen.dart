@@ -1,3 +1,4 @@
+import '../../providers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/rental_request_model.dart';
@@ -18,21 +19,16 @@ class RentalConfirmScreen extends StatelessWidget {
   const RentalConfirmScreen({super.key, required this.requestData});
 
   void _onConfirm(BuildContext context) async {
-    // Hiển thị dialog đang tải
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      ),
-    );
+    final provider = context.read<RentalProvider>();
+    if (provider.isLoading) return;
 
     try {
       // Lưu đơn thuê và tạo hợp đồng thật trong CSDL SQL Server
-      final createdRental = await context.read<RentalProvider>().createRental(requestData);
+      final createdRental = await provider.createRental(requestData);
 
       // Cập nhật lại danh sách hợp đồng cho người dùng
       if (context.mounted) {
+        context.read<CartProvider>().clear();
         final auth = context.read<AuthProvider>();
         if (auth.currentUser != null) {
           context.read<ContractProvider>().fetchContracts(
@@ -43,8 +39,6 @@ class RentalConfirmScreen extends StatelessWidget {
       }
 
       if (context.mounted) {
-        Navigator.pop(context); // Đóng loading dialog
-
         final contractCode = createdRental.contractId ?? 'Hợp đồng mới';
 
         // Hiển thị thông báo thành công
@@ -57,10 +51,10 @@ class RentalConfirmScreen extends StatelessWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Tạo hợp đồng thành công!', style: AppTextStyles.h2, textAlign: TextAlign.center),
+                Text('Đã gửi yêu cầu thuê', style: AppTextStyles.h2, textAlign: TextAlign.center),
                 const SizedBox(height: 12),
                 Text(
-                  'Mã hợp đồng: $contractCode\nYêu cầu thuê đã được lưu vào hệ thống và CSDL SQL Server.', 
+                  '$contractCode · Chờ duyệt\nTổng tiền: ${_money(createdRental.estimatedAmount)}\nMở hợp đồng để ký và thanh toán.',
                   style: AppTextStyles.bodySecondary, 
                   textAlign: TextAlign.center,
                 ),
@@ -71,7 +65,7 @@ class RentalConfirmScreen extends StatelessWidget {
                 text: 'Xem hợp đồng',
                 onPressed: () {
                   Navigator.pop(ctx); // Đóng dialog
-                  Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
+                  Navigator.of(context).pushReplacementNamed('/contracts');
                 },
                 isFullWidth: true,
               ),
@@ -81,7 +75,6 @@ class RentalConfirmScreen extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Đóng loading dialog
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Lỗi tạo hợp đồng: ${e.toString().replaceAll("Exception: ", "")}'),
           backgroundColor: AppColors.error,
@@ -92,6 +85,7 @@ class RentalConfirmScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final submitting = context.watch<RentalProvider>().isLoading;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(title: 'Xác nhận thông tin thuê'),
@@ -120,7 +114,7 @@ class RentalConfirmScreen extends StatelessWidget {
                 icon: Icons.calendar_today_rounded,
                 content: Column(
                   children: [
-                    _buildInfoRow('Hình thức', requestData.rentalType),
+                    _buildInfoRow('Số ngày thuê', '${requestData.rentalDays ?? '—'}'),
                     _buildDivider(),
                     _buildInfoRow('Bắt đầu', '${requestData.startDate.day}/${requestData.startDate.month}/${requestData.startDate.year}'),
                     _buildDivider(),
@@ -150,14 +144,17 @@ class RentalConfirmScreen extends StatelessWidget {
               _buildSectionCard(
                 title: 'Chi phí dự kiến',
                 icon: Icons.payments_outlined,
-                content: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                content: Column(
                   children: [
-                    const Text('Tổng tiền:', style: AppTextStyles.h2),
-                    Text(
-                      '${NumberFormat('#,###').format(requestData.estimatedAmount)} VNĐ', 
-                      style: AppTextStyles.h2.copyWith(color: AppColors.error),
-                    ),
+                    _buildInfoRow('Tiền thuê', _money(requestData.items.fold<double>(0, (sum, item) => sum + item.subtotal))),
+                    if (requestData.promoCode != null) ...[
+                      _buildDivider(),
+                      _buildInfoRow('Giảm giá (${requestData.promoCode})', '-${_money(requestData.discountAmount)}'),
+                    ],
+                    _buildDivider(),
+                    _buildInfoRow('Tổng tiền thuê', _money(requestData.estimatedAmount)),
+                      _buildDivider(),
+                      _buildInfoRow('Cọc bảo đảm thiết bị', _money(requestData.depositRequired)),
                   ],
                 ),
               ),
@@ -169,7 +166,7 @@ class RentalConfirmScreen extends StatelessWidget {
                   Expanded(
                     child: CustomButton(
                       text: 'QUAY LẠI',
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: submitting ? null : () => Navigator.pop(context),
                       type: ButtonType.outline,
                     ),
                   ),
@@ -177,7 +174,8 @@ class RentalConfirmScreen extends StatelessWidget {
                   Expanded(
                     child: CustomButton(
                       text: 'XÁC NHẬN THUÊ',
-                      onPressed: () => _onConfirm(context),
+                      onPressed: submitting ? null : () => _onConfirm(context),
+                      isLoading: submitting,
                       type: ButtonType.primary,
                     ),
                   ),
@@ -190,6 +188,8 @@ class RentalConfirmScreen extends StatelessWidget {
       ),
     );
   }
+
+  String _money(double value) => '${NumberFormat('#,##0.##', 'vi_VN').format(value)} đ';
 
   Widget _buildSectionCard({required String title, required IconData icon, required Widget content}) {
     return Container(

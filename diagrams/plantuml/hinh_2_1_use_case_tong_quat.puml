@@ -1,0 +1,109 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+skinparam package {
+    BorderColor #000000
+    BackgroundColor #f8fafc
+    FontSize 11
+    FontStyle bold
+}
+
+left to right direction
+
+' ==============================================================================
+' 4 VAI TRÒ CHUẨN RBAC & CỔNG THANH TOÁN TỰ ĐỘNG
+' ==============================================================================
+actor "Khách hàng\n(KhachHang)" as ActKH
+actor "Nhân viên Kinh doanh\n(KinhDoanh)" as ActKD
+actor "Kỹ thuật viên\n(KyThuat)" as ActKT
+actor "Quản trị viên\n(Admin)" as ActAD
+actor "Cổng thanh toán\nVietQR / NAPAS 247" as ActBank <<Automated>>
+
+rectangle "HỆ THỐNG QUẢN LÝ VÀ CHO THUÊ THIẾT BỊ RENTALSYSTEM" {
+
+    package "Phân hệ Khách hàng" {
+        usecase "UC-01: Đăng ký & Đăng nhập" as UC01
+        usecase "UC-02: Đặt thuê & Giữ chỗ máy" as UC02
+        usecase "UC-03: Ký hợp đồng điện tử Canvas" as UC03
+    }
+
+    package "Phân hệ Kinh doanh & Vận hành" {
+        usecase "UC-04: Thẩm định duyệt hợp đồng" as UC04
+        usecase "UC-05: Quản lý danh mục & Máy Serial" as UC05
+        usecase "UC-06: Giám sát công nợ 4 cấp" as UC06
+    }
+
+    package "Phân hệ Kỹ thuật & Kho máy" {
+        usecase "UC-07: Xuất kho & Bàn giao máy" as UC07
+        usecase "UC-08: Tiếp nhận xử lý sự cố SLA" as UC08
+        usecase "UC-09: Thu hồi & Nghiệm thu máy" as UC09
+    }
+
+    package "Phân hệ Tài chính & VietQR Webhook" {
+        usecase "UC-10: Thanh toán VietQR động" as UC10
+        usecase "UC-11: Đối soát tự động Webhook" as UC11
+        usecase "UC-12: Lập phiếu chi hoàn cọc" as UC12
+    }
+}
+
+' ==============================================================================
+' LIÊN KẾT TÁC NHÂN - CA SỬ DỤNG (THẲNG, TRỰC TIẾP, KHÔNG CẮT CHÉO)
+' ==============================================================================
+' Khách hàng
+ActKH --> UC01
+ActKH --> UC02
+ActKH --> UC03
+ActKH --> UC08
+ActKH --> UC10
+
+' Kinh doanh
+ActKD --> UC04
+ActKD --> UC05
+ActKD --> UC06
+ActKD --> UC12
+
+' Kỹ thuật viên
+ActKT --> UC05
+ActKT --> UC07
+ActKT --> UC08
+ActKT --> UC09
+
+' Quản trị viên
+ActAD --> UC04
+ActAD --> UC05
+ActAD --> UC06
+ActAD --> UC12
+
+' Cổng thanh toán VietQR / NAPAS 247
+ActBank --> UC10
+ActBank --> UC11
+
+@enduml

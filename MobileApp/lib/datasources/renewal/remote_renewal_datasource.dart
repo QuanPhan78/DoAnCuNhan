@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/renewal_model.dart';
 import '../../services/api_config.dart';
 import 'renewal_datasource.dart';
@@ -12,20 +12,14 @@ class RemoteRenewalDataSource implements RenewalDataSource {
 
   @override
   Future<bool> submitRenewalRequest(RenewalModel request) async {
-    try {
-      final url = Uri.parse('$baseUrl/contracts/${request.contractId}/renew');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'duration': request.duration,
-          'notes': request.notes,
-          'customerId': request.customerId,
-        }),
-      );
-      return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (_) {
-      return false;
-    }
+    final response = await ApiSession.post(
+      Uri.parse('$baseUrl/contracts/${request.contractId}/renew'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'days': int.tryParse(request.duration), 'duration': request.duration, 'notes': request.notes}),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return true;
+    dynamic data;
+    try { data = jsonDecode(utf8.decode(response.bodyBytes)); } on FormatException { data = null; }
+    throw Exception(data is Map ? data['message'] ?? 'Không gửi được yêu cầu gia hạn.' : 'Không gửi được yêu cầu gia hạn.');
   }
 }

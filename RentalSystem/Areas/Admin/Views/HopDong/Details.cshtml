@@ -1,26 +1,42 @@
 @model RentalSystem.Models.HopDong
+@using System.Globalization
 @using RentalSystem.Common
+@using RentalSystem.Services
 @{
-    ViewData["Title"] = "Chi tiết Hợp đồng #" + Model.MaHopDong;
+    ViewData["Title"] = "Hợp đồng #" + Model.MaHopDong;
     var chiTiets = ViewBag.ChiTiets as IEnumerable<RentalSystem.Models.ChiTietHopDong>;
-    var (calcTotalReceivable, calcTotalCollected, calcRemainingDebt) = DebtCalculationHelper.CalculateContractDebt(Model);
+    var (_, calcTotalCollected, calcRemainingDebt) = DebtCalculationHelper.CalculateContractDebt(Model);
     decimal damagesSafe = Model.PhieuBaoTris?.Sum(b => b.PhiDenBu) ?? 0m;
     decimal tienCocDisplay = Model.TienCocBaoDamMay > 0 ? Model.TienCocBaoDamMay : Model.TienDaCoc;
+    bool canManage = User.IsInRole("Admin") || User.IsInRole("KinhDoanh");
+    var missingHandover = new List<string>();
+    if (string.IsNullOrWhiteSpace(Model.ChuKyKhachHang)) missingHandover.Add("chữ ký khách hàng");
+    if (string.IsNullOrWhiteSpace(Model.AnhCCCD_Truoc)) missingHandover.Add("ảnh mặt trước CCCD");
+    if (string.IsNullOrWhiteSpace(Model.ChuKyNhanVien)) missingHandover.Add("chữ ký đối chiếu");
+    bool hasCustomerDocuments = !string.IsNullOrWhiteSpace(Model.ChuKyKhachHang) && !string.IsNullOrWhiteSpace(Model.AnhCCCD_Truoc);
+    var kyHans = ViewBag.KyHans as IEnumerable<RentalSystem.Models.KyHanThanhToan>;
+    var phieuThus = ViewBag.PhieuThus as IEnumerable<RentalSystem.Models.PhieuThu>;
+    bool pendingFirstPayment = FirstContractPayment.IsPendingHandover(Model);
+    var firstInstallment = kyHans?.FirstOrDefault(k => k.SoKyHan == 1 && k.TrangThai != 3);
+    var firstBalance = FirstContractPayment.Balance(Model, phieuThus, firstInstallment);
+    bool firstPaymentReady = !pendingFirstPayment || (firstInstallment != null && firstBalance.Total == 0);
+    var settlement = ViewBag.Settlement as SettlementPreview;
 }
 
 <div class="page-header">
     <div class="d-flex align-items-center flex-wrap gap-2">
         <a href="@(ViewBag.ReturnUrl ?? (User.IsInRole("KyThuat") ? "/Admin/PhanCong/MyTasks" : "/Admin/HopDong"))" class="action-btn me-2" title="Quay lại"><i class="fas fa-arrow-left"></i></a>
-        <h3 class="page-title mb-0"><i class="fas fa-file-contract"></i> Chi tiết Hợp đồng #@Model.MaHopDong</h3>
-        @if (Model.TrangThai == 0) { <span class="status-pill ms-2"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
+        <h3 class="page-title mb-0"><i class="fas fa-file-contract"></i> Hợp đồng #@Model.MaHopDong</h3>
+        @if (Model.TrangThai == 0 && Model.YeuCauHuy) { <span class="status-pill ms-2"><span class="status-dot dot-danger"></span> Yêu cầu hủy</span> }
+        else if (Model.TrangThai == 0) { <span class="status-pill ms-2"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
         else if (Model.TrangThai == 1) { <span class="status-pill ms-2"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
         else if (Model.TrangThai == 4) { <span class="status-pill ms-2"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span> }
-        else if (Model.TrangThai == 2) { <span class="status-pill ms-2"><span class="status-dot dot-success"></span> Đã hoàn tất</span> }
+        else if (Model.TrangThai == 2) { <span class="status-pill ms-2"><span class="status-dot dot-success"></span> Hoàn thành</span> }
         else if (Model.TrangThai == 3) { <span class="status-pill ms-2"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
     </div>
     <div>
         <a href="/Document/InHopDong/@Model.MaHopDong" target="_blank" class="btn btn-outline-navy">
-            <i class="fas fa-print me-1"></i> In Hợp Đồng
+            <i class="fas fa-print me-1"></i> In hợp đồng
         </a>
     </div>
 </div>
@@ -50,9 +66,9 @@
     <div class="alert alert-warning border shadow-sm mb-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
-                <h5 class="alert-heading mb-1"><i class="fas fa-calendar-plus me-2"></i> Khách hàng yêu cầu GIA HẠN HỢP ĐỒNG</h5>
+                <h5 class="alert-heading mb-1"><i class="fas fa-calendar-plus me-2"></i> Yêu cầu gia hạn</h5>
                 <p class="mb-0">
-                    <strong>Số ngày gia hạn thêm:</strong> <span class="badge-soft-navy font-monospace">+@soNgayYc ngày</span> | 
+                    <strong>Thời gian thêm:</strong> <span class="badge-soft-navy font-monospace">+@soNgayYc ngày</span> |
                     <strong>Lý do:</strong> @lyDoYc
                     @if (pendingYcAdmin != null)
                     {
@@ -68,7 +84,7 @@
                         <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                         <input type="hidden" name="id" value="@Model.MaHopDong" />
                         <input type="hidden" name="chapNhan" value="true" />
-                        <button type="submit" class="btn btn-success fw-bold" onclick="return confirm('Xác nhận DUYỆT gia hạn hợp đồng? Hệ thống sẽ kiểm tra trùng lịch và tính thêm chi phí.');">
+                        <button type="submit" class="btn btn-success fw-bold" onclick="return confirm('Duyệt gia hạn hợp đồng?');">
                             <i class="fas fa-check me-1"></i> Đồng ý Gia Hạn
                         </button>
                     </form>
@@ -92,7 +108,7 @@
     <div class="alert alert-danger border shadow-sm mb-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
-                <h5 class="alert-heading mb-1"><i class="fas fa-ban me-2"></i> Khách hàng yêu cầu HỦY ĐƠN HÀNG</h5>
+                <h5 class="alert-heading mb-1"><i class="fas fa-ban me-2"></i> Yêu cầu hủy đơn</h5>
                 <p class="mb-0">
                     <strong>Thời gian gửi:</strong> @Model.NgayYeuCauHuy?.ToString("dd/MM/yyyy HH:mm") | 
                     <strong>Lý do hủy:</strong> @(string.IsNullOrEmpty(Model.LyDoHuy) ? "Không có" : Model.LyDoHuy)
@@ -102,11 +118,12 @@
             {
                 <div>
                     <form asp-action="UpdateStatus" method="post" style="display:inline">
+                <input type="hidden" name="settlementToken" value="@settlement?.Token" />
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                         <input type="hidden" name="id" value="@Model.MaHopDong" />
                         <input type="hidden" name="status" value="3" />
-                        <button type="submit" class="btn btn-danger fw-bold" onclick="return confirm('Xác nhận DUYỆT HỦY đơn theo yêu cầu của khách hàng? Thiết bị sẽ được hoàn về kho.');">
+                        <button type="submit" class="btn btn-danger fw-bold" onclick="return confirm('Duyệt hủy đơn và giải phóng thiết bị giữ chỗ?');">
                             <i class="fas fa-check me-1"></i> Chấp nhận Hủy Đơn
                         </button>
                     </form>
@@ -116,77 +133,181 @@
     </div>
 }
 
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
+@if (canManage && (Model.TrangThai is 1 or 4 || (Model.TrangThai == 0 && !Model.YeuCauHuy)))
+{
+    <section class="card border mb-4" aria-labelledby="contract-next-action">
+        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h5 id="contract-next-action" class="mb-1">Việc tiếp theo</h5>
+                @if (Model.TrangThai == 0)
+                {
+                    @if (missingHandover.Count > 0)
+                    {
+                        <p class="mb-0">Chưa thể giao máy. Còn thiếu @string.Join(", ", missingHandover).</p>
+                    }
+                    else if (!firstPaymentReady)
+                    {
+                        <p class="mb-0">Chờ xác nhận đủ khoản thanh toán lần đầu.</p>
+                    }
+                    else
+                    {
+                        <p class="mb-0">Hồ sơ đã đủ. Xác nhận khi đã giao máy cho khách.</p>
+                    }
+                }
+                else if (Model.TrangThai == 1)
+                {
+                    <p class="mb-0">Xác nhận khi khách trả máy.</p>
+                }
+                else
+                {
+                    <p class="mb-0">Kiểm tra công nợ và tiền cọc trước khi quyết toán.</p>
+                }
+            </div>
+            <form asp-action="UpdateStatus" method="post" class="d-flex flex-wrap gap-2 align-items-start">
+                <input type="hidden" name="settlementToken" value="@settlement?.Token" />
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.MaHopDong" />
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                @if (Model.TrangThai == 0)
+                {
+                    @if (hasCustomerDocuments && string.IsNullOrWhiteSpace(Model.ChuKyNhanVien))
+                    {
+                        <button type="button" class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#modalAdminSign">Ký đối chiếu</button>
+                    }
+                    else
+                    {
+                        <button type="submit" name="status" value="1" class="btn btn-navy" disabled="@(missingHandover.Count > 0 || !firstPaymentReady || (pendingFirstPayment && Model.YeuCauHuy))"
+                                onclick="return confirm('Xác nhận đã giao máy cho khách?');">Giao máy</button>
+                    }
+                    @if (!Model.YeuCauHuy)
+                    {
+                        <button type="submit" name="status" value="3" class="btn btn-outline-danger"
+                                onclick="return confirm('Hủy hợp đồng và giải phóng thiết bị giữ chỗ?');">Hủy đơn</button>
+                    }
+                }
+                else if (Model.TrangThai == 1)
+                {
+                    <button type="submit" name="status" value="4" class="btn btn-navy"
+                            onclick="return confirm('Xác nhận đã nhận lại máy và chuyển sang chờ quyết toán?');">Nhận lại máy</button>
+                    <details>
+                        <summary class="btn btn-outline-secondary">Thao tác khác</summary>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
+                                    data-bs-target="#modalTraMayTruocHan">Trả máy trước hạn</button>
+
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    <button type="submit" name="status" value="2" class="btn btn-navy"
+                            onclick="return confirm('Xác nhận quyết toán công nợ và tiền cọc?');">Quyết toán</button>
+                }
+            </form>
+        </div>
+    </section>
+}
+
+@if (settlement != null && (settlement.Completed || Model.TrangThai == 0 || Model.TrangThai == 4))
+{
+    <partial name="_SettlementPreview" model="settlement" />
+}
+
+@if (pendingFirstPayment && firstInstallment != null)
+{
+    <section class="card border mb-4" aria-labelledby="first-payment">
+        <div class="card-body">
+            <h5 id="first-payment">Thanh toán lần đầu</h5>
+            <div class="d-flex flex-wrap gap-3 mb-3">
+                <span>Cọc còn thiếu <strong>@firstBalance.Deposit.ToString("N0") đ</strong></span>
+                <span>Tiền thuê kỳ đầu còn thiếu <strong>@firstBalance.Rent.ToString("N0") đ</strong></span>
+                <span>Tổng còn thiếu <strong>@firstBalance.Total.ToString("N0") đ</strong></span>
+            </div>
+            @if (firstBalance.Total == 0)
+            {
+                <span class="text-success fw-semibold">Đã nhận đủ khoản đầu</span>
+            }
+            else if (canManage && !Model.YeuCauHuy)
+            {
+                <p class="mb-2">Kiểm tra tiền đã vào tài khoản với nội dung <strong>@FirstContractPayment.TransferReference(Model.MaHopDong)</strong>.</p>
+                <form asp-action="XacNhanThanhToanLanDau" method="post" class="row g-2 align-items-end"
+                      onsubmit="return confirm('Xác nhận đã đối chiếu số tiền và mã giao dịch với ngân hàng?');">
+                    <input type="hidden" name="id" value="@Model.MaHopDong" />
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                    <div class="col-sm-4">
+                        <label for="first-payment-amount" class="form-label">Số tiền thực nhận (đ)</label>
+                        <input id="first-payment-amount" name="soTien" type="number" min="1" step="1" class="form-control" required />
+                    </div>
+                    <div class="col-sm-4">
+                        <label for="first-payment-reference" class="form-label">Mã giao dịch ngân hàng</label>
+                        <input id="first-payment-reference" name="maGiaoDich" maxlength="100" class="form-control" required />
+                    </div>
+                    <div class="col-auto"><button class="btn btn-navy" type="submit">Xác nhận chuyển khoản</button></div>
+                </form>
+            }
+        </div>
+    </section>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
         <div class="card border h-100">
             <div class="card-header bg-light">
-                <h5 class="mb-0">Thông tin Khách hàng</h5>
+                <h5 class="mb-0">Khách hàng</h5>
             </div>
             <div class="card-body">
-                <p class="mb-2"><strong>Họ tên:</strong> @(Model.KhachHang?.HoTen ?? "Chưa cập nhật")</p>
+                <p class="mb-2"><strong>@(Model.KhachHang?.HoTen ?? "Chưa có tên")</strong></p>
                 <p class="mb-2"><strong>Điện thoại:</strong> @(Model.KhachHang?.SoDienThoai ?? "Chưa cập nhật")</p>
                 <p class="mb-2"><strong>Email:</strong> @(Model.KhachHang?.Email ?? "Chưa cập nhật")</p>
-                <p class="mb-2"><strong>CCCD:</strong> @(Model.KhachHang?.CCCD ?? "Chưa cập nhật")</p>
+                @if (!User.IsInRole("KyThuat")) { <p class="mb-2"><strong>CCCD:</strong> @(Model.KhachHang?.CCCD ?? "Chưa cập nhật")</p> }
                 <p class="mb-2"><strong>Địa chỉ:</strong> @(Model.KhachHang?.DiaChi ?? "Chưa cập nhật")</p>
+                <p class="mb-2"><strong>Ngày nhận máy:</strong> @Model.NgayBatDau.ToString("dd/MM/yyyy")</p>
+                <p class="mb-2"><strong>Ngày trả máy:</strong> @Model.NgayKetThuc.ToString("dd/MM/yyyy")</p>
+                <p class="mb-2"><strong>Số ngày thuê:</strong> @((int)Math.Max(1, (Model.NgayKetThuc.Date - Model.NgayBatDau.Date).TotalDays)) ngày</p>
+                <p class="mb-2"><strong>Ngày ký:</strong> @(Model.NgayKy?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa ký")</p>
                 <p class="mb-0"><strong>Nhân viên phụ trách:</strong> @(Model.NhanVien?.HoTen ?? "Hệ thống tự động")</p>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-lg-7">
         <div class="card border h-100">
             <div class="card-header bg-light">
-                <h5 class="mb-0">Thời gian &amp; Tài chính</h5>
+                <h5 class="mb-0">Tóm tắt thanh toán</h5>
             </div>
             <div class="card-body">
-                <p class="mb-2"><strong>Ngày nhận máy:</strong> @Model.NgayBatDau.ToString("dd/MM/yyyy")</p>
-                <p class="mb-2"><strong>Ngày trả máy:</strong> @Model.NgayKetThuc.ToString("dd/MM/yyyy")</p>
-                <p class="mb-2"><strong>Số ngày thuê:</strong> @((int)Math.Max(1, (Model.NgayKetThuc.Date - Model.NgayBatDau.Date).TotalDays)) ngày</p>
-                <hr class="my-2" />
-                <p class="mb-2 text-danger fw-bold"><strong>1. Tổng tiền thuê hợp đồng:</strong> @Model.TongTien.ToString("N0") đ</p>
-                <p class="mb-2 text-primary fw-bold"><strong>2. Tiền cọc bảo đảm máy:</strong> @tienCocDisplay.ToString("N0") đ</p>
-                <p class="mb-2 text-warning fw-bold"><strong>3. Phí đền bù hư hại bảo trì:</strong> @damagesSafe.ToString("N0") đ</p>
-                <p class="mb-2 text-success fw-bold"><strong>4. Tổng đã thanh toán:</strong> @calcTotalCollected.ToString("N0") đ</p>
-                <p class="mb-2 text-danger fw-bold"><strong>5. Thực tế còn nợ:</strong> @(Math.Max(0m, calcRemainingDebt).ToString("N0")) đ</p>
-                <p class="mb-2"><strong>Số kỳ trả góp:</strong> <span class="badge-soft-neutral font-monospace">@Model.SoKyHan kỳ</span></p>
-                <p class="mb-2"><strong>Ngày ký HĐ:</strong>
-                    @if (Model.NgayKy.HasValue) {
-                        @Model.NgayKy.Value.ToString("dd/MM/yyyy HH:mm")
-                    } else {
-                        <span class="text-muted fst-italic">Chưa ký</span>
-                    }
-                </p>
-                <p class="mb-2"><strong>Trạng thái HĐ:</strong>
-                    @if (Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
-                    else if (Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
-                    else if (Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span> }
-                    else if (Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã hoàn tất</span> }
-                    else if (Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
-                </p>
-                <p class="mb-2"><strong>Trạng thái TT:</strong>
-                    @if (Model.TrangThaiThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa thanh toán</span> }
-                    else if (Model.TrangThaiThanhToan == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đã đặt cọc</span> }
-                    else if (Model.TrangThaiThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Còn nợ</span> }
-                    else if (Model.TrangThaiThanhToan == 3) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã tất toán đủ</span> }
+                <p class="mb-2 text-danger fw-bold"><strong>Tiền thuê:</strong> @Model.TongTien.ToString("N0") đ</p>
+                <p class="mb-2 text-primary fw-bold"><strong>Cọc bảo đảm:</strong> @tienCocDisplay.ToString("N0") đ</p>
+                <p class="mb-2 text-warning fw-bold"><strong>Phí bồi thường:</strong> @damagesSafe.ToString("N0") đ</p>
+                <p class="mb-2 text-success fw-bold"><strong>Đã thu tiền thuê và bồi thường:</strong> @calcTotalCollected.ToString("N0") đ</p>
+                <p class="mb-2 text-danger fw-bold"><strong>Còn nợ tiền thuê và bồi thường:</strong> @(Math.Max(0m, calcRemainingDebt).ToString("N0")) đ</p>
+                <p class="mb-2"><strong>Số kỳ thanh toán:</strong> <span class="badge-soft-neutral font-monospace">@Model.SoKyHan kỳ</span></p>
+                <p class="mb-2"><strong>Thanh toán:</strong>
+                    <span class="status-pill"><span class="status-dot dot-@ContractPaymentStatus.BadgeTone(Model.TrangThaiThanhToan)"></span> @ContractPaymentStatus.Label(Model.TrangThaiThanhToan)</span>
                 </p>
                 @if (Model.TienTraThua > 0)
                 {
                     <p class="mb-2 text-primary fw-bold"><strong>Tiền trả thừa cần hoàn:</strong> @Model.TienTraThua.ToString("N0") đ</p>
                 }
-                <p class="mb-2"><strong>Trạng thái Hoàn cọc:</strong>
+                <p class="mb-2"><strong>Hoàn cọc:</strong>
                     @if (Model.TrangThaiHoanCoc == 1)
                     {
                         <span class="status-pill"><span class="status-dot dot-success"></span> Đã hoàn (@(Model.TienCocThucHoan?.ToString("N0") ?? "0") đ)</span>
                         <small class="text-muted d-block">Ngày: @Model.NgayHoanCoc?.ToString("dd/MM/yyyy HH:mm")</small>
+                    }
+                    else if (Model.TrangThaiHoanCoc == 2)
+                    {
+                        <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã cấn trừ hết</span>
                     }
                     else
                     {
                         <span class="status-pill"><span class="status-dot dot-neutral"></span> Chưa hoàn cọc</span>
                     }
                 </p>
-                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && Model.TrangThai != 2 && Model.TrangThai != 3)
+                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && !pendingFirstPayment && Model.TrangThai != 2 && Model.TrangThai != 3)
                 {
-                    <button class="btn btn-sm btn-outline-dark mt-1" data-bs-toggle="modal" data-bs-target="#modalThuCoc">
-                        <i class="fas fa-plus me-1"></i> Thu cọc bổ sung
+                    <button class="btn btn-sm btn-outline-dark mt-1" data-bs-toggle="modal" data-bs-target="#modalThuThemTienThue">
+                        <i class="fas fa-plus me-1"></i> Thu thêm tiền thuê
                     </button>
                 }
             </div>
@@ -196,8 +317,8 @@
 
 @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
 {
-<!-- Modal Thu Cọc Bổ Sung -->
-<div class="modal fade" id="modalThuCoc" tabindex="-1">
+<!-- Thu thêm tiền thuê -->
+<div class="modal fade" id="modalThuThemTienThue" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-action="ThemTienCoc" method="post">
@@ -205,13 +326,13 @@
                 <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                 <input type="hidden" name="maHopDong" value="@Model.MaHopDong" />
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Thu Tiền Cọc Bổ Sung</h5>
+                    <h5 class="modal-title fw-bold">Thu thêm tiền thuê</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Số tiền cọc thêm (đ) <span class="text-danger">*</span></label>
-                        <input type="number" name="soTienCoc" class="form-control" min="1000" step="1000" placeholder="VD: 500000" required />
+                        <label class="form-label fw-bold">Số tiền thu (đ) <span class="text-danger">*</span></label>
+                        <input type="number" name="soTienCoc" class="form-control" min="1" step="1" required />
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Hình thức thanh toán</label>
@@ -222,15 +343,15 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Ghi chú</label>
-                        <input type="text" name="ghiChu" class="form-control" placeholder="Thu cọc bổ sung lần 2..." />
+                        <input type="text" name="ghiChu" class="form-control" />
                     </div>
                     <div class="alert alert-light border small">
-                        Sau khi thu cọc bổ sung, hệ thống sẽ tự <strong>tái tính lại tiền mỗi kỳ hạn</strong> còn lại.
+                        Khoản thu được trừ vào tiền thuê còn nợ.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-dark">Xác nhận Thu Cọc</button>
+                    <button type="submit" class="btn btn-dark">Xác nhận thu</button>
                 </div>
             </form>
         </div>
@@ -238,134 +359,15 @@
 </div>
 }
 
-<!-- Ảnh CCCD và chữ ký -->
-<div class="card border mb-4">
-    <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Hình ảnh CCCD & Chữ ký</h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-4">
-            <div class="col-md-3">
-                <p class="text-muted small fw-bold mb-2">CCCD Mặt trước</p>
-                @{
-                    string? anhTruoc = Model.AnhCCCD_Truoc;
-                }
-                @if (!string.IsNullOrEmpty(anhTruoc))
-                {
-                    <a href="@anhTruoc" target="_blank" title="Nhấn để xem đầy đủ">
-                        <img src="@anhTruoc" alt="Mặt trước CCCD"
-                             class="img-fluid border rounded"
-                             style="max-height:160px; object-fit:contain; background:#f8f8f8;" />
-                    </a>
-                }
-                else { <span class="text-muted fst-italic">Chưa tải lên</span> }
-            </div>
-            <div class="col-md-3">
-                <p class="text-muted small fw-bold mb-2">CCCD Mặt sau</p>
-                @if (!string.IsNullOrEmpty(Model.AnhCCCD_Sau))
-                {
-                    <a href="@Model.AnhCCCD_Sau" target="_blank" title="Nhấn để xem đầy đủ">
-                        <img src="@Model.AnhCCCD_Sau" alt="Mặt sau CCCD"
-                             class="img-fluid border rounded"
-                             style="max-height:160px; object-fit:contain; background:#f8f8f8;" />
-                    </a>
-                }
-                else { <span class="text-muted fst-italic">Chưa tải lên</span> }
-            </div>
-            <div class="col-md-3">
-                <p class="text-muted small fw-bold mb-2">Chữ ký Khách hàng</p>
-                @if (!string.IsNullOrEmpty(Model.ChuKyKhachHang))
-                {
-                    <img src="@Model.ChuKyKhachHang" alt="Chữ ký KH"
-                         class="img-fluid border rounded bg-white"
-                         style="max-height:120px; object-fit:contain;" />
-                }
-                else { <span class="text-muted fst-italic">Chưa ký</span> }
-            </div>
-            <div class="col-md-3">
-                <p class="text-muted small fw-bold mb-2">Chữ ký Nhân viên</p>
-                @if (!string.IsNullOrEmpty(Model.ChuKyNhanVien))
-                {
-                    <img src="@Model.ChuKyNhanVien" alt="Chữ ký NV"
-                         class="img-fluid border rounded bg-white"
-                         style="max-height:120px; object-fit:contain;" />
-                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
-                    {
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-outline-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdminSign">
-                                <i class="fas fa-edit me-1"></i> Ký lại
-                            </button>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="mb-2"><span class="text-muted fst-italic">Chưa ký đối chiếu</span></div>
-                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
-                    {
-                        <button type="button" class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdminSign">
-                            <i class="fas fa-pen-nib me-1"></i> Ký đối chiếu ngay
-                        </button>
-                    }
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card border mb-4">
-    <div class="card-header bg-light">
-        <h5 class="mb-0">Danh sách Máy được cấp phát</h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table align-middle text-center mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th>Dòng Máy</th>
-                        <th>Số Serial (S/N)</th>
-                        <th>Tình trạng</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if(chiTiets != null && chiTiets.Any()) {
-                        foreach (var item in chiTiets) {
-                            <tr>
-                                <td class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</td>
-                                <td><span class="badge-soft-neutral font-monospace">@item.ThietBi?.SoSerial</span></td>
-                                <td>
-                                    @if(Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
-                                    else if(Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
-                                    else if(Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã hoàn tất</span> }
-                                    else if(Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span> }
-                                    else if(Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
-                                </td>
-                            </tr>
-                        }
-                    } else {
-                        <tr>
-                            <td colspan="3" class="text-muted py-3">Không có dữ liệu thiết bị</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 <div class="row g-4 mb-4">
     <div class="col-12">
-        @{
-            var kyHans = ViewBag.KyHans as IEnumerable<RentalSystem.Models.KyHanThanhToan>;
-            var phieuThus = ViewBag.PhieuThus as IEnumerable<RentalSystem.Models.PhieuThu>;
-        }
         <div class="card border mb-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Lịch trả góp / Thu tiền kỳ hạn</h5>
-                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && kyHans != null && kyHans.Any(k => k.TrangThai != 1 && k.TrangThai != 3))
+                <h5 class="mb-0">Lịch thanh toán</h5>
+                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && !pendingFirstPayment && kyHans != null && kyHans.Any(k => k.TrangThai != 1 && k.TrangThai != 3))
                 {
                     <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalTatToanSom">
-                        <i class="fas fa-check-double me-1"></i> Tất toán sớm toàn bộ
+                        <i class="fas fa-check-double me-1"></i> Trả hết tiền thuê
                     </button>
                 }
             </div>
@@ -375,25 +377,24 @@
                         <thead class="bg-light">
                             <tr>
                                 <th>Kỳ</th>
-                                <th>Ngày Đến Hạn</th>
-                                <th>Phải Trả</th>
-                                <th>Đã Trả / Còn Lại</th>
+                                <th>Hạn trả</th>
+                                <th>Tiền kỳ hạn</th>
+                                <th>Đã thu / Còn thiếu</th>
                                 <th>Trạng Thái</th>
                                 <th>Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @{
-                                decimal tongDaTra = 0;
-                            }
                             @if (kyHans == null || !kyHans.Any()) {
-                                <tr><td colspan="6" class="text-muted py-3">Chưa có kỳ hạn trả góp nào được tạo.</td></tr>
+                                <tr><td colspan="6" class="text-muted py-3">Chưa có kỳ thanh toán.</td></tr>
                             }
                             else
                             {
                                 @foreach(var k in kyHans) {
-                                    tongDaTra += k.SoTienDaTra;
-                                    var conLai = k.SoTienPhai - k.SoTienDaTra;
+                                    var conLai = DebtCalculationHelper.GetInstallmentBalance(k);
+                                    var penalty = k.TienPhat;
+                                    var hasFraction = conLai != decimal.Truncate(conLai);
+                                    var amountFormat = hasFraction ? "N2" : "N0";
                                     bool isOverdue = (k.TrangThai == 2 || (k.TrangThai == 0 && k.NgayDenHan.Date < DateTime.Now.Date)) && (Model.TrangThai == 1 || Model.TrangThai == 0 || Model.TrangThai == 4);
                                     <tr>
                                         <td class="fw-bold">@k.SoKyHan</td>
@@ -404,13 +405,14 @@
                                         <td class="text-dark fw-bold">@k.SoTienPhai.ToString("N0") đ</td>
                                         <td>
                                             <span class="text-success small">Đã: @k.SoTienDaTra.ToString("N0") đ</span><br/>
-                                            @if (conLai > 0) { <span class="text-danger small fw-bold">Còn: @conLai.ToString("N0") đ</span> }
+                                            @if (conLai > 0) { <span class="text-danger small fw-bold">Còn: @conLai.ToString(amountFormat) đ</span> }
                                         </td>
                                         <td>
-                                            @if(k.TrangThai == 1 || k.SoTienDaTra >= k.SoTienPhai) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã trả</span> }
+                                            @if (k.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
+                                            else if (k.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã trả</span> }
                                             else if (k.TrangThai == 0 && k.SoTienDaTra > 0) {
                                                 <span class="status-pill">
-                                                    <span class="status-dot dot-warning"></span> Trả thiếu (@k.SoTienDaTra.ToString("N0") / @k.SoTienPhai.ToString("N0") đ)
+                                                    <span class="status-dot dot-warning"></span> Trả một phần
                                                 </span>
                                                 @if (k.NgayHenTraTiepTheo.HasValue)
                                                 {
@@ -425,9 +427,9 @@
                                             }
                                             else if (isOverdue) {
                                                 <span class="status-pill"><span class="status-dot dot-danger"></span> Quá hạn</span>
-                                                @if (k.PhiPhatTreHan > 0)
+                                                @if (penalty > 0)
                                                 {
-                                                    <small class="text-danger d-block fw-bold">(Phạt: +@k.PhiPhatTreHan.ToString("N0")đ)</small>
+                                                    <small class="text-danger d-block fw-bold">Gồm phí trễ hạn @penalty.ToString("N0") đ</small>
                                                 }
                                             }
                                             else { <span class="status-pill"><span class="status-dot dot-warning"></span> Chưa trả</span> }
@@ -475,7 +477,7 @@
                                                     </div>
                                                 }
 
-                                                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && k.TrangThai != 1 && (Model.TrangThai == 0 || Model.TrangThai == 1 || Model.TrangThai == 4)) {
+                                                @if (!pendingFirstPayment && k.TrangThai is 0 or 2 && Model.TrangThai is 0 or 1 or 4) {
                                                     <button type="button" class="btn btn-sm btn-outline-dark"
                                                             data-bs-toggle="collapse"
                                                             data-bs-target="#payForm_@k.MaKyHan"
@@ -503,8 +505,8 @@
                                             }
                                         </td>
                                     </tr>
-                                    @if (k.TrangThai != 1 && (Model.TrangThai == 0 || Model.TrangThai == 1 || Model.TrangThai == 4)) {
-                                        <!-- Modal Điều Chỉnh Kỳ Hạn -->
+                                    @if (canManage && !pendingFirstPayment && k.TrangThai is 0 or 2 && Model.TrangThai is 0 or 1 or 4) {
+                                        <!-- Modal Đổi hạn trả -->
                                         <div class="modal fade" id="modalDieuChinh_@k.MaKyHan" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content text-start">
@@ -513,7 +515,7 @@
                                                         <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                                                         <input type="hidden" name="maKyHan" value="@k.MaKyHan" />
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title fw-bold"><i class="fas fa-calendar-alt me-2"></i> Điều Chỉnh Kỳ Hạn #@k.SoKyHan</h5>
+                                                            <h5 class="modal-title fw-bold"><i class="fas fa-calendar-alt me-2"></i> Đổi hạn trả #@k.SoKyHan</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
@@ -532,7 +534,7 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
-                                                            <button type="submit" class="btn btn-dark">Lưu Điều Chỉnh</button>
+                                                            <button type="submit" class="btn btn-dark">Lưu</button>
                                                         </div>
                                                     </form>
                                                 </div>
@@ -549,7 +551,8 @@
                                                             <input type="hidden" name="maKyHan" value="@k.MaKyHan" />
                                                             <div class="col-md-2">
                                                                 <label class="form-label fw-bold small mb-1">Số tiền thu (đ)</label>
-                                                                <input type="number" name="soTienThucThu" class="form-control form-control-sm" value="@((long)(k.SoTienPhai - k.SoTienDaTra + k.PhiPhatTreHan))" min="1" step="1000" required />
+                                                                <input type="number" name="soTienThucThu" class="form-control form-control-sm" value="@(conLai.ToString("0.##", CultureInfo.InvariantCulture))"
+                                                                       min="@(hasFraction ? "0.01" : "1")" step="@(hasFraction ? "0.01" : "1")" required />
                                                             </div>
                                                             <div class="col-md-2">
                                                                 <label class="form-label fw-bold small mb-1">Hình thức</label>
@@ -581,153 +584,133 @@
                                     }
                                 }
                             }
-                            <tr class="bg-light">
-                                <td colspan="3" class="text-end fw-bold">1. TỔNG TIỀN THUÊ HỢP ĐỒNG</td>
-                                <td colspan="3" class="text-dark text-start fw-bold">@Model.TongTien.ToString("N0") đ</td>
-                            </tr>
-                            <tr class="bg-light">
-                                <td colspan="3" class="text-end fw-bold text-primary">2. TIỀN CỌC BẢO ĐẢM MÁY</td>
-                                <td colspan="3" class="text-primary text-start fw-bold">@tienCocDisplay.ToString("N0") đ</td>
-                            </tr>
-                            <tr class="bg-light">
-                                <td colspan="3" class="text-end fw-bold text-warning">3. PHÍ ĐỀN BÙ HƯ HẠI BẢO TRÌ</td>
-                                <td colspan="3" class="text-warning text-start fw-bold">@damagesSafe.ToString("N0") đ</td>
-                            </tr>
-                            <tr class="bg-light">
-                                <td colspan="3" class="text-end fw-bold text-success">4. TỔNG ĐÃ THANH TOÁN (Kỳ hạn & Đền bù)</td>
-                                <td colspan="3" class="text-success text-start fw-bold fs-5">@calcTotalCollected.ToString("N0") đ</td>
-                            </tr>
-                            <tr class="bg-light">
-                                <td colspan="3" class="text-end fw-bold text-danger">5. THỰC TẾ CÒN NỢ (Hợp Đồng)</td>
-                                <td colspan="3" class="text-danger text-start fw-bold fs-5">@(Math.Max(0m, calcRemainingDebt).ToString("N0")) đ</td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <div class="card border mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Lịch sử giao dịch (Phiếu thu)</h5>
+    </div>
+</div>
+
+<!-- Ảnh CCCD và chữ ký -->
+<details class="card border mb-4" open="@(missingHandover.Count > 0 && Model.TrangThai == 0)">
+    <summary class="card-header bg-light fw-semibold">Hồ sơ ký</summary>
+    <div class="card-body">
+        <div class="row g-4">
+            @if (!User.IsInRole("KyThuat"))
+            {
+            <div class="col-md-3">
+                <p class="text-muted small fw-bold mb-2">CCCD Mặt trước</p>
+                @{
+                    string? anhTruoc = Model.AnhCCCD_Truoc;
+                }
+                @if (!string.IsNullOrEmpty(anhTruoc))
+                {
+                    <a href="@anhTruoc" target="_blank" title="Nhấn để xem đầy đủ">
+                        <img src="@anhTruoc" alt="Mặt trước CCCD"
+                             class="img-fluid border rounded"
+                             style="max-height:160px; object-fit:contain; background:#f8f8f8;" />
+                    </a>
+                }
+                else { <span class="text-muted fst-italic">Chưa tải lên</span> }
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle text-center mb-0">
-                        <thead class="bg-light">
+            <div class="col-md-3">
+                <p class="text-muted small fw-bold mb-2">CCCD Mặt sau</p>
+                @if (!string.IsNullOrEmpty(Model.AnhCCCD_Sau))
+                {
+                    <a href="@Model.AnhCCCD_Sau" target="_blank" title="Nhấn để xem đầy đủ">
+                        <img src="@Model.AnhCCCD_Sau" alt="Mặt sau CCCD"
+                             class="img-fluid border rounded"
+                             style="max-height:160px; object-fit:contain; background:#f8f8f8;" />
+                    </a>
+                }
+                else { <span class="text-muted fst-italic">Chưa tải lên</span> }
+            </div>
+            }
+            <div class="col-md-3">
+                <p class="text-muted small fw-bold mb-2">Chữ ký Khách hàng</p>
+                @if (!string.IsNullOrEmpty(Model.ChuKyKhachHang))
+                {
+                    <img src="@Model.ChuKyKhachHang" alt="Chữ ký KH"
+                         class="img-fluid border rounded bg-white"
+                         style="max-height:120px; object-fit:contain;" />
+                }
+                else { <span class="text-muted fst-italic">Chưa ký</span> }
+            </div>
+            <div class="col-md-3">
+                <p class="text-muted small fw-bold mb-2">Chữ ký Nhân viên</p>
+                @if (!string.IsNullOrEmpty(Model.ChuKyNhanVien))
+                {
+                    <img src="@Model.ChuKyNhanVien" alt="Chữ ký NV"
+                         class="img-fluid border rounded bg-white"
+                         style="max-height:120px; object-fit:contain;" />
+                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                    {
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-outline-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdminSign">
+                                <i class="fas fa-edit me-1"></i> Ký lại
+                            </button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="mb-2"><span class="text-muted fst-italic">Chưa ký đối chiếu</span></div>
+                    @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
+                    {
+                        <button type="button" class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdminSign">
+                            <i class="fas fa-pen-nib me-1"></i> Ký đối chiếu
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</details>
+
+<details class="card border mb-4" open>
+    <summary class="card-header bg-light fw-semibold">Thiết bị &amp; bàn giao</summary>
+    <div class="card-body pb-0">
+<div class="card border mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Thiết bị theo serial</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle text-center mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Dòng Máy</th>
+                        <th>Số Serial (S/N)</th>
+                        <th>Tình trạng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(chiTiets != null && chiTiets.Any()) {
+                        foreach (var item in chiTiets) {
                             <tr>
-                                <th>Mã PT</th>
-                                <th>Ngày thu</th>
-                                <th>Số tiền</th>
-                                <th>Loại phiếu</th>
-                                <th>Hình thức</th>
-                                <th>Thu ngân</th>
-                                <th>Ghi chú / Trạng thái</th>
-                                <th>Thao tác</th>
+                                <td class="fw-bold">@item.ThietBi?.SanPham?.TenSanPham</td>
+                                <td><span class="badge-soft-neutral font-monospace">@item.ThietBi?.SoSerial</span></td>
+                                <td>
+                                    @if(Model.TrangThai == 0) { <span class="status-pill"><span class="status-dot dot-warning"></span> Chờ duyệt</span> }
+                                    else if(Model.TrangThai == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Đang cho thuê</span> }
+                                    else if(Model.TrangThai == 2) { <span class="status-pill"><span class="status-dot dot-success"></span> Đã hoàn tất</span> }
+                                    else if(Model.TrangThai == 4) { <span class="status-pill"><span class="status-dot dot-warning"></span> Đã trả máy (Chờ quyết toán)</span> }
+                                    else if(Model.TrangThai == 3) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Đã hủy</span> }
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @if (phieuThus == null || !phieuThus.Any()) {
-                                <tr><td colspan="8" class="text-muted py-3">Chưa có giao dịch nào được ghi nhận.</td></tr>
-                            }
-                            else
-                            {
-                                @foreach (var p in phieuThus) {
-                                    <tr>
-                                        <td class="fw-bold text-muted">#@p.MaPhieuThu</td>
-                                        <td>@p.NgayGiaoDich.ToString("dd/MM/yyyy HH:mm")</td>
-                                        <td>
-                                            @if (p.DaHuy)
-                                            {
-                                                <span class="text-decoration-line-through text-muted">@p.SoTien.ToString("N0") đ</span>
-                                                <span class="status-pill ms-1"><span class="status-dot dot-neutral"></span> Đã hủy</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-success fw-bold">@p.SoTien.ToString("N0") đ</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            @if (p.LoaiPhieu == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Thu cọc</span> }
-                                            else if (p.LoaiPhieu == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Thu kỳ hạn</span> }
-                                            else if (p.LoaiPhieu == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Thu phí BT</span> }
-                                            else { <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span> }
-                                        </td>
-                                        <td>
-                                            @if (p.HinhThucThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Tiền mặt</span> }
-                                            else if (p.HinhThucThanhToan == 1) {
-                                                <span class="status-pill"><span class="status-dot dot-navy"></span> Chuyển khoản</span>
-                                                @if (!string.IsNullOrEmpty(p.MaGiaoDichNganHang)) {
-                                                    <small class="text-muted d-block font-monospace">GD: @p.MaGiaoDichNganHang</small>
-                                                }
-                                            }
-                                            else if (p.HinhThucThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-navy"></span> VNPay Online</span> }
-                                            else { <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span> }
-                                        </td>
-                                        <td>
-                                            <span class="small">@(p.NhanVienThu?.HoTen ?? (p.MaNhanVienThu != null ? $"NV #{p.MaNhanVienThu}" : "Hệ thống"))</span>
-                                        </td>
-                                        <td>
-                                            <span class="text-muted small">@p.GhiChu</span>
-                                            @if (p.DaHuy)
-                                            {
-                                                <div class="text-danger small fw-bold">
-                                                    <i class="fas fa-ban me-1"></i>Hủy: @p.LyDoHuy (@p.NgayHuy?.ToString("dd/MM/yyyy HH:mm"))
-                                                </div>
-                                            }
-                                        </td>
-                                        <td>
-                                            <a href="/Document/InPhieuThu/@p.MaPhieuThu" target="_blank" class="btn btn-sm btn-outline-dark" title="In phiếu thu">
-                                                <i class="fas fa-print me-1"></i> In
-                                            </a>
-                                            @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && !p.DaHuy)
-                                            {
-                                                <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#modalHuyPhieu_@p.MaPhieuThu" title="Hủy phiếu thu">
-                                                    <i class="fas fa-trash-alt me-1"></i> Hủy
-                                                </button>
-
-                                                <!-- Modal Hủy Phiếu Thu -->
-                                                <div class="modal fade" id="modalHuyPhieu_@p.MaPhieuThu" tabindex="-1">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content text-start">
-                                                            <form asp-action="HuyPhieuThu" method="post">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                                                                <input type="hidden" name="maPhieuThu" value="@p.MaPhieuThu" />
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title fw-bold text-danger"><i class="fas fa-ban me-2"></i> Hủy Phiếu Thu #@p.MaPhieuThu</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <div class="alert alert-warning small">
-                                                                        Cảnh báo: Hành động này sẽ đánh dấu phiếu thu là đã hủy, khấu trừ tiền đã thu, và hoàn nguyên trạng thái kỳ hạn liên quan.
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label fw-bold">Số tiền: <span class="text-danger">@p.SoTien.ToString("N0") đ</span></label>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label fw-bold">Lý do hủy <span class="text-danger">*</span></label>
-                                                                        <textarea name="lyDoHuy" class="form-control" rows="3" required placeholder="Nhập lý do hủy phiếu thu..."></textarea>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Đóng</button>
-                                                                    <button type="submit" class="btn btn-danger fw-bold">Xác Nhận Hủy Phiếu</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        }
+                    } else {
+                        <tr>
+                            <td colspan="3" class="text-muted py-3">Không có dữ liệu thiết bị</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
 
         <!-- Biên bản bàn giao -->
         @{
@@ -735,9 +718,9 @@
         }
         <div class="card border mb-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-clipboard-check me-2 text-brand"></i>Biên Bản Bàn Giao Thiết Bị</h5>
+                <h5 class="mb-0"><i class="fas fa-clipboard-check me-2 text-brand"></i>Biên bản giao nhận</h5>
                 <button type="button" class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#modalLapBienBan">
-                    <i class="fas fa-plus me-1"></i> Lập Biên Bản
+                    <i class="fas fa-plus me-1"></i> Lập biên bản
                 </button>
             </div>
             <div class="card-body p-0">
@@ -781,8 +764,141 @@
                                         <td class="small">@(string.IsNullOrEmpty(bb.TinhTrangNgoaiQuan) ? "Bình thường" : bb.TinhTrangNgoaiQuan)</td>
                                         <td>
                                             <a href="/Document/InBienBanBanGiao/@bb.MaBienBan" target="_blank" class="btn btn-sm btn-outline-dark">
-                                                <i class="fas fa-print me-1"></i> In BB
+                                                <i class="fas fa-print me-1"></i> In biên bản
                                             </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</details>
+
+<details class="card border mb-4">
+    <summary class="card-header bg-light fw-semibold">Lịch sử giao dịch</summary>
+    <div class="card-body pb-0">
+        <div class="card border mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Phiếu thu</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle text-center mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Mã PT</th>
+                                <th>Ngày thu</th>
+                                <th>Số tiền</th>
+                                <th>Loại phiếu</th>
+                                <th>Hình thức</th>
+                                <th>Thu ngân</th>
+                                <th>Ghi chú / Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (phieuThus == null || !phieuThus.Any()) {
+                                <tr><td colspan="8" class="text-muted py-3">Chưa có giao dịch nào được ghi nhận.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var p in phieuThus) {
+                                    <tr>
+                                        <td class="fw-bold text-muted">#@p.MaPhieuThu</td>
+                                        <td>@p.NgayGiaoDich.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            @if (p.DaHuy)
+                                            {
+                                                <span class="text-decoration-line-through text-muted">@p.SoTien.ToString("N0") đ</span>
+                                                <span class="status-pill ms-1"><span class="status-dot dot-neutral"></span> Đã hủy</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-success fw-bold">@p.SoTien.ToString("N0") đ</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (p.LoaiPhieu == 1) { <span class="status-pill"><span class="status-dot dot-navy"></span> Thu cọc</span> }
+                                            else if (p.LoaiPhieu == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Thu kỳ hạn</span> }
+                                            else if (p.LoaiPhieu == FirstContractPayment.ExcessReceipt) { <span class="status-pill">Tiền chuyển thừa</span> }
+                                            else if (p.LoaiPhieu == 2) { <span class="status-pill"><span class="status-dot dot-warning"></span> Thu phí BT</span> }
+                                            else { <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span> }
+                                        </td>
+                                        <td>
+                                            @if (p.HinhThucThanhToan == 0) { <span class="status-pill"><span class="status-dot dot-neutral"></span> Tiền mặt</span> }
+                                            else if (p.HinhThucThanhToan == 1) {
+                                                <span class="status-pill"><span class="status-dot dot-navy"></span> Chuyển khoản</span>
+                                                @if (!string.IsNullOrEmpty(p.MaGiaoDichNganHang)) {
+                                                    <small class="text-muted d-block font-monospace">GD: @p.MaGiaoDichNganHang</small>
+                                                }
+                                            }
+                                            else if (p.HinhThucThanhToan == 2) { <span class="status-pill"><span class="status-dot dot-navy"></span> VNPay Online</span> }
+                                            else { <span class="status-pill"><span class="status-dot dot-neutral"></span> Khác</span> }
+                                        </td>
+                                        <td>
+                                            <span class="small">@(p.NhanVienThu?.HoTen ?? (p.MaNhanVienThu != null ? $"NV #{p.MaNhanVienThu}" : "Hệ thống"))</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted small">@p.GhiChu</span>
+                                            @if (p.DaHuy)
+                                            {
+                                                <div class="text-danger small fw-bold">
+                                                    <i class="fas fa-ban me-1"></i>Hủy: @p.LyDoHuy (@p.NgayHuy?.ToString("dd/MM/yyyy HH:mm"))
+                                                </div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="/Document/InPhieuThu/@p.MaPhieuThu" target="_blank" class="btn btn-sm btn-outline-dark" title="In phiếu thu">
+                                                <i class="fas fa-print me-1"></i> In
+                                            </a>
+                                            @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && !p.DaHuy && settlement?.Completed != true &&
+                                                (!Model.YeuCauThanhToanLanDau ||
+                                                    (pendingFirstPayment ? p.GhiChu == FirstContractPayment.ReceiptNote :
+                                                        p.GhiChu != FirstContractPayment.ReceiptNote && p.GhiChu != "Thu tiền thuê trả trước khi tạo đơn")))
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#modalHuyPhieu_@p.MaPhieuThu" title="Hủy phiếu thu">
+                                                    <i class="fas fa-trash-alt me-1"></i> Hủy
+                                                </button>
+
+                                                <!-- Modal Hủy phiếu thu -->
+                                                <div class="modal fade" id="modalHuyPhieu_@p.MaPhieuThu" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content text-start">
+                                                            <form asp-action="HuyPhieuThu" method="post">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                                                                <input type="hidden" name="maPhieuThu" value="@p.MaPhieuThu" />
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title fw-bold text-danger"><i class="fas fa-ban me-2"></i> Hủy phiếu thu #@p.MaPhieuThu</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="alert alert-warning small">
+                                                                        @(p.GhiChu == FirstContractPayment.ReceiptNote
+                                                                            ? "Thao tác này hủy ghi nhận cả phần cọc và tiền thuê của cùng giao dịch."
+                                                                            : "Hủy phiếu sẽ hoàn tác khoản thu và cập nhật kỳ thanh toán.")
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-bold">Số tiền: <span class="text-danger">@p.SoTien.ToString("N0") đ</span></label>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-bold">Lý do hủy <span class="text-danger">*</span></label>
+                                                                        <textarea name="lyDoHuy" class="form-control" rows="3" required placeholder="Nhập lý do hủy phiếu thu..."></textarea>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Đóng</button>
+                                                                    <button type="submit" class="btn btn-danger fw-bold">Xác nhận hủy</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -797,15 +913,10 @@
         @{
             var phieuChiList = ViewBag.PhieuChis as IEnumerable<RentalSystem.Models.PhieuChi>;
         }
-        <div class="card border mb-4">
+        <div class="card border mb-4" id="settlement-disbursements">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-money-check-alt me-2 text-danger"></i>Phiếu Chi &amp; Hoàn Cọc</h5>
-                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && (Model.TrangThai == 1 || Model.TrangThai == 2 || Model.TrangThai == 4))
-                {
-                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalHoanCoc">
-                        <i class="fas fa-hand-holding-usd me-1"></i> Lập Phiếu Hoàn Cọc
-                    </button>
-                }
+                <h5 class="mb-0"><i class="fas fa-money-check-alt me-2 text-danger"></i>Phiếu chi</h5>
+
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -855,16 +966,18 @@
                 </div>
             </div>
         </div>
+    </div>
+</details>
 
+<details class="card border mb-4">
+    <summary class="card-header bg-light fw-semibold">Gia hạn &amp; bảo trì</summary>
+    <div class="card-body pb-0">
         <!-- Lịch sử gia hạn hợp đồng -->
-        @{
-            var dsGiaHanAdminCard = (ViewBag.YeuCauGiaHans as IEnumerable<RentalSystem.Models.YeuCauGiaHan>) ?? Model.DanhSachYeuCauGiaHan;
-        }
-        @if ((dsGiaHanAdminCard != null && dsGiaHanAdminCard.Any()) || Model.YeuCauGiaHan || Model.TrangThaiGiaHan.HasValue)
+        @if ((dsYeuCauGiaHanAdmin != null && dsYeuCauGiaHanAdmin.Any()) || Model.YeuCauGiaHan || Model.TrangThaiGiaHan.HasValue)
         {
             <div class="card border mb-4">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2 text-info"></i>Lịch Sử Yêu Cầu Gia Hạn Hợp Đồng</h5>
+                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2 text-info"></i>Lịch sử gia hạn</h5>
                     @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
                     {
                         <a href="/Admin/HopDong/YeuCauGiaHan" class="btn btn-sm btn-outline-info">
@@ -884,13 +997,13 @@
                                     <th>Chi phí phát sinh</th>
                                     <th>Trạng thái</th>
                                     <th>Người duyệt</th>
-                                    <th>Ghi chú / Hành động</th>
+                                    <th>Ghi chú</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (dsGiaHanAdminCard != null && dsGiaHanAdminCard.Any())
+                                @if (dsYeuCauGiaHanAdmin != null && dsYeuCauGiaHanAdmin.Any())
                                 {
-                                    foreach (var yc in dsGiaHanAdminCard)
+                                    foreach (var yc in dsYeuCauGiaHanAdmin)
                                     {
                                         <tr>
                                             <td class="fw-bold">#@yc.MaYeuCau</td>
@@ -923,33 +1036,7 @@
                                             </td>
                                             <td>@(yc.NguoiDuyet?.HoTen ?? (yc.TrangThai != 0 ? "Quản trị viên" : "—"))</td>
                                             <td>
-                                                @if ((User.IsInRole("Admin") || User.IsInRole("KinhDoanh")) && yc.TrangThai == 0 && Model.TrangThai == 1)
-                                                {
-                                                    <div class="d-flex justify-content-center gap-1">
-                                                        <form asp-action="DuyetGiaHan" method="post" style="display:inline">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                                                            <input type="hidden" name="id" value="@Model.MaHopDong" />
-                                                            <input type="hidden" name="chapNhan" value="true" />
-                                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Xác nhận DUYỆT gia hạn hợp đồng này?');">
-                                                                <i class="fas fa-check"></i> Duyệt
-                                                            </button>
-                                                        </form>
-                                                        <form asp-action="DuyetGiaHan" method="post" style="display:inline">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                                                            <input type="hidden" name="id" value="@Model.MaHopDong" />
-                                                            <input type="hidden" name="chapNhan" value="false" />
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Từ chối yêu cầu gia hạn này?');">
-                                                                <i class="fas fa-times"></i> Từ chối
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <small class="text-muted">@(string.IsNullOrEmpty(yc.GhiChuAdmin) ? "—" : yc.GhiChuAdmin)</small>
-                                                }
+                                                <small class="text-muted">@(string.IsNullOrEmpty(yc.GhiChuAdmin) ? "—" : yc.GhiChuAdmin)</small>
                                             </td>
                                         </tr>
                                     }
@@ -993,7 +1080,7 @@
         }
         <div class="card border mb-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-tools me-2 text-warning"></i>Lịch Sử Bảo Trì &amp; Bồi Thường Sự Cố</h5>
+                <h5 class="mb-0"><i class="fas fa-tools me-2 text-warning"></i>Bảo trì và bồi thường</h5>
                 <span class="badge-soft-neutral">@(phieuBaoTriList?.Count() ?? 0) phiếu</span>
             </div>
             <div class="card-body p-0">
@@ -1091,83 +1178,22 @@
                 </div>
             </div>
         </div>
-
     </div>
-</div>
+</details>
 
 @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
 {
-<div class="card border mb-4">
-    <div class="card-body p-4 text-center">
-        <h5 class="fw-bold mb-3">XỬ LÝ QUY TRÌNH HỢP ĐỒNG</h5>
-        <div class="d-flex justify-content-center flex-wrap gap-3">
-            <form asp-action="UpdateStatus" method="post" id="statusForm" class="d-inline">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.MaHopDong" />
-                <input type="hidden" name="status" id="statusInput" value="" />
-                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                
-                @* Chặn chuyển ngược về Chờ duyệt. Chỉ kích hoạt khi đang ở trạng thái 0 *@
-                <button type="button" class="btn btn-outline-warning fw-bold px-4" @(Model.TrangThai != 0 ? "disabled" : "") onclick="submitStatus(0, '')">
-                    <i class="fas fa-clock me-1"></i> Chờ duyệt
-                </button>
-
-                @* Chuyển sang Đang thuê: Chỉ cho phép khi TrangThai == 0 *@
-                <button type="button" class="btn btn-outline-dark fw-bold px-4" @(Model.TrangThai != 0 ? "disabled" : "") onclick="submitStatus(1, 'Xác nhận giao máy cho khách và chuyển sang trạng thái Đang thuê?')">
-                    <i class="fas fa-truck me-1"></i> Giao máy &amp; Cho thuê
-                </button>
-
-                @* Trả máy (Chờ quyết toán nợ) - Kích hoạt khi TrangThai == 1 *@
-                <button type="button" class="btn btn-outline-warning fw-bold px-4 text-dark" @(Model.TrangThai != 1 ? "disabled" : "") onclick="submitStatus(4, 'Xác nhận khách đã trả thiết bị về kho? Thiết bị sẽ được nhập kho và hợp đồng chuyển sang chờ quyết toán công nợ.')">
-                    <i class="fas fa-undo me-1"></i> Trả máy (Chờ quyết toán nợ)
-                </button>
-
-                @* Hoàn tất: Cho phép khi TrangThai == 1 hoặc 4 *@
-                <button type="button" class="btn btn-outline-success fw-bold px-4" @(Model.TrangThai != 1 && Model.TrangThai != 4 ? "disabled" : "") onclick="submitStatus(2, 'Xác nhận hoàn tất hợp đồng? Hệ thống sẽ thu hồi serial (nếu chưa thu hồi), khấu trừ công nợ và quyết toán hoàn cọc tự động!')">
-                    <i class="fas fa-check-circle me-1"></i> Hoàn tất (Thu hồi &amp; Quyết toán)
-                </button>
-
-                @* Chặn chuyển từ 1 sang 3. Chỉ cho phép hủy khi TrangThai == 0 *@
-                <button type="button" class="btn btn-outline-danger fw-bold px-4" @(Model.TrangThai != 0 ? "disabled" : "") onclick="submitStatus(3, 'Xác nhận hủy đơn hàng này và giải phóng thiết bị giữ chỗ về kho?')">
-                    <i class="fas fa-ban me-1"></i> Hủy đơn
-                </button>
-            </form>
-
-            @* Trả máy trước hạn *@
-            @if (Model.TrangThai == 1)
-            {
-                <button type="button" class="btn btn-warning fw-bold px-4 text-dark" data-bs-toggle="modal" data-bs-target="#modalTraMayTruocHan">
-                    <i class="fas fa-calendar-times me-1"></i> Trả máy trước hạn
-                </button>
-            }
-        </div>
-
-        <script>
-            function submitStatus(statusVal, message) {
-                if (!message) {
-                    document.getElementById('statusInput').value = statusVal;
-                    document.getElementById('statusForm').submit();
-                    return;
-                }
-                if (confirm(message)) {
-                    document.getElementById('statusInput').value = statusVal;
-                    document.getElementById('statusForm').submit();
-                }
-            }
-        </script>
-    </div>
-</div>
-
 <!-- Modal Trả Máy Trước Hạn -->
 <div class="modal fade" id="modalTraMayTruocHan" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form asp-action="TraMayTruocHan" method="post">
+            <form asp-action="TraMayTruocHan" method="post" id="early-settlement-form">
+                <input type="hidden" name="settlementToken" value="" />
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                 <input type="hidden" name="id" value="@Model.MaHopDong" />
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold text-warning"><i class="fas fa-calendar-times me-2"></i> Trả Máy Trước Hạn (Thanh Lý Sớm)</h5>
+                    <h5 class="modal-title fw-bold text-warning"><i class="fas fa-calendar-times me-2"></i> Trả máy trước hạn</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -1177,19 +1203,20 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Phí phạt vi phạm / hư tổn (nếu có)</label>
-                        <input type="number" name="phiPhat" class="form-control" value="0" min="0" step="1000" />
+                        <input type="number" name="phiPhatTraSom" class="form-control" value="0" min="0" step="1000" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Ghi chú thanh lý</label>
                         <input type="text" name="ghiChu" class="form-control" placeholder="Khách trả máy sớm do xong dự án..." />
                     </div>
+                    <div id="early-settlement-amounts" class="mb-3" role="status"></div>
                     <div class="alert alert-info small mb-0">
-                        <i class="fas fa-info-circle me-1"></i> Hệ thống sẽ tính lại tiền thuê theo số ngày thực tế sử dụng, hủy các kỳ hạn tương lai, giải phóng thiết bị về kho và quyết toán hoàn cọc ngay lập tức.
+                        <i class="fas fa-info-circle me-1"></i> Tiền thuê được tính lại theo ngày sử dụng. Các kỳ chưa thu sẽ bị hủy và cọc được quyết toán.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-warning fw-bold">Xác Nhận Trả Máy Trước Hạn</button>
+                    <button type="submit" class="btn btn-warning fw-bold" id="early-settlement-submit" disabled>Xác nhận trả máy</button>
                 </div>
             </form>
         </div>
@@ -1197,7 +1224,7 @@
 </div>
 }
 
-<!-- Modal Lập Biên Bản Bàn Giao -->
+<!-- Modal Lập biên bản Bàn Giao -->
 <div class="modal fade" id="modalLapBienBan" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -1206,7 +1233,7 @@
                 <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                 <input type="hidden" name="maHopDong" value="@Model.MaHopDong" />
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold"><i class="fas fa-clipboard-list me-2"></i> Lập Biên Bản Bàn Giao Thiết Bị</h5>
+                    <h5 class="modal-title fw-bold"><i class="fas fa-clipboard-list me-2"></i> Lập biên bản giao nhận</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -1248,43 +1275,7 @@
 @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
 {
 <!-- Modal Hoàn Cọc Thủ Công -->
-<div class="modal fade" id="modalHoanCoc" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form asp-action="HoanCoc" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
-                <input type="hidden" name="id" value="@Model.MaHopDong" />
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold text-danger"><i class="fas fa-hand-holding-usd me-2"></i> Lập Phiếu Hoàn Cọc</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Số tiền hoàn cọc (đ) <span class="text-danger">*</span></label>
-                        <input type="number" name="soTienHoan" class="form-control" value="@(Model.TienDaCoc)" min="1" step="1000" required />
-                        <small class="text-muted">Tiền đã cọc: @Model.TienDaCoc.ToString("N0") đ</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Hình thức chi</label>
-                        <select name="hinhThuc" class="form-select">
-                            <option value="1">Chuyển khoản</option>
-                            <option value="0">Tiền mặt</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Ghi chú hoàn cọc</label>
-                        <input type="text" name="ghiChu" class="form-control" placeholder="Hoàn trả tiền đặt cọc thiết bị..." />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger fw-bold">Xác Nhận Lập Phiếu Hoàn Cọc</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 }
 
 @if (User.IsInRole("Admin") || User.IsInRole("KinhDoanh"))
@@ -1298,12 +1289,12 @@
                 <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                 <input type="hidden" name="maHopDong" value="@Model.MaHopDong" />
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold text-primary"><i class="fas fa-check-double me-2"></i> Tất Toán Sớm Toàn Bộ Hợp Đồng</h5>
+                    <h5 class="modal-title fw-bold text-primary"><i class="fas fa-check-double me-2"></i> Trả hết tiền thuê</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info small">
-                        Hệ thống sẽ tính tổng số tiền còn thiếu của tất cả các kỳ hạn còn lại (bao gồm cả tiền phạt quá hạn nếu có) và tạo một phiếu thu tất toán. Hợp đồng sẽ chuyển sang trạng thái đã tất toán đủ.
+                        Thu các kỳ còn thiếu và phí trễ hạn. Hợp đồng tiếp tục đến ngày trả máy.
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Hình thức thanh toán</label>
@@ -1323,7 +1314,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary fw-bold">Xác Nhận Tất Toán</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Xác nhận thu</button>
                 </div>
             </form>
         </div>
@@ -1332,6 +1323,44 @@
 }
 
 @section Scripts {
+
+<script>
+(() => {
+ const form = document.getElementById('early-settlement-form');
+ if (form) {
+  let version=0;
+  const submit=document.getElementById('early-settlement-submit');
+  const out=document.getElementById('early-settlement-amounts');
+  const token=form.elements.settlementToken;
+  const money=n=>new Intl.NumberFormat('vi-VN').format(n)+' đ';
+  const refresh=async()=>{
+   const request=++version; submit.disabled=true; token.value=''; out.textContent='Đang tính quyết toán…';
+   try {
+    const query=new URLSearchParams({id:form.elements.id.value,kind:'1',returnDate:form.elements.ngayTraThucTe.value,earlyFee:form.elements.phiPhatTraSom.value});
+    const response=await fetch('/Admin/HopDong/SettlementPreview?'+query);
+    if(!response.ok)throw Error();
+    const q=await response.json(); if(request!==version)return;
+    if(q.error){out.textContent=q.error;return;}
+    out.textContent='Cọc thực thu: '+money(q.depositReceived)+'; cọc đã hoàn: '+money(q.depositRefunded)+
+      '; tiền thuê thực tế và phí: '+money(q.rentObligation)+'; nợ thuê: '+money(q.rentDue)+'; bồi thường: '+money(q.damagesDue)+
+      '; cọc cấn trừ: '+money(q.depositToRent+q.depositToDamages)+'; hoàn cọc: '+money(q.refundDeposit)+
+      '; hoàn tiền thuê: '+money(q.refundRent)+'; hoàn tiền thừa: '+money(q.refundExcess)+'; tổng hoàn: '+money(q.totalRefund)+
+      '; cần thu thêm: '+money(q.additionalDue);
+    token.value=q.token; submit.disabled=false;
+   }catch{if(request===version)out.textContent='Không tải được quyết toán. Vui lòng thử lại.';}
+  };
+  form.querySelectorAll('input[type=date],input[name=phiPhatTraSom]').forEach(e=>e.addEventListener('change',refresh));
+  document.getElementById('modalTraMayTruocHan').addEventListener('show.bs.modal',refresh);
+  form.addEventListener('submit',e=>{if(!token.value || !confirm('Xác nhận trả máy và quyết toán theo số tiền vừa xem?'))e.preventDefault();});
+ }
+ document.querySelectorAll('form[action$="UpdateStatus"],#early-settlement-form').forEach(f=>f.addEventListener('submit',e=>{
+  if(e.defaultPrevented)return;
+  if(e.submitter?.name){const v=document.createElement('input');v.type='hidden';v.name=e.submitter.name;v.value=e.submitter.value;f.appendChild(v);}
+  f.querySelectorAll('button[type=submit]').forEach(b=>b.disabled=true);
+ }));
+})();
+</script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const paymentForms = document.querySelectorAll(".form-confirm-payment");
@@ -1357,12 +1386,12 @@
 </script>
 }
 
-<!-- Modal Ký Đối Chiếu Hợp Đồng (Dành cho Nhân Viên Kinh Doanh / Admin) -->
+<!-- Modal Ký đối chiếu hợp đồng (Dành cho Nhân Viên Kinh Doanh / Admin) -->
 <div class="modal fade" id="modalAdminSign" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-navy text-white" style="background-color: var(--navy-primary); color: #fff;">
-                <h5 class="modal-title fw-bold"><i class="fas fa-pen-nib me-2"></i> Ký Đối Chiếu Hợp Đồng #@Model.MaHopDong</h5>
+                <h5 class="modal-title fw-bold"><i class="fas fa-pen-nib me-2"></i> Ký đối chiếu hợp đồng #@Model.MaHopDong</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form asp-action="AdminSign" method="post" id="adminSignForm">
@@ -1371,21 +1400,21 @@
                 <input type="hidden" name="signatureData" id="adminSignatureData" />
                 <div class="modal-body p-4 text-center">
                     <p class="text-muted small mb-3">
-                        Vui lòng dùng chuột hoặc màn hình cảm ứng để ký tên xác nhận đối chiếu hồ sơ và hợp đồng thuê thiết bị.
+                        Ký trong khung để xác nhận đối chiếu hồ sơ.
                     </p>
                     <div class="border rounded bg-light d-inline-block p-1 mb-2">
                         <canvas id="admin-signature-pad" width="460" height="200" class="bg-white rounded" style="touch-action: none; cursor: crosshair;"></canvas>
                     </div>
                     <div>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="adminClearBtn">
-                            <i class="fas fa-eraser me-1"></i> Xóa chữ ký làm lại
+                            <i class="fas fa-eraser me-1"></i> Xóa chữ ký
                         </button>
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-navy fw-bold" id="adminSubmitBtn">
-                        <i class="fas fa-check-circle me-1"></i> Xác Nhận & Lưu Chữ Ký
+                        <i class="fas fa-check-circle me-1"></i> Lưu chữ ký
                     </button>
                 </div>
             </form>

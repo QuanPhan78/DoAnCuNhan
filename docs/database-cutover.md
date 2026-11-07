@@ -4,9 +4,10 @@
 
 ## Tạo mới và cập nhật
 
-- Bộ SQL chính thức nằm trong `RentalSystem/Database/Sql`. Chạy `001_Baseline.sql` một lần trên CSDL trống với `sqlcmd -b`. File SQL trong MobileApp dẫn tới cùng bộ lệnh. Chạy từ thư mục gốc của dự án và chỉ định CSDL đích bằng `-d`.
+- Bộ SQL chính thức nằm trong `RentalSystem/Database/Sql`. Trên CSDL trống, chạy `MobileApp/RentalSystemDB.sql` từ thư mục gốc với `sqlcmd -b` và chỉ định CSDL đích bằng `-d`. Tệp này chạy lần lượt lược đồ 001 và 002.
 - Với bản sao cũ, công cụ chuyển đổi giữ ảnh mặt trước hiện có, điền từ `AnhCMND` khi trường mới trống, giữ mặt sau, đối chiếu lược đồ rồi đăng ký phiên bản 001. Công cụ lưu bằng chứng so sánh theo từng bảng. Bảng lịch sử EF của CSDL cũ nằm trong bản quay lui và bản sao lưu.
 - Với thay đổi tiếp theo, thêm script SQL mới theo thứ tự. Mỗi script xác nhận phiên bản trước, cập nhật dữ liệu và ghi phiên bản mới trong cùng giao dịch. Cập nhật `DatabaseSchema.CurrentVersion` cùng bản phát hành. Web kiểm tra phiên bản khi khởi động. Nạp mẫu qua công cụ diễn tập.
+- Khi nâng từ 001 lên 002, sao lưu và xác minh bản sao lưu, dừng backend rồi chạy `002_MaintenanceAssignments.sql` trên CSDL đích trước khi mở bản build mới. Script dùng lại việc mở trùng phiếu và người phụ trách hoặc tạo việc xử lý sự cố. Các việc thủ công và lịch sử phiếu đã đóng được giữ lại.
 
 ## Khởi động và sao lưu
 

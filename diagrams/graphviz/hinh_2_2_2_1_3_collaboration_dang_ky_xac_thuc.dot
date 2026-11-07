@@ -1,0 +1,19 @@
+digraph Collab_DangKyXacThuc {
+    graph [rankdir="LR", splines=ortho, nodesep=1.0, ranksep=1.2, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, fontname="Segoe UI", fontsize=10.5, style="rounded,filled", fillcolor="#ffffff", color="#000000", penwidth=1.3];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    User [label="Khách hàng\n(Actor)", shape=ellipse, fillcolor="#f4f4f5"];
+    View [label=":RegisterView\n(Boundary)"];
+    Ctrl [label=":AccountController\n(Control)", fillcolor="#27272a", fontcolor="#ffffff"];
+    Hasher [label=":PasswordHasher\n(Helper)"];
+    DB [label=":ApplicationDbContext\n(Entity/Data)"];
+    Auth [label=":CookieAuthHandler\n(Security)"];
+
+    User -> View [label="1: Nhập thông tin & Submit"];
+    View -> Ctrl [label="2: POST Register(model)"];
+    Ctrl -> DB [label="3: Kiểm tra Email trùng\n5: Lưu NguoiDung mới"];
+    Ctrl -> Hasher [label="4: HashPassword(pbkdf2)"];
+    Ctrl -> Auth [label="6: SignInAsync(Claims)"];
+    View -> User [label="7: Chuyển hướng Trang chủ", style=dashed];
+}

@@ -1,0 +1,45 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+rectangle ":MyTicketsView" as View
+rectangle ":BaoTriController" as BtCtrl
+actor "Quản trị viên\n(Admin)" as Admin
+rectangle ":PhanCongController" as PcCtrl
+actor "Kỹ thuật viên\n(KyThuat)" as Tech
+rectangle ":ApplicationDbContext" as DB
+
+User -- View : 1: Báo cáo sự cố thiết bị >\n8: Nhận thông báo hoàn tất <
+View -- BtCtrl : 2: POST TaoPhieu(model) >
+BtCtrl -- DB : 3: Khởi tạo PhieuBaoTri >
+Admin -- BtCtrl : 4: Đánh giá SLA & Tạm dừng tính tiền >
+Admin -- PcCtrl : 5: Phân công kỹ thuật viên >
+PcCtrl -- DB : 5.1: Gán MaKTV & DangXuLy >
+Tech -- DB : 6: Xem nhiệm vụ MyTasks >
+Tech -- BtCtrl : 7: POST HoanTat(chiPhi, ketQua) >
+BtCtrl -- DB : 7.1: PhieuBaoTri=HoanTat & Save() >
+
+@enduml

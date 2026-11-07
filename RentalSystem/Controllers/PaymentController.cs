@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -58,6 +59,18 @@ namespace RentalSystem.Controllers
                 return Forbid();
             }
 
+            if (await _context.ContractSettlements.AnyAsync(s => s.MaHopDong == maHopDong))
+            {
+                TempData["Warning"] = "Hợp đồng đã quyết toán, không tạo thêm yêu cầu thanh toán.";
+                return RedirectToAction("ContractDetail", "Cart", new { id = maHopDong });
+            }
+
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+            {
+                TempData["Warning"] = "Hãy dùng thông tin chuyển khoản thanh toán lần đầu trên hợp đồng.";
+                return RedirectToAction("ContractDetail", "Cart", new { id = maHopDong });
+            }
+
             decimal amountToPay = 0;
             if (soTien.HasValue && soTien.Value > 0)
             {
@@ -70,7 +83,7 @@ namespace RentalSystem.Controllers
                 {
                     return NotFound("Không tìm thấy kỳ hạn thanh toán chỉ định.");
                 }
-                amountToPay = Math.Max(0, kyHan.SoTienPhai - kyHan.SoTienDaTra + kyHan.PhiPhatTreHan);
+                amountToPay = Math.Max(0, kyHan.SoTienPhai - kyHan.SoTienDaTra + kyHan.TienPhat);
             }
             else
             {
@@ -82,7 +95,7 @@ namespace RentalSystem.Controllers
                 if (nextKy != null)
                 {
                     maKyHan = nextKy.MaKyHan;
-                    amountToPay = Math.Max(0, nextKy.SoTienPhai - nextKy.SoTienDaTra + nextKy.PhiPhatTreHan);
+                    amountToPay = Math.Max(0, nextKy.SoTienPhai - nextKy.SoTienDaTra + nextKy.TienPhat);
                 }
                 else if (hopDong.TienDaCoc > 0 && hopDong.TrangThaiThanhToan == 0)
                 {
@@ -129,10 +142,15 @@ namespace RentalSystem.Controllers
         public async Task<IActionResult> PaymentCallback()
         {
             var response = _vnPayService.PaymentExecute(Request.Query);
+            bool isMobile = Request.Query["source"] == "mobile" || response.IsMobile;
 
             if (!response.IsValidSignature)
             {
                 _logger.LogWarning("VNPay callback with invalid signature for OrderId: {OrderId}", response.OrderId);
+                if (isMobile)
+                {
+                    return RenderMobileCallback(false, "Chữ ký bảo mật VNPay không hợp lệ hoặc giao dịch đã bị can thiệp!", response);
+                }
                 TempData["Error"] = "Chữ ký bảo mật VNPay không hợp lệ hoặc giao dịch đã bị can thiệp!";
                 if (response.ContractId > 0)
                 {
@@ -144,6 +162,10 @@ namespace RentalSystem.Controllers
             if (response.VnPayResponseCode != "00")
             {
                 _logger.LogWarning("VNPay payment failed or cancelled with response code {Code} for OrderId: {OrderId}", response.VnPayResponseCode, response.OrderId);
+                if (isMobile)
+                {
+                    return RenderMobileCallback(false, $"Giao dịch VNPay không thành công hoặc đã bị hủy (Mã phản hồi: {response.VnPayResponseCode}).", response);
+                }
                 TempData["Error"] = $"Giao dịch VNPay không thành công hoặc đã bị hủy (Mã phản hồi: {response.VnPayResponseCode}).";
                 if (response.ContractId > 0)
                 {
@@ -154,6 +176,15 @@ namespace RentalSystem.Controllers
 
             // Cập nhật thanh toán (bỏ qua nếu IPN đã xử lý trước)
             var (rspCode, message) = await ProcessPaymentAsync(response);
+
+            if (isMobile)
+            {
+                bool success = rspCode == "00" || rspCode == "02";
+                string note = success
+                    ? $"Thanh toán thành công {response.Amount:N0} VNĐ qua cổng trực tuyến VNPay! (Mã GD: {response.TransactionId})"
+                    : $"VNPay xác nhận thành công nhưng hệ thống báo: {message}";
+                return RenderMobileCallback(success, note, response);
+            }
 
             if (rspCode == "00" || rspCode == "02")
             {
@@ -171,6 +202,64 @@ namespace RentalSystem.Controllers
 
             return RedirectToAction("Index", "Home");
         }
+
+        private IActionResult RenderMobileCallback(bool success, string message, VnPaymentResponseModel response)
+        {
+            string statusStr = success ? "success" : "failed";
+            string deepLink = $"rentalsystem://payment-result?status={statusStr}&contractId={response.ContractId}&amount={(long)response.Amount}&txn={WebUtility.UrlEncode(response.TransactionId ?? "")}&code={response.VnPayResponseCode}&message={WebUtility.UrlEncode(message)}";
+            string statusColor = success ? "#16a34a" : "#dc2626";
+            string statusBg = success ? "#f0fdf4" : "#fef2f2";
+            string statusIcon = success ? "&#10003;" : "&#10005;";
+            string statusTitle = success ? "Thanh toán thành công" : "Giao dịch không thành công";
+
+            string html = $@"<!DOCTYPE html>
+<html lang=""vi"">
+<head>
+    <meta charset=""utf-8"" />
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+    <title>Kết quả thanh toán VNPay</title>
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
+        body {{ background-color: #f8fafc; color: #0f172a; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }}
+        .card {{ background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); max-width: 420px; width: 100%; padding: 32px 24px; text-align: center; }}
+        .icon-circle {{ width: 68px; height: 68px; border-radius: 50%; background: {statusBg}; color: {statusColor}; font-size: 32px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; }}
+        h1 {{ font-size: 20px; font-weight: 700; color: #0f2b5c; margin-bottom: 8px; }}
+        p.subtitle {{ font-size: 14px; color: #64748b; margin-bottom: 24px; line-height: 1.5; }}
+        .info-box {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left; }}
+        .info-row {{ display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }}
+        .info-row:last-child {{ margin-bottom: 0; }}
+        .info-label {{ color: #64748b; }}
+        .info-value {{ font-weight: 600; color: #0f172a; }}
+        .btn {{ display: block; width: 100%; padding: 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; text-align: center; transition: all 0.2s; }}
+        .btn-navy {{ background: #0f2b5c; color: #ffffff; border: none; }}
+        .btn-navy:hover {{ background: #1e3a8a; }}
+        .hint {{ font-size: 12px; color: #94a3b8; margin-top: 14px; }}
+    </style>
+</head>
+<body>
+    <div class=""card"">
+        <div class=""icon-circle"">{statusIcon}</div>
+        <h1>{statusTitle}</h1>
+        <p class=""subtitle"">{WebUtility.HtmlEncode(message)}</p>
+        <div class=""info-box"">
+            <div class=""info-row""><span class=""info-label"">Số tiền</span><span class=""info-value"">{response.Amount:N0} đ</span></div>
+            <div class=""info-row""><span class=""info-label"">Hợp đồng</span><span class=""info-value"">#{response.ContractId}</span></div>
+            <div class=""info-row""><span class=""info-label"">Mã GD</span><span class=""info-value"">{(string.IsNullOrEmpty(response.TransactionId) ? response.OrderId : response.TransactionId)}</span></div>
+        </div>
+        <a id=""btnReturn"" href=""{deepLink}"" class=""btn btn-navy"">Mở ứng dụng Rental System</a>
+        <div class=""hint"">Đang tự động chuyển hướng về ứng dụng...</div>
+    </div>
+    <script>
+        setTimeout(function() {{
+            window.location.href = '{deepLink}';
+        }}, 600);
+    </script>
+</body>
+</html>";
+
+            return Content(html, "text/html; charset=utf-8");
+        }
+
 
         /// <summary>
         /// Server-to-server Webhook IPN từ VNPay để tự động cập nhật CSDL
@@ -205,6 +294,8 @@ namespace RentalSystem.Controllers
                 // Ghi nhận thanh toán vào hệ thống
                 var (rspCode, message) = await ProcessPaymentAsync(response);
                 return Json(new { RspCode = rspCode, Message = message });
+
+
             }
             catch (Exception ex)
             {
@@ -216,11 +307,26 @@ namespace RentalSystem.Controllers
         // Xử lý ghi nhận thanh toán VNPay vào CSDL
         private async Task<(string rspCode, string message)> ProcessPaymentAsync(VnPaymentResponseModel response)
         {
+            await HopDongController.PaymentLock.WaitAsync();
+            try
+            {
+                return await RecordVnPayPaymentAsync(response);
+            }
+            finally
+            {
+                HopDongController.PaymentLock.Release();
+            }
+        }
+
+        private async Task<(string rspCode, string message)> RecordVnPayPaymentAsync(VnPaymentResponseModel response)
+        {
             // Kiểm tra tính hợp lệ cơ bản
             if (response.Amount <= 0)
             {
                 return ("04", "Invalid amount");
             }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
             // Kiểm tra giao dịch đã được ghi nhận trước đó hay chưa
             if (!string.IsNullOrEmpty(response.TransactionId))
@@ -243,6 +349,20 @@ namespace RentalSystem.Controllers
                 _logger.LogWarning("VNPay IPN: Contract #{ContractId} not found.", response.ContractId);
                 return ("01", "Order not found");
             }
+
+            if (FirstContractPayment.IsPendingHandover(hopDong))
+                return ("01", "First payment requires bank verification");
+
+            if (await _context.ContractSettlements.AnyAsync(s => s.MaHopDong == response.ContractId))
+            {
+                _logger.LogWarning("VNPay {TransactionId}, amount {Amount}, arrived after settlement of HD{ContractId}; manual reconciliation required.",
+                    response.TransactionId, response.Amount, response.ContractId);
+                return ("02", "Contract already settled; manual reconciliation required");
+            }
+
+            if (response.InstallmentId is > 0 &&
+                hopDong.KyHanThanhToans?.Any(k => k.MaKyHan == response.InstallmentId && k.TrangThai != 3) != true)
+                return ("01", "Installment not found or cancelled");
 
             // Xác định loại phiếu thu (0: Thu thuê kỳ hạn, 1: Thu cọc)
             int loaiPhieu = 0;
@@ -281,6 +401,8 @@ namespace RentalSystem.Controllers
                     if (kyHan.SoTienDaTra >= kyHan.SoTienPhai)
                     {
                         kyHan.TrangThai = 1; // Đã trả
+                        kyHan.TienPhat = 0;
+                        kyHan.SoNgayTreHan = 0;
                     }
                     kyHan.NgayThanhToan = DateTime.Now;
                     kyHan.TrangThaiXacNhan = 2; // Đã xác nhận đối soát
@@ -292,7 +414,7 @@ namespace RentalSystem.Controllers
                 // Nếu thanh toán chung cho hợp đồng, trừ dần vào các kỳ hạn chưa trả
                 decimal remainingPaid = response.Amount;
                 var unpaidKyHans = hopDong.KyHanThanhToans?
-                    .Where(k => k.TrangThai != 1)
+                    .Where(k => k.TrangThai != 1 && k.TrangThai != 3)
                     .OrderBy(k => k.SoKyHan)
                     .ToList();
 
@@ -301,11 +423,13 @@ namespace RentalSystem.Controllers
                     foreach (var k in unpaidKyHans)
                     {
                         if (remainingPaid <= 0) break;
-                        decimal canThu = Math.Max(0, k.SoTienPhai - k.SoTienDaTra);
+                        decimal canThu = Math.Max(0, (k.SoTienPhai - k.SoTienDaTra) + k.TienPhat);
                         if (remainingPaid >= canThu)
                         {
                             k.SoTienDaTra += canThu;
                             k.TrangThai = 1;
+                            k.TienPhat = 0;
+                            k.SoNgayTreHan = 0;
                             k.NgayThanhToan = DateTime.Now;
                             k.TrangThaiXacNhan = 2;
                             k.MaGiaoDichChuyenKhoan = response.TransactionId;
@@ -322,24 +446,10 @@ namespace RentalSystem.Controllers
                 }
             }
 
-            // Đồng bộ trạng thái thanh toán của hợp đồng
-            if (hopDong.KyHanThanhToans != null && hopDong.KyHanThanhToans.Any())
-            {
-                if (hopDong.KyHanThanhToans.All(k => k.TrangThai == 1))
-                {
-                    hopDong.TrangThaiThanhToan = 2; // Đã thanh toán đủ (hoặc 3 khi áp dụng 4 cấp)
-                }
-                else if (hopDong.KyHanThanhToans.Any(k => k.SoTienDaTra > 0) || hopDong.TienDaCoc > 0)
-                {
-                    hopDong.TrangThaiThanhToan = 1; // Còn nợ
-                }
-            }
-            else if (hopDong.TienDaCoc > 0)
-            {
-                hopDong.TrangThaiThanhToan = 1;
-            }
-
             await _context.SaveChangesAsync();
+            await HopDongController.SyncTrangThaiThanhToanHopDong(hopDong, _context);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             _logger.LogInformation("Successfully processed VNPay payment for Contract #{ContractId}, Amount: {Amount}, Receipt #{ReceiptId}", response.ContractId, response.Amount, phieuThu.MaPhieuThu);
 
             return ("00", "Confirm Success");
@@ -532,6 +642,29 @@ namespace RentalSystem.Controllers
                         };
                     }
 
+                    if (await _context.ContractSettlements.AnyAsync(s => s.MaHopDong == maHopDong))
+                    {
+                        _logger.LogWarning("Bank transfer {Reference}, amount {Amount}, arrived after settlement of HD{ContractId}; manual reconciliation required.",
+                            referenceCode, amount, maHopDong);
+                        return new BankingExecutionResult
+                        {
+                            StatusCode = 200,
+                            ResponseData = new { success = true, requiresManualReview = true, reason = "ContractAlreadySettled" }
+                        };
+                    }
+
+                    if (hd.YeuCauThanhToanLanDau &&
+                        (hd.TrangThai is 0 or 3 || Regex.IsMatch(rawContent, @"(?i)\b(?:HD|HĐ)[\s\-_:#]*[0-9]{1,10}\s+LD\b")))
+                    {
+                        _logger.LogInformation("First payment {Reference} for HD{ContractId} requires staff verification.",
+                            referenceCode, maHopDong);
+                        return new BankingExecutionResult
+                        {
+                            StatusCode = 200,
+                            ResponseData = new { success = true, requiresManualReview = true }
+                        };
+                    }
+
                     decimal transferAmount = amount;
                     decimal tienConLai = transferAmount;
                     int? primaryKyHanId = null;
@@ -551,7 +684,7 @@ namespace RentalSystem.Controllers
                             primaryKyHanId = targetKy.MaKyHan;
                             if (targetKy.TrangThai != 1)
                             {
-                                decimal penalty = Math.Max(targetKy.TienPhat, targetKy.PhiPhatTreHan);
+                                decimal penalty = targetKy.TienPhat;
                                 decimal conThieu = Math.Max(0m, (targetKy.SoTienPhai - targetKy.SoTienDaTra) + penalty);
 
                                 if (tienConLai >= conThieu)
@@ -560,7 +693,6 @@ namespace RentalSystem.Controllers
                                     targetKy.TrangThai = 1;
                                     targetKy.NgayThanhToan = txnDate;
                                     targetKy.TienPhat = 0;
-                                    targetKy.PhiPhatTreHan = 0;
                                     targetKy.SoNgayTreHan = 0;
                                     targetKy.TrangThaiXacNhan = 2; // Đã duyệt đối soát
                                     targetKy.MaGiaoDichChuyenKhoan = referenceCode;
@@ -593,13 +725,12 @@ namespace RentalSystem.Controllers
                             if (tienConLai <= 0) break;
                             if (!primaryKyHanId.HasValue) primaryKyHanId = nextKy.MaKyHan;
 
-                            decimal nextPenalty = Math.Max(nextKy.TienPhat, nextKy.PhiPhatTreHan);
+                            decimal nextPenalty = nextKy.TienPhat;
                             decimal nextUnpaid = Math.Max(0m, (nextKy.SoTienPhai - nextKy.SoTienDaTra) + nextPenalty);
                             if (nextUnpaid <= 0)
                             {
                                 nextKy.TrangThai = 1;
                                 nextKy.TienPhat = 0;
-                                nextKy.PhiPhatTreHan = 0;
                                 nextKy.SoNgayTreHan = 0;
                                 continue;
                             }
@@ -610,7 +741,6 @@ namespace RentalSystem.Controllers
                                 nextKy.TrangThai = 1;
                                 nextKy.NgayThanhToan = txnDate;
                                 nextKy.TienPhat = 0;
-                                nextKy.PhiPhatTreHan = 0;
                                 nextKy.SoNgayTreHan = 0;
                                 nextKy.TrangThaiXacNhan = 2;
                                 nextKy.MaGiaoDichChuyenKhoan = referenceCode;
@@ -753,7 +883,7 @@ namespace RentalSystem.Controllers
     public class BankingExecutionResult
     {
         public int StatusCode { get; set; } = 200;
-        public object ResponseData { get; set; }
+        public object ResponseData { get; set; } = new { };
     }
 
     public class BankingWebhookModel

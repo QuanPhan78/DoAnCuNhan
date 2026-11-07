@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/maintenance_model.dart';
 import '../../models/role_enum.dart';
 import '../../services/api_config.dart';
@@ -14,13 +14,13 @@ class RemoteMaintenanceDataSource implements MaintenanceDataSource {
   @override
   Future<List<MaintenanceModel>> getMaintenances(String userId, Role role, String userName) async {
     try {
-      final roleStr = role == Role.admin ? 'Admin' : (role == Role.staff ? 'Staff' : 'KhachHang');
-      final url = Uri.parse('$baseUrl/maintenance?userId=$userId&role=$roleStr');
-      final response = await http.get(url);
+      final url = Uri.parse('$baseUrl/maintenance');
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-        return data.map((item) {
+        return data.where((item) => role != Role.staff ||
+            item['assignedStaffId']?.toString() == userId).map((item) {
           final notesRaw = (item['notes'] as List<dynamic>?) ?? [];
           final notes = notesRaw.map((n) => MaintenanceNote(
             time: n['time'] ?? '',
@@ -37,10 +37,14 @@ class RemoteMaintenanceDataSource implements MaintenanceDataSource {
             description: item['description'] ?? '',
             status: item['status'] ?? 'Chờ xử lý',
             assignedEmployee: item['assignedEmployee'],
+            assignedStaffId: item['assignedStaffId']?.toString(),
+            statusCode: (item['statusCode'] as num?)?.toInt(),
             createdAt: item['createdAt'],
             completedAt: item['completedAt'],
             result: item['result'],
             notes: notes,
+            imageUrls: (item['imagePaths'] as List? ?? []).cast<String>()
+                .map((path) => Uri.parse(baseUrl).resolve(path).toString()).toList(),
           );
         }).toList();
       } else {
@@ -57,12 +61,12 @@ class RemoteMaintenanceDataSource implements MaintenanceDataSource {
     try {
       final url = Uri.parse('$baseUrl/maintenance/${maintenance.id}/status');
       final payload = {
-        'status': maintenance.status,
-        'result': maintenance.result,
-        'notes': maintenance.notes.isNotEmpty ? maintenance.notes.last.content : '',
+        'statusCode': maintenance.statusCode,
+        if (maintenance.statusCode == 3) 'result': maintenance.result,
+        if (maintenance.updateNote?.isNotEmpty == true) 'notes': maintenance.updateNote,
       };
 
-      final response = await http.put(
+      final response = await ApiSession.put(
         url,
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),

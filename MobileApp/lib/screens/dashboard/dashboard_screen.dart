@@ -60,11 +60,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case Role.staff:
         return [
           HomeScreen(onSelectTab: handleSelectTab),
-          TasksScreen(initialFilter: _staffTaskFilter),
+          TasksScreen(initialFilter: _staffTaskFilter, isActive: _currentIndex == 1),
           const MaintenanceListScreen(),
-          const NotificationsScreen(),
+          NotificationsScreen(isActive: _currentIndex == 3),
           const AccountScreen(),
         ];
+      case Role.unavailable:
       case Role.admin:
         return [
           HomeScreen(onSelectTab: handleSelectTab),
@@ -94,6 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           NavigationDestination(icon: const Icon(Icons.notifications_outlined), selectedIcon: const Icon(Icons.notifications), label: config.tr('Thông báo')),
           NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: config.tr('Tài khoản')),
         ];
+      case Role.unavailable:
       case Role.admin:
         return [
           NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: config.tr('Trang chủ')),
@@ -123,6 +125,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     
+    if (user.role != Role.customer && user.role != Role.staff) {
+      return const Scaffold(body: Center(child: Text('Tài khoản này vui lòng sử dụng Web.')));
+    }
     final screens = _getScreens(user.role);
     final items = _getNavBarItems(user.role, config);
     final title = _getAppBarTitle(_currentIndex, user.role, config);
@@ -131,6 +136,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: CustomAppBar(
         title: title,
         actions: [
+          if (user.role == Role.customer) ...[
+            IconButton(tooltip: 'Giỏ hàng', icon: const Icon(Icons.shopping_cart_outlined), onPressed: () => Navigator.pushNamed(context, '/cart')),
+            IconButton(tooltip: 'Sổ công nợ', icon: const Icon(Icons.account_balance_wallet_outlined), onPressed: () => Navigator.pushNamed(context, '/debts')),
+          ],
           IconButton(
             icon: const Icon(Icons.search_rounded),
             onPressed: () => Navigator.pushNamed(context, '/search'),

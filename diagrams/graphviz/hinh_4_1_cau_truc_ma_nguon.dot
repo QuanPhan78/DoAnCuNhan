@@ -1,0 +1,90 @@
+digraph Source_Structure {
+    graph [rankdir="LR", splines=ortho, nodesep=0.35, ranksep=0.8, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, style="filled,rounded", fontname="Segoe UI", fontsize=9.5, penwidth=1.2];
+    edge [fontname="Segoe UI", fontsize=9, color="#000000", penwidth=1.2];
+
+    // Nút gốc Solution
+    Solution [label="Solution: RentalSystem.sln\n(.NET 9 STS / ASP.NET Core MVC)", fillcolor="#27272a", fontcolor="#ffffff", fontsize=11, fontname="Segoe UI Bold"];
+
+    // Dự án chính
+    Project_Web [label="Project: RentalSystem (Web App)\nASP.NET Core 9 MVC", fillcolor="#f4f4f5", fontname="Segoe UI Bold"];
+    Project_Test [label="Project: ChallengerTests (Test Suite)\n595 Automated Unit & Integration Tests", fillcolor="#f4f4f5", fontname="Segoe UI Bold"];
+
+    Solution -> Project_Web;
+    Solution -> Project_Test;
+
+    // Các thư mục trong RentalSystem
+    subgraph cluster_web_modules {
+        label="";
+        color="#ffffff";
+
+        Dir_Areas [label="Areas/Admin/\n(Phân hệ Quản trị)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        Dir_Controllers [label="Controllers/\n(Cổng Khách hàng)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        Dir_Models [label="Models/\n(18 Bảng EF Core)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        Dir_Services [label="Services/\n(Dịch vụ nền)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        Dir_Common [label="Common/\n(Thuật toán lõi)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        Dir_Views [label="Views/\n(Razor Views)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        Dir_Wwwroot [label="wwwroot/\n(Tài nguyên tĩnh)", fillcolor="#ffffff", fontname="Segoe UI Semibold"];
+        File_Program [label="Program.cs\n(DI & Pipeline)", fillcolor="#ffffff"];
+    }
+
+    Project_Web -> Dir_Areas;
+    Project_Web -> Dir_Controllers;
+    Project_Web -> Dir_Models;
+    Project_Web -> Dir_Services;
+    Project_Web -> Dir_Common;
+    Project_Web -> Dir_Views;
+    Project_Web -> Dir_Wwwroot;
+    Project_Web -> File_Program;
+
+    // Chi tiết Areas/Admin
+    subgraph cluster_admin_detail {
+        label="";
+        color="#ffffff";
+        Admin_Controllers [label="Admin Controllers:\n- HopDongController.cs (Lock & Hoàn cọc)\n- ThietBiController.cs (Kho Serial 5 trạng thái)\n- CongNoController.cs (4 Nhóm tuổi nợ)\n- BaoTriController.cs (SLA sự cố)\n- PhanCongController.cs (Điều phối KTV)\n- SanPhamController, ThongKe, KhuyenMai", fillcolor="#ffffff"];
+        Admin_Views [label="Admin Razor Views:\n- HopDong/ (Details.cshtml, Canvas Pad)\n- ThietBi/, CongNo/, BaoTri/, PhanCong/\n- Shared/_LayoutAdmin.cshtml", fillcolor="#ffffff"];
+    }
+    Dir_Areas -> Admin_Controllers;
+    Dir_Areas -> Admin_Views;
+
+    // Chi tiết Controllers
+    subgraph cluster_ctrl_detail {
+        label="";
+        color="#ffffff";
+        Root_Controllers [label="Root Controllers:\n- CartController.cs (InventoryLock, SignContract)\n- PaymentController.cs (BankingWebhook 4 tầng)\n- AccountController.cs (Cookie Auth 4 Role)\n- HomeController.cs, DocumentController.cs", fillcolor="#ffffff"];
+    }
+    Dir_Controllers -> Root_Controllers;
+
+    // Chi tiết Models
+    subgraph cluster_models_detail {
+        label="";
+        color="#ffffff";
+        Models_Files [label="Cơ sở dữ liệu & Thực thể:\n- AppModels.cs (ApplicationDbContext, 18 DbSets)\n- DbInitializer.cs (Seed Data, 4 Role RBAC)\n- Migrations/ (21 Tệp lịch sử chuyển dịch CSDL)", fillcolor="#ffffff"];
+    }
+    Dir_Models -> Models_Files;
+
+    // Chi tiết Services & Common
+    subgraph cluster_services_detail {
+        label="";
+        color="#ffffff";
+        Services_Files [label="Dịch vụ & Thuật toán lõi:\n- ReservationCleanupService.cs (Quét 15p)\n- DebtCalculationHelper.cs (4 Cấp tuổi nợ)\n- VietQRHelper.cs (Sinh chuỗi EMVCo & CRC16)", fillcolor="#ffffff"];
+    }
+    Dir_Services -> Services_Files;
+    Dir_Common -> Services_Files;
+
+    // Chi tiết Wwwroot
+    subgraph cluster_wwwroot_detail {
+        label="";
+        color="#ffffff";
+        Wwwroot_Files [label="Tài nguyên Web & Uploads:\n- css/classic-navy.css (Executive Navy Theme)\n- uploads/signatures/ (Chữ ký điện tử PNG)\n- uploads/cmnd/ (Ảnh CCCD JPG/PNG/WEBP)", fillcolor="#ffffff"];
+    }
+    Dir_Wwwroot -> Wwwroot_Files;
+
+    // Chi tiết ChallengerTests
+    subgraph cluster_tests_detail {
+        label="";
+        color="#ffffff";
+        Test_Files [label="Bộ kiểm thử tự động:\n- OpenBankingWebhookTests.cs (Đối soát 4 tầng)\n- ExecutiveBiAnalyticsTests.cs (9 Chỉ số KPI)\n- Concurrency & Semaphore Tests (Overbooking)\n- Magic Bytes & Signature Pad Tests", fillcolor="#ffffff"];
+    }
+    Project_Test -> Test_Files;
+}

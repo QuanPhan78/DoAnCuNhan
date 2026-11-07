@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
+using RentalSystem.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RentalSystem.Models;
+using RentalSystem.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,26 +13,26 @@ namespace RentalSystem.Controllers
 {
     [Route("api/maintenance")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = ApiTokens.Scheme)]
     public class ApiMaintenanceController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
-        public ApiMaintenanceController(ApplicationDbContext context)
+        private readonly IWebHostEnvironment _environment;
+
+        public ApiMaintenanceController(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: api/maintenance
-        // Lấy danh sách phiếu báo sự cố / bảo trì. Hỗ trợ lọc theo userId, role, contractId
         [HttpGet]
-        public async Task<IActionResult> GetTickets(
-            [FromQuery] string? userId,
-            [FromQuery] string? role,
-            [FromQuery] int? contractId)
+        public async Task<IActionResult> GetTickets([FromQuery] int? contractId)
         {
-            IQueryable<PhieuBaoTri> query = _context.PhieuBaoTris
+            IQueryable<PhieuBaoTri> query = _context.PhieuBaoTris.VisibleTickets(User)
                 .Include(p => p.HopDong)
-                    .ThenInclude(h => h.KhachHang)
+                    .ThenInclude(h => h!.KhachHang)
                 .Include(p => p.ThietBi)
                     .ThenInclude(t => t.SanPham)
                 .Include(p => p.KyThuatVien);
@@ -39,34 +42,11 @@ namespace RentalSystem.Controllers
                 query = query.Where(p => p.MaHopDong == contractId.Value);
             }
 
-            if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int parsedUserId))
-            {
-                bool isPrivileged = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(role, "Staff", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(role, "KyThuat", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(role, "KinhDoanh", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(role, "Quản lý", StringComparison.OrdinalIgnoreCase) ||
-                                   string.Equals(role, "Nhân viên", StringComparison.OrdinalIgnoreCase);
-
-                if (!isPrivileged)
-                {
-                    // Khách hàng: chỉ xem phiếu bảo trì thuộc các hợp đồng của chính mình
-                    query = query.Where(p => p.HopDong.MaKhachHang == parsedUserId);
-                }
-            }
-
             var tickets = await query.OrderByDescending(p => p.NgayBaoLoi).ToListAsync();
 
             var result = tickets.Select(p =>
             {
-                string statusText = p.TrangThai switch
-                {
-                    1 => "Chờ xử lý",
-                    2 => "Đang xử lý",
-                    3 => "Đã hoàn thành",
-                    4 => "Đã hủy",
-                    _ => "Chờ xử lý"
-                };
+                string statusText = MaintenanceAssignment.StatusLabel(p.TrangThai);
 
                 string deviceName = p.ThietBi?.SanPham != null
                     ? $"{p.ThietBi.SanPham.TenSanPham} ({p.ThietBi.SoSerial})"
@@ -106,17 +86,20 @@ namespace RentalSystem.Controllers
                     customerPhone = p.HopDong?.KhachHang?.SoDienThoai ?? "",
                     issueType = issueType,
                     description = desc,
-                    severity = "Trung bình",
+                    severity = SeverityLabel(p.MucDoKhanCap),
                     occurrenceTime = p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm"),
                     status = statusText,
                     statusCode = p.TrangThai,
+                    assignedStaffId = p.MaKyThuatVien,
                     assignedStaff = p.KyThuatVien?.HoTen,
                     assignedEmployee = p.KyThuatVien?.HoTen,
                     createdAt = p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm"),
-                    completedAt = p.TrangThai == 3 ? p.NgayBaoLoi.AddHours(2).ToString("dd/MM/yyyy HH:mm") : null,
+                    completedAt = p.NgayHoanThanh?.ToString("dd/MM/yyyy HH:mm"),
                     result = p.GhiChuSuaChua,
                     compensationFee = (double)p.PhiDenBu,
                     rating = p.DanhGiaSao,
+                    feedback = p.YKienPhanHoi,
+                    imagePaths = CustomerMaintenance.ImagePaths(p),
                     notes = notesList
                 };
             }).ToList();
@@ -128,9 +111,9 @@ namespace RentalSystem.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTicketById(int id)
         {
-            var p = await _context.PhieuBaoTris
+            var p = await _context.PhieuBaoTris.VisibleTickets(User)
                 .Include(p => p.HopDong)
-                    .ThenInclude(h => h.KhachHang)
+                    .ThenInclude(h => h!.KhachHang)
                 .Include(p => p.ThietBi)
                     .ThenInclude(t => t.SanPham)
                 .Include(p => p.KyThuatVien)
@@ -141,14 +124,7 @@ namespace RentalSystem.Controllers
                 return NotFound(new { message = $"Không tìm thấy phiếu sự cố #{id}" });
             }
 
-            string statusText = p.TrangThai switch
-            {
-                1 => "Chờ xử lý",
-                2 => "Đang xử lý",
-                3 => "Đã hoàn thành",
-                4 => "Đã hủy",
-                _ => "Chờ xử lý"
-            };
+            string statusText = MaintenanceAssignment.StatusLabel(p.TrangThai);
 
             string deviceName = p.ThietBi?.SanPham != null
                 ? $"{p.ThietBi.SanPham.TenSanPham} ({p.ThietBi.SoSerial})"
@@ -187,183 +163,131 @@ namespace RentalSystem.Controllers
                 customerPhone = p.HopDong?.KhachHang?.SoDienThoai ?? "",
                 issueType = issueType,
                 description = desc,
-                severity = "Trung bình",
+                severity = SeverityLabel(p.MucDoKhanCap),
                 occurrenceTime = p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm"),
                 status = statusText,
                 statusCode = p.TrangThai,
+                assignedStaffId = p.MaKyThuatVien,
                 assignedStaff = p.KyThuatVien?.HoTen,
                 assignedEmployee = p.KyThuatVien?.HoTen,
                 createdAt = p.NgayBaoLoi.ToString("dd/MM/yyyy HH:mm"),
-                completedAt = p.TrangThai == 3 ? p.NgayBaoLoi.AddHours(2).ToString("dd/MM/yyyy HH:mm") : null,
+                completedAt = p.NgayHoanThanh?.ToString("dd/MM/yyyy HH:mm"),
                 result = p.GhiChuSuaChua,
                 compensationFee = (double)p.PhiDenBu,
                 rating = p.DanhGiaSao,
+                feedback = p.YKienPhanHoi,
+                imagePaths = CustomerMaintenance.ImagePaths(p),
                 notes = notesList
             });
         }
 
-        // POST: api/maintenance
-        // Tạo phiếu sự cố / báo hỏng thiết bị mới vào SQL Server
+        [Authorize(Roles = "KhachHang")]
         [HttpPost]
-        public async Task<IActionResult> CreateTicket([FromBody] CreateMaintenanceDto request)
+        [Consumes("application/json")]
+        public Task<IActionResult> CreateTicket([FromBody] CreateMaintenanceDto request) =>
+            SaveTicketAsync(request, [], request.Description ?? "Khách hàng báo sự cố thiết bị");
+
+        [Authorize(Roles = "KhachHang")]
+        [HttpPost]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(32 * 1024 * 1024)]
+        public Task<IActionResult> CreateTicketWithImages([FromForm] CreateMaintenanceDto request, [FromForm] List<IFormFile> images) =>
+            SaveTicketAsync(request, images, request.Description);
+
+        private async Task<IActionResult> SaveTicketAsync(CreateMaintenanceDto request, List<IFormFile> images, string? description)
         {
-            if (request == null)
-            {
-                return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ." });
-            }
+            if (images.Count > 3)
+                return BadRequest(new { message = "Chỉ có thể đính kèm tối đa 3 ảnh." });
+            if (string.IsNullOrWhiteSpace(description))
+                return BadRequest(new { message = "Vui lòng nhập mô tả lỗi." });
 
-            // 1. Phân giải Mã Hợp Đồng
-            int contractId = 0;
-            if (request.MaHopDong.HasValue && request.MaHopDong.Value > 0)
-            {
-                contractId = request.MaHopDong.Value;
-            }
-            else if (!string.IsNullOrEmpty(request.ContractId))
-            {
-                string cleanId = request.ContractId.ToUpper().Replace("HD-", "").Replace("HD", "").Trim();
-                int.TryParse(cleanId, out contractId);
-            }
+            var key = request.ContractId?.Trim() ?? "";
+            if (key.StartsWith("HD", StringComparison.OrdinalIgnoreCase)) key = key[2..].TrimStart('-');
+            int contractId = request.MaHopDong ?? (int.TryParse(key, out var id) ? id : 0);
+            int urgency = request.Severity switch { "Nghiêm trọng" => 2, "Trung bình" => 3, _ => 1 };
+            if (!string.IsNullOrWhiteSpace(request.IssueType))
+                description = $"[{request.IssueType.Trim()}] {description.Trim()}";
 
-            var hopDong = await _context.HopDongs
-                .Include(h => h.KhachHang)
-                .FirstOrDefaultAsync(h => h.MaHopDong == contractId);
-
-            if (hopDong == null)
+            try
             {
-                // Fallback nếu không tìm thấy hợp đồng, tìm hợp đồng gần nhất của user
-                if (!string.IsNullOrEmpty(request.CustomerId) && int.TryParse(request.CustomerId, out int cId))
+                var ticket = await CustomerMaintenance.ReportAsync(_context, _environment.WebRootPath, User.UserId(),
+                    contractId, request.MaThietBi?.ToString() ?? request.DeviceId, description, urgency,
+                    images, allowVideo: false, HttpContext.RequestAborted);
+                return Ok(new
                 {
-                    hopDong = await _context.HopDongs.OrderByDescending(h => h.MaHopDong).FirstOrDefaultAsync(h => h.MaKhachHang == cId);
-                }
-                if (hopDong == null)
-                {
-                    hopDong = await _context.HopDongs.OrderByDescending(h => h.MaHopDong).FirstOrDefaultAsync();
-                }
-                if (hopDong != null) contractId = hopDong.MaHopDong;
+                    success = true,
+                    id = ticket.MaPhieu.ToString(),
+                    code = $"SC-{ticket.MaPhieu:D4}",
+                    requestCode = $"SC-{ticket.MaPhieu:D4}",
+                    contractId = ticket.MaHopDong.ToString(),
+                    deviceId = ticket.MaThietBi.ToString(),
+                    status = MaintenanceAssignment.StatusLabel(ticket.TrangThai),
+                    statusCode = ticket.TrangThai,
+                    imagePaths = CustomerMaintenance.ImagePaths(ticket),
+                    message = "Đã gửi báo cáo sự cố."
+                });
             }
-
-            if (hopDong == null)
+            catch (CustomerMaintenanceException error)
             {
-                return BadRequest(new { message = "Không tìm thấy hợp đồng để lập phiếu bảo trì." });
+                return StatusCode(error.StatusCode, new { message = error.Message });
             }
-
-            // 2. Phân giải Thiết Bị Vật Lý (ThietBis)
-            int thietBiId = 0;
-            if (request.MaThietBi.HasValue && request.MaThietBi.Value > 0)
-            {
-                thietBiId = request.MaThietBi.Value;
-            }
-            else if (!string.IsNullOrEmpty(request.DeviceId) && int.TryParse(request.DeviceId, out int parsedDevId))
-            {
-                thietBiId = parsedDevId;
-            }
-
-            // Nếu chưa tìm thấy thiết bị, tìm từ ChiTietHopDongs của hợp đồng này
-            var chiTiets = await _context.ChiTietHopDongs
-                .Include(c => c.ThietBi)
-                .ThenInclude(t => t.SanPham)
-                .Where(c => c.MaHopDong == contractId)
-                .ToListAsync();
-
-            if (thietBiId <= 0 && chiTiets.Any())
-            {
-                // Tìm theo tên thiết bị nếu DeviceId truyền vào là tên thiết bị
-                if (!string.IsNullOrEmpty(request.DeviceId))
-                {
-                    var match = chiTiets.FirstOrDefault(c => 
-                        (c.ThietBi?.SanPham != null && c.ThietBi.SanPham.TenSanPham.Contains(request.DeviceId, StringComparison.OrdinalIgnoreCase)) ||
-                        (c.ThietBi != null && c.ThietBi.SoSerial.Contains(request.DeviceId, StringComparison.OrdinalIgnoreCase))
-                    );
-                    if (match != null) thietBiId = match.MaThietBi;
-                }
-
-                if (thietBiId <= 0)
-                {
-                    thietBiId = chiTiets.First().MaThietBi;
-                }
-            }
-
-            // Nếu vẫn chưa có thiết bị nào, lấy thiết bị đầu tiên trong bảng ThietBis
-            if (thietBiId <= 0)
-            {
-                var fallbackTb = await _context.ThietBis.FirstOrDefaultAsync();
-                thietBiId = fallbackTb?.MaThietBi ?? 1;
-            }
-
-            // 3. Chuẩn bị nội dung lỗi
-            string moTa = request.Description ?? "Khách hàng báo sự cố thiết bị";
-            if (!string.IsNullOrEmpty(request.IssueType))
-            {
-                moTa = $"[{request.IssueType}] {moTa}";
-            }
-
-            var phieu = new PhieuBaoTri
-            {
-                MaHopDong = contractId,
-                MaThietBi = thietBiId,
-                MoTaLoi = moTa,
-                NgayBaoLoi = DateTime.Now,
-                TrangThai = 1, // 1: Mới tiếp nhận / Chờ xử lý
-                GhiChuSuaChua = "",
-                PhiDenBu = 0,
-                DanhGiaSao = null
-            };
-
-            _context.PhieuBaoTris.Add(phieu);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                success = true,
-                id = phieu.MaPhieu.ToString(),
-                code = $"SC-{phieu.MaPhieu:D4}",
-                requestCode = $"SC-{phieu.MaPhieu:D4}",
-                contractId = phieu.MaHopDong.ToString(),
-                deviceId = phieu.MaThietBi.ToString(),
-                status = "Chờ xử lý",
-                message = "Đã gửi yêu cầu báo sự cố thành công!"
-            });
         }
+
+        private static string SeverityLabel(int? urgency) => urgency switch
+        {
+            2 => "Nghiêm trọng",
+            3 => "Trung bình",
+            _ => "Nhẹ"
+        };
 
         // PUT: api/maintenance/{id}/status
         // Cập nhật trạng thái xử lý (Nhân viên kỹ thuật tiếp nhận / hoàn thành)
+        [Authorize(Roles = "Admin,KyThuat")]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateMaintenanceStatusDto request)
         {
+            int? status = request.StatusCode;
+            if (status == null && !string.IsNullOrWhiteSpace(request.Status))
+            {
+                var label = request.Status.Trim().ToLowerInvariant();
+                status = label switch
+                {
+                    "đã gửi" or "chờ xử lý" or "tiếp nhận" or "phân công" => 1,
+                    "đang xử lý" or "đang sửa chữa" => 2,
+                    "hoàn thành" or "đã hoàn thành" or "đã sửa xong" or "chờ nghiệm thu" => 3,
+                    "hỏng, chuyển thanh lý" => 4,
+                    _ => 0
+                };
+            }
+            if (status is < 1 or > 4)
+                return BadRequest(new { message = "Trạng thái xử lý không hợp lệ." });
+
+            await using var transaction = await MaintenanceAssignment.BeginUpdateAsync(_context, id);
             var phieu = await _context.PhieuBaoTris.FindAsync(id);
             if (phieu == null)
-            {
                 return NotFound(new { message = $"Không tìm thấy phiếu sự cố #{id}" });
+
+            int actorId = User.UserId();
+            if (User.IsInRole("KyThuat"))
+            {
+                if (phieu.MaKyThuatVien != actorId) return NotFound(new { message = "Không tìm thấy phiếu được giao." });
+                if (request.StaffId.HasValue || request.CompensationFee.HasValue)
+                    return Forbid(ApiTokens.Scheme);
+                if (status.HasValue && (status.Value is not (2 or 3) ||
+                    (status.Value != phieu.TrangThai && status.Value != phieu.TrangThai + 1)))
+                    return Conflict(new { message = "Chỉ có thể bắt đầu sửa hoặc báo sửa xong phiếu được giao." });
             }
 
-            if (!string.IsNullOrEmpty(request.Status))
-            {
-                string s = request.Status.ToLower();
-                if (s.Contains("hoàn thành") || s.Contains("xong"))
-                {
-                    phieu.TrangThai = 3;
-                }
-                else if (s.Contains("đang") || s.Contains("tiếp nhận") || s.Contains("phân công"))
-                {
-                    phieu.TrangThai = 2;
-                }
-                else if (s.Contains("hủy"))
-                {
-                    phieu.TrangThai = 4;
-                }
-                else
-                {
-                    phieu.TrangThai = 1;
-                }
-            }
-            else if (request.StatusCode.HasValue)
-            {
-                phieu.TrangThai = request.StatusCode.Value;
-            }
+            if (phieu.TrangThai is 4 or 5 && status.HasValue && status != phieu.TrangThai)
+                return Conflict(new { message = "Phiếu đã đóng." });
 
-            if (!string.IsNullOrEmpty(request.Result) || !string.IsNullOrEmpty(request.Notes))
+            if (status.HasValue)
+                await MaintenanceAssignment.ApplyStatusAsync(_context, phieu, status.Value);
+
+            if (!string.IsNullOrWhiteSpace(request.Result) || !string.IsNullOrWhiteSpace(request.Notes))
             {
-                string noteText = !string.IsNullOrEmpty(request.Result) ? request.Result : request.Notes!;
+                string noteText = string.Join(" | ", new[] { request.Notes, request.Result }
+                    .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!.Trim()));
                 phieu.GhiChuSuaChua = string.IsNullOrEmpty(phieu.GhiChuSuaChua)
                     ? noteText
                     : $"{phieu.GhiChuSuaChua} | {noteText}";
@@ -371,6 +295,9 @@ namespace RentalSystem.Controllers
 
             if (request.StaffId.HasValue && request.StaffId.Value > 0)
             {
+                if (request.StaffId != phieu.MaKyThuatVien &&
+                    !await MaintenanceAssignment.IsActiveTechnicianAsync(_context, request.StaffId.Value))
+                    return BadRequest(new { message = "Hãy chọn kỹ thuật viên đang hoạt động." });
                 phieu.MaKyThuatVien = request.StaffId.Value;
             }
 
@@ -379,7 +306,9 @@ namespace RentalSystem.Controllers
                 phieu.PhiDenBu = request.CompensationFee.Value;
             }
 
+            await MaintenanceAssignment.SyncAsync(_context, phieu, actorId);
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return Ok(new
             {
@@ -389,38 +318,43 @@ namespace RentalSystem.Controllers
             });
         }
 
-        // PUT: api/maintenance/{id}/rating
-        // Khách hàng gửi đánh giá mức độ hài lòng (1 - 5 sao)
+        [Authorize(Roles = "KhachHang")]
+        [HttpPut("{id}/acceptance")]
+        public Task<IActionResult> AcceptMaintenance(int id, [FromBody] AcceptMaintenanceDto request) =>
+            ReviewAsync(id, request.Accepted, null, request.Feedback);
+
+        [Authorize(Roles = "KhachHang")]
         [HttpPut("{id}/rating")]
-        public async Task<IActionResult> RateMaintenance(int id, [FromBody] RateMaintenanceDto request)
+        public Task<IActionResult> RateMaintenance(int id, [FromBody] RateMaintenanceDto request) =>
+            ReviewAsync(id, null, request.Rating, request.Feedback);
+
+        private async Task<IActionResult> ReviewAsync(int id, bool? accepted, int? rating, string? feedback)
         {
-            var phieu = await _context.PhieuBaoTris.FindAsync(id);
-            if (phieu == null)
+            if (accepted == null && rating == null)
+                return BadRequest(new { message = "Chọn đồng ý hoặc từ chối nghiệm thu." });
+            try
             {
-                return NotFound(new { message = $"Không tìm thấy phiếu sự cố #{id}" });
+                var ticket = await CustomerMaintenance.ReviewAsync(_context, User.UserId(), id, accepted, rating, feedback);
+                return Ok(new
+                {
+                    success = true,
+                    statusCode = ticket.TrangThai,
+                    status = MaintenanceAssignment.StatusLabel(ticket.TrangThai),
+                    rating = ticket.DanhGiaSao,
+                    feedback = ticket.YKienPhanHoi
+                });
             }
-
-            if (request.Rating < 1 || request.Rating > 5)
+            catch (CustomerMaintenanceException error)
             {
-                return BadRequest(new { message = "Điểm đánh giá phải từ 1 đến 5 sao." });
+                return StatusCode(error.StatusCode, new { message = error.Message });
             }
-
-            phieu.DanhGiaSao = request.Rating;
-            if (!string.IsNullOrEmpty(request.Feedback))
-            {
-                phieu.GhiChuSuaChua = string.IsNullOrEmpty(phieu.GhiChuSuaChua)
-                    ? $"[Phản hồi KH]: {request.Feedback}"
-                    : $"{phieu.GhiChuSuaChua} | [Phản hồi KH]: {request.Feedback}";
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                success = true,
-                message = "Cảm ơn bạn đã gửi đánh giá chất lượng dịch vụ bảo trì!"
-            });
         }
+    }
+
+    public class AcceptMaintenanceDto
+    {
+        public bool? Accepted { get; set; }
+        public string? Feedback { get; set; }
     }
 
     public class CreateMaintenanceDto

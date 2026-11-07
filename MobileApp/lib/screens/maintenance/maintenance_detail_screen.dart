@@ -1,9 +1,10 @@
+import 'maintenance_evidence_screen.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/custom_image_widget.dart';
 import 'package:provider/provider.dart';
 import '../../models/maintenance_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/permission_enum.dart';
-import '../../utils/permission_manager.dart';
+import '../../models/role_enum.dart';
 import '../../widgets/maintenance_timeline.dart';
 import '../../widgets/maintenance_stepper.dart';
 import '../../widgets/core/custom_app_bar.dart';
@@ -20,8 +21,10 @@ class MaintenanceDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userRole = context.read<AuthProvider>().currentUser?.role;
-    final canUpdate = userRole != null && PermissionManager.hasPermission(userRole, AppPermission.viewAssignedMaintenance);
+    final user = context.watch<AuthProvider>().currentUser;
+    final canUpdate = user != null && user.role == Role.staff &&
+        user.id == maintenance.assignedStaffId && !maintenance.isClosed &&
+        maintenance.statusCode != 3;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,7 +41,8 @@ class MaintenanceDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             
             // Stepper Visual
-            MaintenanceStepper(currentStatus: maintenance.status ?? 'Đã gửi'),
+            MaintenanceStepper(currentStatus: maintenance.status ?? 'Đã gửi',
+              statusCode: maintenance.statusCode, isAssigned: maintenance.assignedStaffId != null),
             const SizedBox(height: 24),
 
             _buildSectionCard(
@@ -57,7 +61,7 @@ class MaintenanceDetailScreen extends StatelessWidget {
                   _buildInfoRow('Ngày tạo', maintenance.createdAt ?? 'N/A'),
                   if (maintenance.completedAt != null && maintenance.completedAt!.isNotEmpty) ...[
                     _buildDivider(),
-                    _buildInfoRow('Hoàn thành', maintenance.completedAt!, isSuccess: true),
+                    _buildInfoRow('Sửa xong', maintenance.completedAt!, isSuccess: true),
                   ],
                 ],
               ),
@@ -72,6 +76,18 @@ class MaintenanceDetailScreen extends StatelessWidget {
                 style: AppTextStyles.body.copyWith(height: 1.5),
               ),
             ),
+
+            if (maintenance.imageUrls.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildSectionCard(
+                title: 'Ảnh sự cố',
+                icon: Icons.image_outlined,
+                content: Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final url in maintenance.imageUrls)
+                    CustomImageWidget(imageUrl: url, width: 100, height: 100, borderRadius: 8),
+                ]),
+              ),
+            ],
 
             if (maintenance.result != null && maintenance.result!.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -92,11 +108,16 @@ class MaintenanceDetailScreen extends StatelessWidget {
               content: MaintenanceTimeline(notes: maintenance.notes),
             ),
 
+            if (user?.role == Role.staff && user?.id == maintenance.assignedStaffId && !maintenance.isClosed)
+              OutlinedButton.icon(icon: const Icon(Icons.camera_alt_outlined), label: const Text('Thêm ảnh hiện trường'), onPressed: () async {
+                final saved = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => MaintenanceEvidenceScreen(ticketId: maintenance.id)));
+                if (saved == true && context.mounted) Navigator.pop(context);
+              }),
             const SizedBox(height: 40),
           ],
         ),
       ),
-      bottomNavigationBar: canUpdate && maintenance.status != 'Hoàn thành'
+      bottomNavigationBar: canUpdate
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),

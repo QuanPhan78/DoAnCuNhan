@@ -25,6 +25,13 @@ namespace RentalSystem.Services
             var hashSecret = _configuration["Vnpay:HashSecret"] ?? string.Empty;
             var baseUrl = _configuration["Vnpay:BaseUrl"] ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
             var returnUrl = _configuration["Vnpay:ReturnUrl"] ?? string.Empty;
+            if (context?.Request != null && !string.IsNullOrEmpty(returnUrl))
+            {
+                if (Uri.TryCreate(returnUrl, UriKind.Absolute, out var returnUri) && returnUri.IsLoopback && context.Request.Host.HasValue)
+                {
+                    returnUrl = $"{context.Request.Scheme}://{context.Request.Host.Value}{returnUri.PathAndQuery}";
+                }
+            }
             var version = _configuration["Vnpay:Version"] ?? "2.1.0";
             var command = _configuration["Vnpay:Command"] ?? "pay";
             var currCode = _configuration["Vnpay:CurrCode"] ?? "VND";
@@ -32,7 +39,7 @@ namespace RentalSystem.Services
 
             long vnpAmount = (long)(request.Amount * 100);
 
-            string ipAddress = context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+            string ipAddress = context?.Connection?.RemoteIpAddress?.ToString() ?? "127.0.0.1";
             if (ipAddress == "::1")
             {
                 ipAddress = "127.0.0.1";
@@ -49,8 +56,15 @@ namespace RentalSystem.Services
             payParams.Add("vnp_Locale", locale);
             payParams.Add("vnp_OrderInfo", string.IsNullOrWhiteSpace(request.Description) ? $"Thanh toan hop dong {request.ContractId}" : request.Description);
             payParams.Add("vnp_OrderType", "other");
+            if (request.IsMobile && !string.IsNullOrEmpty(returnUrl))
+            {
+                returnUrl += (returnUrl.Contains('?') ? "&" : "?") + "source=mobile";
+            }
             payParams.Add("vnp_ReturnUrl", returnUrl);
-            payParams.Add("vnp_TxnRef", $"{request.ContractId}_{request.InstallmentId ?? 0}_{DateTime.Now.Ticks}");
+            string txnRef = request.IsMobile
+                ? $"{request.ContractId}_{request.InstallmentId ?? 0}_{DateTime.Now.Ticks}_mob"
+                : $"{request.ContractId}_{request.InstallmentId ?? 0}_{DateTime.Now.Ticks}";
+            payParams.Add("vnp_TxnRef", txnRef);
 
             var hashData = new StringBuilder();
             var query = new StringBuilder();
@@ -136,6 +150,9 @@ namespace RentalSystem.Services
 
             int contractId = 0;
             int? installmentId = null;
+            bool isMobile = (collections.ContainsKey("source") && collections["source"] == "mobile") ||
+                            (!string.IsNullOrEmpty(vnpTxnRef) && vnpTxnRef.EndsWith("_mob", StringComparison.OrdinalIgnoreCase));
+
             if (!string.IsNullOrEmpty(vnpTxnRef))
             {
                 var parts = vnpTxnRef.Split('_');
@@ -151,6 +168,7 @@ namespace RentalSystem.Services
 
             return new VnPaymentResponseModel
             {
+                IsMobile = isMobile,
                 IsValidSignature = isValidSignature,
                 Success = isValidSignature && vnpResponseCode == "00",
                 PaymentMethod = "VnPay",

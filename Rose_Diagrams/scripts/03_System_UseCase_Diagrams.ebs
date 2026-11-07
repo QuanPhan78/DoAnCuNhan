@@ -1,0 +1,254 @@
+' ==============================================================================
+' ROSESCRIPT 03: SINH SO DO CA SU DUNG HE THONG & 3 PHAN HE CHUYEN BIET
+' (03_System_UseCase_Diagrams.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Quy chuan: 14 SYS-UCs Overview & 3 Subsystems (Customer, Admin, Maintenance)
+' Ngon ngu: 100% Tieng Viet khong dau (Pure ASCII)
+' ==============================================================================
+Option Explicit
+
+
+' ------------------------------------------------------------------------------
+' TIEN ICH TRO GIUP MO HINH HOA (MODELING HELPER FUNCTIONS)
+' ------------------------------------------------------------------------------
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, doc As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    Set GetOrCreateClass = aCls
+                    If st <> "" Then aCls.Stereotype = st
+                    If doc <> "" Then aCls.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If doc <> "" Then aCls.Documentation = doc
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Function GetOrCreateUseCase(parentCat As Category, ucName As String, st As String, doc As String) As UseCase
+    On Error Resume Next
+    Dim aUc As UseCase
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.UseCases.Count
+            Set aUc = parentCat.UseCases.GetAt(i)
+            If Not aUc Is Nothing Then
+                If aUc.Name = ucName Then
+                    Set GetOrCreateUseCase = aUc
+                    If st <> "" Then aUc.Stereotype = st
+                    If doc <> "" Then aUc.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aUc = parentCat.AddUseCase(ucName)
+        If Not aUc Is Nothing Then
+            If st <> "" Then aUc.Stereotype = st
+            If doc <> "" Then aUc.Documentation = doc
+        End If
+        Set GetOrCreateUseCase = aUc
+    End If
+End Function
+
+Sub SafeAddAssociation(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        clientCls.AddAssociation "", supplierName
+    End If
+End Sub
+
+Sub SafeAddAttribute(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOperation(theCls As Class, opName As String, returnType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, returnType)
+    End If
+End Sub
+
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootUC As Category
+    Dim pkgSystem As Category
+    Dim pkgPortal As Category
+    Dim pkgAdmin As Category
+    Dim pkgMaint As Category
+    
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo Model trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Set rootUC = theModel.RootUseCaseCategory
+    Set pkgSystem = GetOrCreateCategory(rootUC, "03_System_Use_Cases")
+    
+    ' 1. Cac Tac nhan he thong (System Actors)
+    Dim actKH As Class, actAdmin As Class, actKD As Class, actKTV As Class, actNH As Class
+    Set actKH = GetOrCreateClass(rootUC, "Khach hang", "actor", "Khach hang he thong")
+    Set actAdmin = GetOrCreateClass(rootUC, "Quan tri vien", "actor", "Quan tri vien he thong")
+    Set actKD = GetOrCreateClass(rootUC, "Nhan vien kinh doanh", "actor", "Nhan vien kinh doanh he thong")
+    Set actKTV = GetOrCreateClass(rootUC, "Ky thuat vien", "actor", "Ky thuat vien he thong")
+    Set actNH = GetOrCreateClass(rootUC, "Ngan hang / Cong VietQR", "actor", "Cong VietQR va Ngan hang")
+    
+    ' 2. 14 Ca su dung he thong tong quat (14 SYS-UCs)
+    Dim ucs(1 To 14) As UseCase
+    Set ucs(1) = GetOrCreateUseCase(rootUC, "SYS-UC01 - Dang ky & Xac thuc tai khoan", "use case", "Dang ky, dang nhap va phan quyen")
+    Set ucs(2) = GetOrCreateUseCase(rootUC, "SYS-UC02 - Dat thue & Giu cho may Serial", "use case", "Dat thue may truc tuyen giu cho 24h")
+    Set ucs(3) = GetOrCreateUseCase(rootUC, "SYS-UC03 - Ky so hop dong Canvas HTML5 & CCCD", "use case", "Ky hop dong dien tu va tai CCCD")
+    Set ucs(4) = GetOrCreateUseCase(rootUC, "SYS-UC04 - Theo doi lich no ca nhan MyDebt", "use case", "Xem cong no va thanh toan ky han")
+    Set ucs(5) = GetOrCreateUseCase(rootUC, "SYS-UC05 - Tham dinh & Duyet hop dong thue", "use case", "Kinh doanh duyet ho so thue")
+    Set ucs(6) = GetOrCreateUseCase(rootUC, "SYS-UC06 - Quan ly thiet bi Serial & Danh muc kho", "use case", "Quan ly may theo serial tung chiec")
+    Set ucs(7) = GetOrCreateUseCase(rootUC, "SYS-UC07 - Quan tri phan quyen nguoi dung RBAC", "use case", "Phan quyen theo vai tro nguoi dung")
+    Set ucs(8) = GetOrCreateUseCase(rootUC, "SYS-UC08 - Giam sat cong no & Tuoi no 4 cap", "use case", "Giam sat va phan loai tuoi no")
+    Set ucs(9) = GetOrCreateUseCase(rootUC, "SYS-UC09 - Xuat kho ban giao & Quet Barcode", "use case", "KTV xuat kho va ban giao may")
+    Set ucs(10) = GetOrCreateUseCase(rootUC, "SYS-UC10 - Tiep nhan & Xu ly su co theo SLA", "use case", "Tiep nhan ticket va tinh gio SLA")
+    Set ucs(11) = GetOrCreateUseCase(rootUC, "SYS-UC11 - Thu hoi, nghiem thu & Doi may", "use case", "Nghiem thu may va doi may bao hanh")
+    Set ucs(12) = GetOrCreateUseCase(rootUC, "SYS-UC12 - Thanh toan dat coc VietQR dong NAPAS 247", "use case", "Sinh VietQR thanh toan tu dong")
+    Set ucs(13) = GetOrCreateUseCase(rootUC, "SYS-UC13 - Doi soat tu dong Banking Webhook", "use case", "Nhan IPN Webhook gach no")
+    Set ucs(14) = GetOrCreateUseCase(rootUC, "SYS-UC14 - Lap phieu chi hoan tien coc", "use case", "Quyet toan va lap phieu chi hoan coc")
+    
+    ' Ket noi Association cho SYS-UCs
+    SafeAddAssociation actKH, ucs(1).Name
+    SafeAddAssociation actAdmin, ucs(1).Name
+    SafeAddAssociation actKH, ucs(2).Name
+    SafeAddAssociation actKH, ucs(3).Name
+    SafeAddAssociation actKH, ucs(4).Name
+    SafeAddAssociation actKD, ucs(5).Name
+    SafeAddAssociation actAdmin, ucs(6).Name
+    SafeAddAssociation actKTV, ucs(6).Name
+    SafeAddAssociation actAdmin, ucs(7).Name
+    SafeAddAssociation actKD, ucs(8).Name
+    SafeAddAssociation actAdmin, ucs(8).Name
+    SafeAddAssociation actKTV, ucs(9).Name
+    SafeAddAssociation actKTV, ucs(10).Name
+    SafeAddAssociation actKH, ucs(10).Name
+    SafeAddAssociation actKTV, ucs(11).Name
+    SafeAddAssociation actKH, ucs(12).Name
+    SafeAddAssociation actNH, ucs(12).Name
+    SafeAddAssociation actNH, ucs(13).Name
+    SafeAddAssociation actKD, ucs(14).Name
+    
+    Dim diagSys As Diagram
+    Set diagSys = rootUC.AddUseCaseDiagram("System Use Case Overview Diagram")
+    If Not diagSys Is Nothing Then diagSys.Open
+    
+    ' 3. Phan he 1: Customer Portal Subsystem (8 UCs)
+    Set pkgPortal = GetOrCreateCategory(pkgSystem, "Phan he Khach hang (Customer Portal)")
+    Dim uPortal(1 To 8) As UseCase
+    Set uPortal(1) = GetOrCreateUseCase(pkgPortal, "UC-KH01 - Dang ky & Dang nhap tai khoan", "use case", "Dang ky, dang nhap, xac thuc")
+    Set uPortal(2) = GetOrCreateUseCase(pkgPortal, "UC-KH02 - Tim kiem & Loc danh muc thiet bi", "use case", "Tim kiem thiet bi theo cau hinh")
+    Set uPortal(3) = GetOrCreateUseCase(pkgPortal, "UC-KH03 - Dat thue & Giu cho may Serial", "use case", "Giu cho thiet bi 24h")
+    Set uPortal(4) = GetOrCreateUseCase(pkgPortal, "UC-KH04 - Ky hop dong dien tu Canvas & CCCD", "use case", "Ky so HTML5 Canvas")
+    Set uPortal(5) = GetOrCreateUseCase(pkgPortal, "UC-KH05 - Thanh toan dat coc VietQR dong", "use case", "Thanh toan qua ma QR NAPAS 247")
+    Set uPortal(6) = GetOrCreateUseCase(pkgPortal, "UC-KH06 - Theo doi lich no & Tra gop ky han", "use case", "Theo doi ky han tra gop MyDebt")
+    Set uPortal(7) = GetOrCreateUseCase(pkgPortal, "UC-KH07 - Gui yeu cau bao su co ky thuat SLA", "use case", "Bao su co kem hinh anh")
+    Set uPortal(8) = GetOrCreateUseCase(pkgPortal, "UC-KH08 - Yeu cau gia han hop dong thue", "use case", "Xin gia han them thoi gian thue")
+    
+    Dim pActKH As Class
+    Set pActKH = GetOrCreateClass(pkgPortal, "Khach hang", "actor", "Khach hang Portal")
+    Dim m As Integer
+    For m = 1 To 8
+        SafeAddAssociation pActKH, uPortal(m).Name
+    Next m
+    
+    Dim diagPortal As Diagram
+    Set diagPortal = pkgPortal.AddUseCaseDiagram("Customer Portal Use Case Diagram")
+    If Not diagPortal Is Nothing Then diagPortal.Open
+    
+    ' 4. Phan he 2: Admin & Operations Subsystem (9 UCs)
+    Set pkgAdmin = GetOrCreateCategory(pkgSystem, "Phan he Quan tri & Van hanh (Admin & Operations)")
+    Dim uAdmin(1 To 9) As UseCase
+    Set uAdmin(1) = GetOrCreateUseCase(pkgAdmin, "UC-AD01 - Quan tri nguoi dung & Phan quyen", "use case", "Quan ly tai khoan va vai tro")
+    Set uAdmin(2) = GetOrCreateUseCase(pkgAdmin, "UC-AD02 - Quan ly danh muc & May Serial", "use case", "Quan ly san pham va may serial")
+    Set uAdmin(3) = GetOrCreateUseCase(pkgAdmin, "UC-AD03 - Tham dinh & Duyet hop dong thue", "use case", "Kinh doanh duyet hop dong")
+    Set uAdmin(4) = GetOrCreateUseCase(pkgAdmin, "UC-AD04 - Cau hinh ma khuyen mai Voucher", "use case", "Quan ly chuong trinh khuyen mai")
+    Set uAdmin(5) = GetOrCreateUseCase(pkgAdmin, "UC-AD05 - Giam sat cong no & Tuoi no 4 cap", "use case", "Theo doi cong no va nhac no")
+    Set uAdmin(6) = GetOrCreateUseCase(pkgAdmin, "UC-AD06 - Cau hinh chinh sach lai phat & An han", "use case", "Cau hinh an han 3 ngay, phat 0.1%")
+    Set uAdmin(7) = GetOrCreateUseCase(pkgAdmin, "UC-AD07 - Doi soat bien dong so du Webhook", "use case", "Doi soat giao dich ngan hang")
+    Set uAdmin(8) = GetOrCreateUseCase(pkgAdmin, "UC-AD08 - Lap phieu chi hoan tra tien coc", "use case", "Lap phieu chi tat toan hoan coc")
+    Set uAdmin(9) = GetOrCreateUseCase(pkgAdmin, "UC-AD09 - Xuat bao cao tai chinh BI Excel", "use case", "Xuat bao cao ClosedXML")
+    
+    Dim aActAdmin As Class, aActKD As Class
+    Set aActAdmin = GetOrCreateClass(pkgAdmin, "Quan tri vien", "actor", "Quan tri vien")
+    Set aActKD = GetOrCreateClass(pkgAdmin, "Nhan vien kinh doanh", "actor", "Kinh doanh")
+    For m = 1 To 9
+        SafeAddAssociation aActAdmin, uAdmin(m).Name
+    Next m
+    SafeAddAssociation aActKD, uAdmin(3).Name
+    SafeAddAssociation aActKD, uAdmin(5).Name
+    SafeAddAssociation aActKD, uAdmin(8).Name
+    
+    Dim diagAdmin As Diagram
+    Set diagAdmin = pkgAdmin.AddUseCaseDiagram("Admin & Operations Use Case Diagram")
+    If Not diagAdmin Is Nothing Then diagAdmin.Open
+    
+    ' 5. Phan he 3: Maintenance & Technical Subsystem (6 UCs)
+    Set pkgMaint = GetOrCreateCategory(pkgSystem, "Phan he Bao tri & Ky thuat (Maintenance & Technical)")
+    Dim uMaint(1 To 6) As UseCase
+    Set uMaint(1) = GetOrCreateUseCase(pkgMaint, "UC-BT01 - Tiep nhan yeu cau bao su co thiet bi", "use case", "Tiep nhan ticket su co")
+    Set uMaint(2) = GetOrCreateUseCase(pkgMaint, "UC-BT02 - Dieu phoi & Phan cong ky thuat vien", "use case", "Phan cong KTV xu ly")
+    Set uMaint(3) = GetOrCreateUseCase(pkgMaint, "UC-BT03 - Kich hoat SLA tam dung tinh tien", "use case", "Dong ho SLA tam dung neu >24h")
+    Set uMaint(4) = GetOrCreateUseCase(pkgMaint, "UC-BT04 - Kiem tra tai cho, sua chua & Doi may", "use case", "KTV xu ly su co tai cho")
+    Set uMaint(5) = GetOrCreateUseCase(pkgMaint, "UC-BT05 - Dong kiem & Ky bien ban bao tri", "use case", "Dong kiem nghiem thu sua chua")
+    Set uMaint(6) = GetOrCreateUseCase(pkgMaint, "UC-BT06 - Nghiem thu hoan tat & Cap nhat kho", "use case", "Cap nhat trang thai thiet bi")
+    
+    Dim mActKTV As Class
+    Set mActKTV = GetOrCreateClass(pkgMaint, "Ky thuat vien", "actor", "Ky thuat vien")
+    For m = 1 To 6
+        SafeAddAssociation mActKTV, uMaint(m).Name
+    Next m
+    
+    Dim diagMaint As Diagram
+    Set diagMaint = pkgMaint.AddUseCaseDiagram("Maintenance & Technical Use Case Diagram")
+    If Not diagMaint Is Nothing Then diagMaint.Open
+    
+    MsgBox "DA TAO XONG SO DO CA SU DUNG HE THONG & 3 PHAN HE!" & vbCrLf & vbCrLf & _
+           "- Overview: 14 SYS-UCs" & vbCrLf & _
+           "- Customer Portal: 8 UCs" & vbCrLf & _
+           "- Admin & Operations: 9 UCs" & vbCrLf & _
+           "- Maintenance & Technical: 6 UCs", 64, "Hoan thanh Script 03"
+End Sub

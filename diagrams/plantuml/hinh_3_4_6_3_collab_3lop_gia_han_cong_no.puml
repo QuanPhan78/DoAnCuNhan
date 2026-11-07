@@ -1,0 +1,37 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 9.5
+}
+
+rectangle "1. Tác nhân\nKhách hàng" as User
+rectangle "2. Giao diện\nExtension & Debt View" as View
+rectangle "3. Bộ điều khiển\nHopDong & CongNo" as Ctrl
+rectangle "4. Thuật toán\nDebtCalculationHelper" as Helper
+rectangle "5. Cơ sở dữ liệu\nApplicationDbContext" as DB
+rectangle "6. Thực thể\nHopDong & KyHan" as Entity
+rectangle "7. Tác nhân\nNhân viên Kinh doanh" as Staff
+
+User -right-> View : 1: Gửi yêu cầu gia hạn\n10: Nhận kết quả gia hạn
+View -right-> Ctrl : 2: POST /Account/RequestExtension\n9: Phản hồi duyệt thành công
+Staff -left-> View : 3: Duyệt yêu cầu gia hạn
+Ctrl -down-> Helper : 4: Kiểm tra 4 nhóm tuổi nợ & Blacklist
+Ctrl -right-> DB : 5: Lưu YeuCauGiaHan\n7: Cập nhật CSDL
+DB -down-> Entity : 6: Kéo dài HopDong.NgayKetThuc\n8: Sinh thêm KyHanThanhToan mới
+
+@enduml

@@ -23,7 +23,10 @@
                 <p><strong>Ngày nhận:</strong> @Model.NgayBatDau.ToString("dd/MM/yyyy")</p>
                 <p><strong>Ngày trả:</strong> @Model.NgayKetThuc.ToString("dd/MM/yyyy")</p>
                 <p><strong>Tổng tiền:</strong> <span class="text-danger fw-bold">@Model.TongTien.ToString("N0") đ</span></p>
-                <p><strong>Yêu cầu đặt cọc:</strong> <span class="text-warning fw-bold">@(((decimal?)ViewBag.TienCocYeuCau ?? 0).ToString("N0")) đ</span> <small class="text-muted">(Thanh toán khi nhận máy)</small></p>
+                <p><strong>Cọc bảo đảm:</strong>
+                    <span class="text-warning fw-bold">@((Model.YeuCauThanhToanLanDau ? Model.TienCocBaoDamMay : ((decimal?)ViewBag.TienCocYeuCau ?? 0)).ToString("N0")) đ</span>
+                    <small class="text-muted">@(Model.YeuCauThanhToanLanDau ? "(Chuyển cùng tiền thuê kỳ đầu sau khi ký)" : "(Thanh toán khi nhận máy)")</small>
+                </p>
                 <p><strong>Tiền đã cọc:</strong> <span class="text-success fw-bold">@Model.TienDaCoc.ToString("N0") đ</span></p>
             </div>
         </div>

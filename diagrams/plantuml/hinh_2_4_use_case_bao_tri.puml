@@ -1,0 +1,65 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #f8fafc
+    FontSize 11.5
+    FontStyle bold
+}
+
+left to right direction
+
+' ==============================================================================
+' 3 TÁC NHÂN LIÊN QUAN TRỰC TIẾP (RBAC CHUẨN 4 ROLES - KHÔNG CÓ TRƯỞNG PHÒNG)
+' ==============================================================================
+actor "Khách hàng\n(KhachHang)" as ActKH
+actor "Quản trị viên\n(Admin / Điều phối)" as ActAD
+actor "Kỹ thuật viên\n(KyThuat)" as ActKT
+
+rectangle "PHÂN HỆ BẢO TRÌ & KỸ THUẬT (MAINTENANCE PORTAL)" {
+    usecase "UC-BT01: Tiếp nhận yêu cầu sự cố máy" as UCBT01
+    usecase "UC-BT02: Điều phối & Phân công kỹ thuật viên" as UCBT02
+    usecase "UC-BT03: Kích hoạt SLA tạm dừng tính tiền" as UCBT03
+    usecase "UC-BT04: Kiểm tra tại chỗ, sửa chữa & Đổi máy" as UCBT04
+    usecase "UC-BT05: Đồng kiểm & Ký biên bản bảo trì" as UCBT05
+    usecase "UC-BT06: Nghiệm thu hoàn tất & Cập nhật kho" as UCBT06
+}
+
+' Liên kết Khách hàng
+ActKH --> UCBT01
+ActKH --> UCBT05
+
+' Liên kết Quản trị viên (Điều phối)
+ActAD --> UCBT01
+ActAD --> UCBT02
+ActAD --> UCBT03
+
+' Liên kết Kỹ thuật viên (KyThuat)
+ActKT --> UCBT01
+ActKT --> UCBT04
+ActKT --> UCBT05
+ActKT --> UCBT06
+
+@enduml

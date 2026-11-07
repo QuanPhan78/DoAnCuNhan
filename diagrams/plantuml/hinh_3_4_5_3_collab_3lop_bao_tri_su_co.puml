@@ -1,0 +1,35 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 9.5
+}
+
+rectangle "1. Tác nhân\nKhách hàng" as User
+rectangle "2. Giao diện\nTicket & Task View" as View
+rectangle "3. Bộ điều khiển\nBaoTri & PhanCong" as Ctrl
+rectangle "4. Cơ sở dữ liệu\nApplicationDbContext" as DB
+rectangle "5. Thực thể\nPhieuBaoTri & ThietBi" as Entity
+rectangle "6. Tác nhân\nKỹ thuật viên (KyThuat)" as Tech
+
+User -right-> View : 1: Báo cáo sự cố thiết bị\n10: Nhận kết quả xử lý SLA
+View -right-> Ctrl : 2: Gửi thông tin lỗi\n9: Phản hồi hoàn tất sửa chữa
+Ctrl -down-> DB : 3: Khởi tạo PhieuBaoTri\n5: Gán việc KTV (PhanCongCongViec)\n7: Cập nhật kết quả sửa chữa
+DB -down-> Entity : 4: Lưu trạng thái phiếu\n8: Đổi ThietBi.TrangThai
+Tech -left-> View : 6: Xem MyTasks & Cập nhật biên bản sửa
+
+@enduml

@@ -1,0 +1,34 @@
+@model RentalSystem.Services.SettlementPreview
+<section class="card border mb-4" id="settlement-preview">
+    <div class="card-body">
+        <h5>@(Model.Completed ? "Kết quả quyết toán" : "Xem trước quyết toán")</h5>
+        @if (Model.Error != null)
+        {
+            <p class="text-danger mb-0">@Model.Error</p>
+        }
+        else
+        {
+            <div class="row g-2">
+                <div class="col-md-6">Cọc thực thu: <strong>@Model.DepositReceived.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Cọc đã hoàn trước quyết toán: <strong>@Model.DepositRefunded.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Nợ thuê trước cấn trừ: <strong>@Model.RentDue.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Bồi thường còn thiếu: <strong>@Model.DamagesDue.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Cọc cấn trừ thuê: <strong>@Model.DepositToRent.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Cọc cấn trừ bồi thường: <strong>@Model.DepositToDamages.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Hoàn cọc lần này: <strong>@Model.RefundDeposit.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Hoàn tiền thuê: <strong>@Model.RefundRent.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Hoàn tiền chuyển thừa: <strong>@Model.RefundExcess.ToString("N0") đ</strong></div>
+                <div class="col-md-6">Tổng hoàn: <strong>@Model.TotalRefund.ToString("N0") đ</strong></div>
+            </div>
+            @if (Model.Completed)
+            {
+                <p class="text-success mt-3 mb-0">Đã quyết toán. Cọc còn có thể hoàn: 0 đ.</p>
+                <a href="#settlement-disbursements" class="btn btn-sm btn-outline-navy mt-2">Xem chứng từ</a>
+            }
+            else if (Model.AdditionalDue > 0)
+            {
+                <p class="text-danger mt-3 mb-0">Cần thu thêm @Model.AdditionalDue.ToString("N0") đ trước khi hoàn tất quyết toán.</p>
+            }
+        }
+    </div>
+</section>

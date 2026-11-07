@@ -10,12 +10,14 @@ namespace RentalSystem.Models
         public string Description { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public bool IsMobile { get; set; } = false;
     }
 
     public class VnPaymentResponseModel
     {
         public bool Success { get; set; }
         public bool IsValidSignature { get; set; }
+        public bool IsMobile { get; set; } = false;
         public string PaymentMethod { get; set; } = "VnPay";
         public string OrderDescription { get; set; } = string.Empty;
         public string OrderId { get; set; } = string.Empty; // vnp_TxnRef

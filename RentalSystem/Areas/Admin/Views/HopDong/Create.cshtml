@@ -104,25 +104,20 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6 mb-2 mb-md-0">
-                            <label class="form-label fw-bold">Tiền cọc bảo đảm máy (VNĐ)</label>
-                            <input type="number" name="TienCocBaoDamMay" id="TienCocBaoDamMay" class="form-control text-primary fw-bold" value="0" min="0" step="1000" placeholder="0" />
-                            <small class="text-muted d-block mt-1">Cọc bảo lãnh tài sản, hoàn trả khi trả máy</small>
+                            <label class="form-label fw-bold">Cọc bảo đảm phải nộp (đ)</label>
+                            <input type="number" name="TienCocBaoDamMay" id="TienCocBaoDamMay" class="form-control text-primary fw-bold" value="0" min="0" step="1" placeholder="0" />
+                            <small class="text-muted d-block mt-1">Khách chuyển cùng tiền thuê kỳ đầu sau khi ký.</small>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Tiền thuê trả trước (VNĐ)</label>
-                            <input type="number" name="TienThueTraTruoc" id="TienThueTraTruoc" class="form-control text-success fw-bold" value="0" min="0" step="1000" placeholder="0" />
-                            <small class="text-muted d-block mt-1">Khấu trừ trực tiếp vào các kỳ trả góp</small>
+                            <label class="form-label fw-bold">Tiền thuê đã nhận trước (đ)</label>
+                            <input type="number" name="TienThueTraTruoc" id="TienThueTraTruoc" class="form-control text-success fw-bold" value="0" min="0" step="1" placeholder="0" />
+                            <small class="text-muted d-block mt-1">Chỉ nhập số tiền đã thực nhận.</small>
                         </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tổng tiền đã cọc/trả trước (VNĐ) <span class="text-danger">*</span></label>
-                        <input type="number" name="TienDaCoc" id="TienDaCoc" class="form-control text-dark fw-bold" value="0" min="0" step="1000" readonly />
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-6">
-                            <label class="form-label fw-bold">Hình thức đặt cọc</label>
+                            <label class="form-label fw-bold">Hình thức thu tiền thuê trước</label>
                             <select name="HinhThucCoc" class="form-select">
                                 <option value="0">💵 Tiền mặt</option>
                                 <option value="1">🏦 Chuyển khoản</option>
@@ -131,7 +126,7 @@
                         <div class="col-6">
                             <label class="form-label fw-bold">Số kỳ hạn trả góp</label>
                             <input type="number" name="SoKyHan" id="SoKyHan" class="form-control" value="1" min="1" max="24" />
-                            <small class="text-muted d-block mt-1">Hệ thống sẽ tự chia đều sau khi giao máy</small>
+                            <small class="text-muted d-block mt-1">Lịch thanh toán được lập khi khách ký.</small>
                         </div>
                     </div>
 
@@ -140,8 +135,8 @@
                         <h2 class="text-danger fw-bolder mb-0" id="lblTotal">0 đ</h2>
                         <small class="text-muted">Tổng số ngày thuê: <span id="lblDays" class="fw-bold fs-5 text-dark">2</span> ngày</small>
                         <div class="mt-2 text-muted small">
-                            Còn lại sau cọc: <strong id="lblConLai" class="text-danger">0 đ</strong>
-                            &nbsp;|&nbsp; Mỗi kỳ hạn: <strong id="lblMoiKy" class="text-primary">0 đ</strong>
+                            Tiền thuê còn lại: <strong id="lblConLai" class="text-danger">0 đ</strong>
+                            &nbsp;|&nbsp; Thanh toán lần đầu dự kiến: <strong id="lblMoiKy" class="text-primary">0 đ</strong>
                         </div>
                     </div>
 
@@ -296,7 +291,6 @@
         const lblTotal = document.getElementById("lblTotal");
         const lblConLai = document.getElementById("lblConLai");
         const lblMoiKy = document.getElementById("lblMoiKy");
-        const tienCocInput = document.getElementById("TienDaCoc");
         const depositInput = document.getElementById("TienCocBaoDamMay");
         const rentAdvanceInput = document.getElementById("TienThueTraTruoc");
         const soKyInput = document.getElementById("SoKyHan");
@@ -430,21 +424,14 @@
 
             let depositVal = parseFloat(depositInput?.value) || 0;
             let rentAdvanceVal = parseFloat(rentAdvanceInput?.value) || 0;
-            let totalDeposit = depositVal + rentAdvanceVal;
-            if (tienCocInput) {
-                tienCocInput.value = totalDeposit;
-            }
-
-            let soKy = parseInt(soKyInput?.value) || 1;
-            if (soKy < 1) soKy = 1;
-
-            // Tiền cọc bảo đảm máy giữ nguyên; chỉ tiền thuê trả trước cấn trừ vào các kỳ
-            let conLai = finalTotal - rentAdvanceVal;
-            if (conLai < 0) conLai = 0;
-            let moiKy = conLai / soKy;
+            const maxKy = Math.max(1, Math.floor(days / 7));
+            const soKy = Math.min(maxKy, Math.max(1, parseInt(soKyInput?.value) || 1));
+            const conLai = Math.max(0, finalTotal - rentAdvanceVal);
+            const firstRent = soKy === 1 ? finalTotal : Math.floor(finalTotal / soKy);
+            const firstPayment = depositVal + Math.max(0, firstRent - rentAdvanceVal);
 
             if (lblConLai) lblConLai.innerText = formatVND(conLai);
-            if (lblMoiKy) lblMoiKy.innerText = formatVND(moiKy);
+            if (lblMoiKy) lblMoiKy.innerText = formatVND(firstPayment);
         }
 
         startInput.addEventListener("input", function() { endInput.setAttribute('min', startInput.value); calculateTotal(); });
@@ -453,7 +440,6 @@
         endInput.addEventListener("change", calculateTotal);
         if (depositInput) { depositInput.addEventListener("input", calculateTotal); depositInput.addEventListener("change", calculateTotal); }
         if (rentAdvanceInput) { rentAdvanceInput.addEventListener("input", calculateTotal); rentAdvanceInput.addEventListener("change", calculateTotal); }
-        if (tienCocInput) { tienCocInput.addEventListener("input", calculateTotal); tienCocInput.addEventListener("change", calculateTotal); }
         if (soKyInput) { soKyInput.addEventListener("input", calculateTotal); soKyInput.addEventListener("change", calculateTotal); }
         qtyInputs.forEach(input => { input.addEventListener("input", calculateTotal); input.addEventListener("change", calculateTotal); });
 

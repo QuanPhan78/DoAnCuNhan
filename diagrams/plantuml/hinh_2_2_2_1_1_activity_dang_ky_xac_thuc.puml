@@ -1,0 +1,67 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Truy cập trang Đăng ký tài khoản;
+:Nhập thông tin cá nhân\n(Họ tên, Email, Số điện thoại, Mật khẩu);
+:Bấm nút "Đăng Ký";
+
+|Hệ thống RentalSystem|
+:Tiếp nhận Form dữ liệu qua HTTP POST;
+:Kiểm tra tính hợp lệ & Định dạng dữ liệu (Regex);
+
+if (Dữ liệu đầu vào hợp lệ?) then (Không)
+    |Khách hàng|
+    :Hiển thị thông báo lỗi xác thực dữ liệu;
+    detach
+else (Hợp lệ)
+    |Hệ thống RentalSystem|
+    :Truy vấn CSDL: ApplicationDbContext.NguoiDungs\nAnyAsync(u => u.Email == model.Email);
+    
+    if (Email đã tồn tại trong hệ thống?) then (Đã tồn tại)
+        |Khách hàng|
+        :Thông báo lỗi: Email đã được sử dụng;
+        detach
+    else (Chưa tồn tại)
+        |Hệ thống RentalSystem|
+        :Mã hóa mật khẩu an toàn\n(PBKDF2 với Salt / SHA-256);
+        :Khởi tạo đối tượng NguoiDung\nvới MaVaiTro = KhachHang (ID=4);
+        :Lưu bản ghi vào cơ sở dữ liệu\nawait context.SaveChangesAsync();
+        :Thiết lập Cookie Authentication Claims\n(NameIdentifier, Name, Email, Role='KhachHang');
+        :Chuyển hướng người dùng về Trang chủ (Home/Index);
+        
+        |Khách hàng|
+        :Nhận phiên đăng nhập & Giao diện cá nhân hóa;
+        stop
+    endif
+endif
+
+@enduml

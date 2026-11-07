@@ -1,6 +1,8 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication;
+using RentalSystem.Common;
 using RentalSystem.Database;
 using RentalSystem.Models;
 
@@ -29,15 +31,21 @@ builder.Services.AddRateLimiter(options =>
         opt.PermitLimit = 5;
         opt.QueueLimit = 0;
     });
+    options.AddPolicy("ApiLoginLimiter", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { Window = TimeSpan.FromMinutes(1), PermitLimit = 20 }));
 });
 
 // Thêm cấu hình Xác thực (Cookie Authentication)
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<ApiTokens>();
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
-    });
+    })
+    .AddScheme<AuthenticationSchemeOptions, ApiTokenAuthentication>(ApiTokens.Scheme, _ => { });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -51,6 +59,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ContractFileAccess>();
 app.UseStaticFiles(); 
 app.UseRouting();
 

@@ -29,7 +29,12 @@ class RentalRequestModel {
   final String? installationAddress;
   final String note;
   final double estimatedAmount;
+  final int? rentalDays;
+  final String? promoCode;
+  final double discountAmount;
+  final double depositRequired;
   final RentalStatus status;
+  final String? cancellationReason;
   final String? contractId;
   final DateTime createdAt;
 
@@ -44,7 +49,12 @@ class RentalRequestModel {
     this.installationAddress,
     required this.note,
     required this.estimatedAmount,
+    this.rentalDays,
+    this.promoCode,
+    this.discountAmount = 0,
+    this.depositRequired = 0,
     required this.status,
+    this.cancellationReason,
     this.contractId,
     required this.createdAt,
   });
@@ -60,7 +70,12 @@ class RentalRequestModel {
     String? installationAddress,
     String? note,
     double? estimatedAmount,
+    int? rentalDays,
+    String? promoCode,
+    double? discountAmount,
+    double? depositRequired,
     RentalStatus? status,
+    String? cancellationReason,
     String? contractId,
     DateTime? createdAt,
   }) {
@@ -75,7 +90,12 @@ class RentalRequestModel {
       installationAddress: installationAddress ?? this.installationAddress,
       note: note ?? this.note,
       estimatedAmount: estimatedAmount ?? this.estimatedAmount,
+      rentalDays: rentalDays ?? this.rentalDays,
+      promoCode: promoCode ?? this.promoCode,
+      discountAmount: discountAmount ?? this.discountAmount,
+      depositRequired: depositRequired ?? this.depositRequired,
       status: status ?? this.status,
+      cancellationReason: cancellationReason ?? this.cancellationReason,
       contractId: contractId ?? this.contractId,
       createdAt: createdAt ?? this.createdAt,
     );

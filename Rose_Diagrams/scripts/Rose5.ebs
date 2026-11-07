@@ -1,0 +1,191 @@
+' ==============================================================================
+' RATIONAL ROSE SCRIPT: HINH 3.4.3.1 - SO DO 3 LOP MUC THIET KE (BCE)
+' CHUC NANG: THANH TOAN DAT COC QUA VIETQR DONG NAPAS 247
+' CHUAN: TIENG VIET KHONG DAU, KHONG DUP (+/-), KHONG DUP NGOAC ()
+' ==============================================================================
+Option Explicit
+
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, docStr As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    If st <> "" Then aCls.Stereotype = st
+                    If docStr <> "" Then aCls.Documentation = docStr
+                    Set GetOrCreateClass = aCls
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If docStr <> "" Then aCls.Documentation = docStr
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Sub SafeAddAttr(theCls As Class, attrName As String, attrType As String, vis As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            If vis = "Private" Or vis = "Public" Or vis = "Protected" Then
+                anAttr.ExportControl.Name = vis
+            Else
+                anAttr.ExportControl.Name = "Public"
+            End If
+        End If
+    End If
+End Sub
+
+Sub SafeAddOp(theCls As Class, opName As String, retType As String, vis As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, retType)
+        If Not anOp Is Nothing Then
+            If vis = "Private" Or vis = "Public" Or vis = "Protected" Then
+                anOp.ExportControl.Name = vis
+            Else
+                anOp.ExportControl.Name = "Public"
+            End If
+        End If
+    End If
+End Sub
+
+Sub SafeAddRel(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    Dim anAssoc As Association
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+    End If
+End Sub
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgRoot As Category
+    Dim pkgUC As Category
+    Dim diagBCE As Diagram
+    
+    Dim bPayment As Class
+    Dim bGateway As Class
+    Dim cPayCtrl As Class
+    Dim cWebhookSvc As Class
+    Dim eHopDong As Class
+    Dim ePhieuThu As Class
+    Dim eKyHan As Class
+    
+    Set theModel = RoseApp.CurrentModel
+    Set rootLog = theModel.RootCategory
+    
+    ' 1. Tao cac goi quan ly
+    Set pkgRoot = GetOrCreateCategory(rootLog, "04_Design_3_Layers_UseCases")
+    Set pkgUC = GetOrCreateCategory(pkgRoot, "3_4_3_ThanhToan_VietQR")
+    
+    ' --------------------------------------------------------------------------
+    ' 2. TANG BIEN (BOUNDARY CLASSES)
+    ' --------------------------------------------------------------------------
+    Set bPayment = GetOrCreateClass(pkgUC, "PaymentView", "boundary", "Giao dien quet ma VietQR thanh toan coc")
+    Call SafeAddAttr(bPayment, "imgVietQRCode", "string", "Private")
+    Call SafeAddAttr(bPayment, "lblDepositAmount", "decimal", "Private")
+    Call SafeAddAttr(bPayment, "lblContractCode", "string", "Private")
+    Call SafeAddAttr(bPayment, "lblCountdownTimer", "string", "Private")
+    Call SafeAddOp(bPayment, "HienThiMaVietQR", "void", "Public")
+    Call SafeAddOp(bPayment, "DemNguocThoiGian", "void", "Public")
+    Call SafeAddOp(bPayment, "CapNhatTrangThaiDaThu", "void", "Public")
+
+    Set bGateway = GetOrCreateClass(pkgUC, "BankingGatewayView", "boundary", "Cong tiep nhan Webhook ngan hang Napas 247")
+    Call SafeAddOp(bGateway, "GuiTinHieuWebhook", "void", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 3. TANG DIEU KHIEN (CONTROL CLASSES)
+    ' --------------------------------------------------------------------------
+    Set cPayCtrl = GetOrCreateClass(pkgUC, "PaymentController", "control", "Bo dieu khien thanh toan va tiep nhan Webhook")
+    Call SafeAddAttr(cPayCtrl, "_context", "ApplicationDbContext", "Private")
+    Call SafeAddAttr(cPayCtrl, "_webhookService", "OpenBankingWebhookService", "Private")
+    Call SafeAddOp(cPayCtrl, "TaoMaVietQR", "Task<IActionResult>", "Public")
+    Call SafeAddOp(cPayCtrl, "BankingWebhook", "Task<IActionResult>", "Public")
+    Call SafeAddOp(cPayCtrl, "KiemTraTrangThaiDon", "Task<IActionResult>", "Public")
+
+    Set cWebhookSvc = GetOrCreateClass(pkgUC, "OpenBankingWebhookService", "control", "Sinh ma EMVCo va thuc hien gach no tu dong")
+    Call SafeAddAttr(cWebhookSvc, "_secretKey", "string", "Private")
+    Call SafeAddAttr(cWebhookSvc, "_context", "ApplicationDbContext", "Private")
+    Call SafeAddOp(cWebhookSvc, "SinhChuoiEMVCo", "string", "Public")
+    Call SafeAddOp(cWebhookSvc, "XacThucChuKyNganHang", "bool", "Public")
+    Call SafeAddOp(cWebhookSvc, "BocTachMaHopDong", "string", "Public")
+    Call SafeAddOp(cWebhookSvc, "ThucHienGachNoTuDong", "Task<bool>", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 4. TANG THUC THE (ENTITY CLASSES)
+    ' --------------------------------------------------------------------------
+    Set eHopDong = GetOrCreateClass(pkgUC, "HopDong", "entity", "Thuc the hop dong thue may")
+    Call SafeAddAttr(eHopDong, "MaHopDong", "int", "Public")
+    Call SafeAddAttr(eHopDong, "SoHopDong", "string", "Public")
+    Call SafeAddAttr(eHopDong, "TienCoc", "decimal", "Public")
+    Call SafeAddAttr(eHopDong, "TrangThai", "string", "Public")
+    Call SafeAddOp(eHopDong, "CapNhatTrangThaiDaCoc", "void", "Public")
+
+    Set ePhieuThu = GetOrCreateClass(pkgUC, "PhieuThu", "entity", "Chung tu thu tien coc tu dong")
+    Call SafeAddAttr(ePhieuThu, "MaPhieuThu", "int", "Public")
+    Call SafeAddAttr(ePhieuThu, "MaHopDong", "int", "Public")
+    Call SafeAddAttr(ePhieuThu, "SoTienThu", "decimal", "Public")
+    Call SafeAddAttr(ePhieuThu, "MaGiaoDichNganHang", "string", "Public")
+    Call SafeAddAttr(ePhieuThu, "NgayThu", "DateTime", "Public")
+    Call SafeAddOp(ePhieuThu, "TaoPhieuThuTuDong", "void", "Public")
+
+    Set eKyHan = GetOrCreateClass(pkgUC, "KyHanThanhToan", "entity", "Ky han thanh toan cua hop dong")
+    Call SafeAddAttr(eKyHan, "MaKyHan", "int", "Public")
+    Call SafeAddAttr(eKyHan, "MaHopDong", "int", "Public")
+    Call SafeAddAttr(eKyHan, "SoTienPhaiTra", "decimal", "Public")
+    Call SafeAddAttr(eKyHan, "TrangThai", "string", "Public")
+    Call SafeAddOp(eKyHan, "CapNhatDaThanhToan", "void", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 5. THIET LAP LIEN KET TUONG TAC (ASSOCIATIONS)
+    ' --------------------------------------------------------------------------
+    Call SafeAddRel(bPayment, "PaymentController")
+    Call SafeAddRel(bGateway, "PaymentController")
+    Call SafeAddRel(cPayCtrl, "OpenBankingWebhookService")
+    Call SafeAddRel(cPayCtrl, "HopDong")
+    Call SafeAddRel(cWebhookSvc, "PhieuThu")
+    Call SafeAddRel(cWebhookSvc, "KyHanThanhToan")
+    Call SafeAddRel(eHopDong, "PhieuThu")
+    Call SafeAddRel(eHopDong, "KyHanThanhToan")
+
+    ' --------------------------------------------------------------------------
+    ' 6. TAO VA MO SO DO BCE
+    ' --------------------------------------------------------------------------
+    Set diagBCE = pkgUC.AddClassDiagram("Hinh_3_4_3_1_BCE_ThanhToan_VietQR")
+    If Not diagBCE Is Nothing Then
+        diagBCE.Activate
+    End If
+    
+    MsgBox "DA TAO XONG HINH 3.4.3. 1 - SO DO 3 LOP BCE THANH TOAN VIETQR!", 64, "RentalSystem UML Design"
+End Sub

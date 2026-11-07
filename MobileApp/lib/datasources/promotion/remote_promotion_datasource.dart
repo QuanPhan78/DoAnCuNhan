@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../services/api_session.dart';
 import '../../models/promotion_model.dart';
 import '../../services/api_config.dart';
 import 'promotion_datasource.dart';
@@ -14,7 +14,7 @@ class RemotePromotionDataSource implements PromotionDataSource {
   Future<List<PromotionModel>> getPromotions() async {
     try {
       final url = Uri.parse('$baseUrl/promotions');
-      final response = await http.get(url);
+      final response = await ApiSession.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));

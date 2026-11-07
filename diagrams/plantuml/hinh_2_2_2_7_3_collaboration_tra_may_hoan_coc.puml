@@ -1,0 +1,40 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.3
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam ArrowColor #000000
+skinparam ArrowThickness 1.3
+
+actor "Khách hàng" as User
+actor "Kỹ thuật viên" as Tech
+rectangle ":NghiemThuView" as View
+actor "Kinh doanh" as Sales
+rectangle ":HopDongController" as Ctrl
+rectangle ":ApplicationDbContext" as DB
+
+User -- Tech : 1: Mang trả thiết bị tại kho >\n7: Nhận tiền hoàn cọc qua ngân hàng <
+Tech -- View : 2: Nhập kết quả nghiệm thu máy >
+Sales -- View : 3: Xem quyết toán tài chính >
+Sales -- Ctrl : 4: POST HoanCoc(refundModel) >
+Ctrl -- DB : 5: Thêm PhieuChi & HopDong.TrangThai = 2 >\n6: ThietBi.TrangThai = 0 (SanSang) & Save() >
+
+@enduml

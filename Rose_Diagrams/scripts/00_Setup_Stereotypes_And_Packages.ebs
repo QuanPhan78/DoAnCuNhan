@@ -1,0 +1,201 @@
+' ==============================================================================
+' ROSESCRIPT 00: CAU HINH GOI MO HINH VA STEREOTYPES CHUAN RUP
+' (00_Setup_Stereotypes_And_Packages.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Quy chuan: RUP Standard Architecture (Use Case View, Logical View, Component View)
+' Ngon ngu: 100% Tieng Viet khong dau (Pure ASCII)
+' ==============================================================================
+Option Explicit
+
+
+' ------------------------------------------------------------------------------
+' TIEN ICH TRO GIUP MO HINH HOA (MODELING HELPER FUNCTIONS)
+' ------------------------------------------------------------------------------
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, doc As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    Set GetOrCreateClass = aCls
+                    If st <> "" Then aCls.Stereotype = st
+                    If doc <> "" Then aCls.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If doc <> "" Then aCls.Documentation = doc
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Function GetOrCreateUseCase(parentCat As Category, ucName As String, st As String, doc As String) As UseCase
+    On Error Resume Next
+    Dim aUc As UseCase
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.UseCases.Count
+            Set aUc = parentCat.UseCases.GetAt(i)
+            If Not aUc Is Nothing Then
+                If aUc.Name = ucName Then
+                    Set GetOrCreateUseCase = aUc
+                    If st <> "" Then aUc.Stereotype = st
+                    If doc <> "" Then aUc.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aUc = parentCat.AddUseCase(ucName)
+        If Not aUc Is Nothing Then
+            If st <> "" Then aUc.Stereotype = st
+            If doc <> "" Then aUc.Documentation = doc
+        End If
+        Set GetOrCreateUseCase = aUc
+    End If
+End Function
+
+Sub SafeAddAssociation(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        clientCls.AddAssociation "", supplierName
+    End If
+End Sub
+
+Sub SafeAddAttribute(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOperation(theCls As Class, opName As String, returnType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, returnType)
+    End If
+End Sub
+
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootUC As Category
+    Dim rootLog As Category
+    Dim rootComp As SubSystem
+    
+    ' 1. Kiem tra phien lam viec Rational Rose
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo hoac tao mot Model moi trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Set rootUC = theModel.RootUseCaseCategory
+    Set rootLog = theModel.RootCategory
+    Set rootComp = theModel.RootSubsystem
+    
+    ' 2. Thiet lap cau truc Goi trong Use Case View
+    Dim pkgUCBusiness As Category
+    Dim pkgUCWorkflows As Category
+    Dim pkgUCSystem As Category
+    
+    Set pkgUCBusiness = GetOrCreateCategory(rootUC, "01_Business_Use_Cases")
+    pkgUCBusiness.Documentation = "Chua cac Tac nhan ngoai (Business Actors), Nhan su noi bo (Business Workers) va 7 Ca su dung nghiep vu cot loi."
+    
+    Set pkgUCWorkflows = GetOrCreateCategory(rootUC, "02_Business_Workflows")
+    pkgUCWorkflows.Documentation = "Chua 7 goi quy trinh nghiep vu chi tiet kem so do Hoat dong, Tuan tu va Cong tac."
+    
+    Dim wfNames(1 To 7) As String
+    wfNames(1) = "Quy trinh 1 - Dang ky & Xac thuc nguoi dung"
+    wfNames(2) = "Quy trinh 2 - Dat thue may & Kiem tra ton kho"
+    wfNames(3) = "Quy trinh 3 - Thanh toan dat coc qua VietQR dong"
+    wfNames(4) = "Quy trinh 4 - Ban giao & Ky bien ban ban giao may"
+    wfNames(5) = "Quy trinh 5 - Bao cao su co & Phan cong bao tri thiet bi"
+    wfNames(6) = "Quy trinh 6 - Gia han hop dong & Phan ky no"
+    wfNames(7) = "Quy trinh 7 - Tra may, nghiem thu & Hoan tra tien coc"
+    
+    Dim k As Integer
+    For k = 1 To 7
+        GetOrCreateCategory pkgUCWorkflows, wfNames(k)
+    Next k
+    
+    Set pkgUCSystem = GetOrCreateCategory(rootUC, "03_System_Use_Cases")
+    pkgUCSystem.Documentation = "Chua 14 Ca su dung he thong tong quat va 3 Phan he chuc nang chi tiet."
+    
+    GetOrCreateCategory pkgUCSystem, "Phan he Khach hang (Customer Portal)"
+    GetOrCreateCategory pkgUCSystem, "Phan he Quan tri & Van hanh (Admin & Operations)"
+    GetOrCreateCategory pkgUCSystem, "Phan he Bao tri & Ky thuat (Maintenance & Technical)"
+    
+    ' 3. Thiet lap cau truc Goi trong Logical View
+    Dim pkgBCE As Category
+    Dim pkg3Tier As Category
+    
+    Set pkgBCE = GetOrCreateCategory(rootLog, "01_Analysis_Classes_BCE")
+    pkgBCE.Documentation = "Chua cac lop phan tich BCE: 15 Boundary Classes, 7 Control Classes, 18 Entity Classes."
+    GetOrCreateCategory pkgBCE, "Boundary Classes"
+    GetOrCreateCategory pkgBCE, "Control Classes"
+    GetOrCreateCategory pkgBCE, "Entity Classes"
+    
+    Set pkg3Tier = GetOrCreateCategory(rootLog, "02_Design_Classes_3Tier")
+    pkg3Tier.Documentation = "Chua cac lop thiet ke kien truc 3 tang ASP.NET Core 9 MVC."
+    GetOrCreateCategory pkg3Tier, "Presentation Tier"
+    GetOrCreateCategory pkg3Tier, "Business Logic Tier"
+    GetOrCreateCategory pkg3Tier, "Data Access Tier"
+    
+    ' 4. Dinh nghia cac Stereotypes chuan RUP thong qua Metadata Notes
+    Dim noteStereo As Class
+    Set noteStereo = GetOrCreateClass(rootLog, "Stereotypes_Registry", "utility", "Danh muc cac Stereotype chuan RUP su dung trong mo hinh RentalSystem")
+    SafeAddAttribute noteStereo, "Stereotype_BusinessActor", "business actor"
+    SafeAddAttribute noteStereo, "Stereotype_BusinessWorker", "business worker"
+    SafeAddAttribute noteStereo, "Stereotype_BusinessUseCase", "business use case"
+    SafeAddAttribute noteStereo, "Stereotype_Boundary", "boundary"
+    SafeAddAttribute noteStereo, "Stereotype_Control", "control"
+    SafeAddAttribute noteStereo, "Stereotype_Entity", "entity"
+    SafeAddAttribute noteStereo, "Stereotype_Actor", "actor"
+    SafeAddAttribute noteStereo, "Stereotype_UseCase", "use case"
+    
+    ' 5. Tao so do kien truc tong the Class Diagram trong Logical View
+    Dim diagArch As Diagram
+    Set diagArch = rootLog.AddClassDiagram("Kien Truc Phan Goi He Thong (Package Architecture)")
+    If Not diagArch Is Nothing Then
+        diagArch.Open
+    End If
+    
+    MsgBox "DA THIET LAP THANH CONG HE THONG GOI VA STEREOTYPES!" & vbCrLf & vbCrLf & _
+           "1. Use Case View: 01_Business_Use_Cases, 02_Business_Workflows, 03_System_Use_Cases" & vbCrLf & _
+           "2. Logical View: 01_Analysis_Classes_BCE, 02_Design_Classes_3Tier" & vbCrLf & _
+           "3. Stereotypes: business actor, business worker, business use case, boundary, control, entity" & vbCrLf & _
+           "4. Mo hinh san sang de thuc thi cac script tiep theo.", 64, "Hoan thanh Script 00"
+End Sub

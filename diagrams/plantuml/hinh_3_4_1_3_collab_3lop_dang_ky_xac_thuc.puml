@@ -1,0 +1,35 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam rectangle {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 9.5
+}
+
+rectangle "1. Tác nhân\nKhách hàng" as User
+rectangle "2. Giao diện\nLoginView" as View
+rectangle "3. Bộ điều khiển\nAccountController" as Ctrl
+rectangle "4. Cơ chế bảo mật\nCookieAuth" as Auth
+rectangle "5. Truy cập dữ liệu\nApplicationDbContext" as DB
+rectangle "6. Thực thể dữ liệu\nNguoiDung & VaiTro" as Entity
+
+User -right-> View : 1: Submit Form Đăng nhập\n8: Nhận phản hồi đăng nhập
+View -right-> Ctrl : 2: POST /Account/Login(model)\n7: Trả về RedirectResult
+Ctrl -down-> DB : 3: Truy vấn người dùng theo Email/SĐT
+DB -right-> Entity : 4: Nạp bản ghi NguoiDung + VaiTro
+Ctrl -left-> Auth : 5: SignInAsync(ClaimsPrincipal)\n6: Ghi nhận Cookie phiên làm việc
+
+@enduml

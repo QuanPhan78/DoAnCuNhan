@@ -1,0 +1,112 @@
+digraph Sitemap_Customer {
+    graph [rankdir="TB", splines=ortho, nodesep=0.35, ranksep=0.75, dpi=300, bgcolor="#ffffff"];
+    node [shape=box, style="filled,rounded", fontname="Segoe UI", fontsize=10, penwidth=1.2];
+    edge [fontname="Segoe UI", fontsize=9, color="#000000", penwidth=1.2];
+
+    // Nút gốc - Trang chủ Cổng Khách hàng
+    Root [label="CỔNG KHÁCH HÀNG (CUSTOMER PORTAL)\n/Home/Index", fillcolor="#27272a", fontcolor="#ffffff", fontsize=11, fontname="Segoe UI Bold"];
+
+    // Nhóm 1: Danh mục & Tìm kiếm thiết bị
+    subgraph cluster_catalog {
+        label="";
+        color="#ffffff";
+        Cat_Catalog [label="DANH MỤC & SẢN PHẨM\nBộ lọc & Phân loại thiết bị", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_Search [label="Tìm kiếm sản phẩm\n/Home/Index?search=...", fillcolor="#ffffff"];
+        Page_Category [label="Lọc theo loại máy\n/Home/Index?loaiId=...", fillcolor="#ffffff"];
+        Page_Detail [label="Chi tiết thông số & giá thuê\n/Home/Details/{id}", fillcolor="#ffffff"];
+    }
+
+    // Nhóm 2: Giỏ hàng & Đặt thuê trực tuyến
+    subgraph cluster_cart {
+        label="";
+        color="#ffffff";
+        Cat_Cart [label="GIỎ HÀNG & ĐẶT THUÊ\nKiểm tra tồn kho thời gian thực", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_CartView [label="Xem giỏ hàng & Số lượng\n/Cart/Index", fillcolor="#ffffff"];
+        Page_Checkout [label="Xác nhận gói thuê & Khuyến mãi\n/Cart/Checkout (POST)", fillcolor="#ffffff"];
+        Page_InventoryCheck [label="Kiểm tra tồn kho (SemaphoreSlim)\nCartController.InventoryLock", fillcolor="#ffffff"];
+    }
+
+    // Nhóm 3: Hợp đồng điện tử & Ký số
+    subgraph cluster_contract {
+        label="";
+        color="#ffffff";
+        Cat_Contract [label="HỢP ĐỒNG ĐIỆN TỬ\nXác thực số & Lưu trữ pháp lý", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_Sign [label="Ký số HTML5 Canvas & Upload CCCD\n/Cart/SignContract/{id}", fillcolor="#ffffff"];
+        Page_MyContracts [label="Sổ theo dõi hợp đồng của tôi\n/Account/MyContracts", fillcolor="#ffffff"];
+        Page_ContractDetail [label="Xem nội dung & Tải PDF Hợp đồng\n/Document/PrintContract/{id}", fillcolor="#ffffff"];
+        Page_ExtendRequest [label="Gửi yêu cầu gia hạn hợp đồng\n/Account/RequestExtension/{id}", fillcolor="#ffffff"];
+    }
+
+    // Nhóm 4: Thanh toán VietQR & Sổ nợ cá nhân
+    subgraph cluster_payment {
+        label="";
+        color="#ffffff";
+        Cat_Payment [label="THANH TOÁN & CÔNG NỢ\nOpen Banking NAPAS 247", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_QRDeposit [label="Quét mã VietQR cọc máy\n/Cart/PaymentSuccess/{id}", fillcolor="#ffffff"];
+        Page_MyDebt [label="Sổ nợ & Lịch thanh toán 4 cấp\n/Account/MyDebt", fillcolor="#ffffff"];
+        Page_QRPayment [label="VietQR trả góp theo kỳ\n/Payment/PayInstallment/{id}", fillcolor="#ffffff"];
+    }
+
+    // Nhóm 5: Báo cáo sự cố & Bảo trì SLA
+    subgraph cluster_ticket {
+        label="";
+        color="#ffffff";
+        Cat_Ticket [label="BẢO TRÌ & SỰ CỐ SLA\nHỗ trợ kỹ thuật thiết bị", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_CreateTicket [label="Lập phiếu báo hỏng thiết bị\n/Account/CreateTicket", fillcolor="#ffffff"];
+        Page_MyTickets [label="Theo dõi tiến độ khắc phục\n/Account/MyTickets", fillcolor="#ffffff"];
+    }
+
+    // Nhóm 6: Tài khoản cá nhân
+    subgraph cluster_account {
+        label="";
+        color="#ffffff";
+        Cat_Account [label="TÀI KHOẢN KHÁCH HÀNG\nBảo mật & Thông tin cá nhân", fillcolor="#f4f4f5", fontname="Segoe UI Semibold"];
+        Page_Login [label="Đăng nhập tài khoản\n/Account/Login", fillcolor="#ffffff"];
+        Page_Register [label="Đăng ký người dùng mới\n/Account/Register", fillcolor="#ffffff"];
+        Page_Profile [label="Thông tin cá nhân & Địa chỉ\n/Account/Profile", fillcolor="#ffffff"];
+    }
+
+    // Liên kết từ gốc đến danh mục cấp 1
+    Root -> Cat_Catalog;
+    Root -> Cat_Cart;
+    Root -> Cat_Contract;
+    Root -> Cat_Payment;
+    Root -> Cat_Ticket;
+    Root -> Cat_Account;
+
+    // Phân rã Danh mục
+    Cat_Catalog -> Page_Search;
+    Cat_Catalog -> Page_Category;
+    Page_Category -> Page_Detail;
+    Page_Search -> Page_Detail;
+
+    // Phân rã Giỏ hàng
+    Cat_Cart -> Page_CartView;
+    Page_CartView -> Page_Checkout;
+    Page_Checkout -> Page_InventoryCheck;
+
+    // Phân rã Hợp đồng
+    Cat_Contract -> Page_Sign;
+    Cat_Contract -> Page_MyContracts;
+    Page_MyContracts -> Page_ContractDetail;
+    Page_MyContracts -> Page_ExtendRequest;
+
+    // Phân rã Thanh toán
+    Cat_Payment -> Page_QRDeposit;
+    Cat_Payment -> Page_MyDebt;
+    Page_MyDebt -> Page_QRPayment;
+
+    // Phân rã Bảo trì
+    Cat_Ticket -> Page_CreateTicket;
+    Cat_Ticket -> Page_MyTickets;
+
+    // Phân rã Tài khoản
+    Cat_Account -> Page_Login;
+    Cat_Account -> Page_Register;
+    Cat_Account -> Page_Profile;
+
+    // Luồng nghiệp vụ liên hoàn (Luân chuyển chính)
+    Page_Detail -> Page_CartView [style=dashed, label=" Thêm giỏ"];
+    Page_InventoryCheck -> Page_Sign [style=dashed, label=" Khóa máy & Ký"];
+    Page_Sign -> Page_QRDeposit [style=dashed, label=" Thanh toán cọc"];
+}

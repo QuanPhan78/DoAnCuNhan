@@ -1,0 +1,195 @@
+digraph AnalysisClassDiagram {
+    graph [rankdir="BT", splines=ortho, nodesep=0.7, ranksep=0.9, dpi=300, bgcolor="#ffffff"];
+    node [shape=none, fontname="Segoe UI", fontsize=10];
+    edge [fontname="Segoe UI", fontsize=9.0, color="#000000", penwidth=1.2, arrowsize=0.8];
+
+    // VaiTro
+    VaiTro [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>VaiTro</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaVaiTro: int</td></tr>
+            <tr><td align="left">- TenVaiTro: string</td></tr>
+            <hr/>
+            <tr><td align="left">+ LayDanhSachQuyen()</td></tr>
+        </table>
+    >];
+
+    // NguoiDung
+    NguoiDung [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>NguoiDung</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaNguoiDung: int</td></tr>
+            <tr><td align="left">- HoTen: string</td></tr>
+            <tr><td align="left">- Email: string</td></tr>
+            <tr><td align="left">- SoDienThoai: string</td></tr>
+            <tr><td align="left">- MaVaiTro: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ DangNhap()</td></tr>
+            <tr><td align="left">+ DoiMatKhau()</td></tr>
+        </table>
+    >];
+
+    // LoaiThietBi
+    LoaiThietBi [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>LoaiThietBi</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaLoai: int</td></tr>
+            <tr><td align="left">- TenLoai: string</td></tr>
+            <hr/>
+            <tr><td align="left">+ LayDanhSachSanPham()</td></tr>
+        </table>
+    >];
+
+    // SanPham
+    SanPham [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>SanPham</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaSanPham: int</td></tr>
+            <tr><td align="left">- TenSanPham: string</td></tr>
+            <tr><td align="left">- DonGiaNgay: decimal</td></tr>
+            <tr><td align="left">- TienCoc: decimal</td></tr>
+            <tr><td align="left">- MaLoai: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ TinhGiaThue()</td></tr>
+            <tr><td align="left">+ KiemTraSoLuongTon()</td></tr>
+        </table>
+    >];
+
+    // ThietBi
+    ThietBi [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>ThietBi</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaThietBi: int</td></tr>
+            <tr><td align="left">- MaSanPham: int</td></tr>
+            <tr><td align="left">- SoSerial: string</td></tr>
+            <tr><td align="left">- TrangThai: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ CapNhatTrangThai()</td></tr>
+            <tr><td align="left">+ KiemTraKhaDung()</td></tr>
+        </table>
+    >];
+
+    // LichSuThietBi
+    LichSuThietBi [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>LichSuThietBi</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaLichSu: int</td></tr>
+            <tr><td align="left">- MaThietBi: int</td></tr>
+            <tr><td align="left">- HanhDong: string</td></tr>
+            <tr><td align="left">- NgayTao: DateTime</td></tr>
+            <hr/>
+            <tr><td align="left">+ GhiNhatKy()</td></tr>
+        </table>
+    >];
+
+    // HopDong
+    HopDong [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>HopDong</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaHopDong: int</td></tr>
+            <tr><td align="left">- MaKhachHang: int</td></tr>
+            <tr><td align="left">- NgayBatDau: DateTime</td></tr>
+            <tr><td align="left">- NgayKetThuc: DateTime</td></tr>
+            <tr><td align="left">- TongTien: decimal</td></tr>
+            <tr><td align="left">- TienDaCoc: decimal</td></tr>
+            <tr><td align="left">- TrangThai: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ DuyetHopDong()</td></tr>
+            <tr><td align="left">+ ThanhLy()</td></tr>
+        </table>
+    >];
+
+    // ChiTietHopDong
+    ChiTietHopDong [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>ChiTietHopDong</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaChiTiet: int</td></tr>
+            <tr><td align="left">- MaHopDong: int</td></tr>
+            <tr><td align="left">- MaThietBi: int</td></tr>
+            <tr><td align="left">- GiaChotThu: decimal</td></tr>
+        </table>
+    >];
+
+    // KyHanThanhToan
+    KyHanThanhToan [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>KyHanThanhToan</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaKyHan: int</td></tr>
+            <tr><td align="left">- MaHopDong: int</td></tr>
+            <tr><td align="left">- SoTienPhai: decimal</td></tr>
+            <tr><td align="left">- NgayDenHan: DateTime</td></tr>
+            <tr><td align="left">- TrangThai: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ TinhPhatTreHan()</td></tr>
+            <tr><td align="left">+ GachNo()</td></tr>
+        </table>
+    >];
+
+    // PhieuThu
+    PhieuThu [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>PhieuThu</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaPhieuThu: int</td></tr>
+            <tr><td align="left">- MaHopDong: int</td></tr>
+            <tr><td align="left">- SoTien: decimal</td></tr>
+            <tr><td align="left">- MaGiaoDichNganHang: string</td></tr>
+            <tr><td align="left">- MaNhanVienThu: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ XacNhanThu()</td></tr>
+        </table>
+    >];
+
+    // PhieuChi
+    PhieuChi [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>PhieuChi</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaPhieuChi: int</td></tr>
+            <tr><td align="left">- MaHopDong: int</td></tr>
+            <tr><td align="left">- SoTienHoanTra: decimal</td></tr>
+            <tr><td align="left">- LyDoChi: string</td></tr>
+            <hr/>
+            <tr><td align="left">+ InPhieuChi()</td></tr>
+        </table>
+    >];
+
+    // PhieuBaoTri
+    PhieuBaoTri [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center"><font color="#ffffff"><b>&lt;&lt;entity&gt;&gt;<br/>PhieuBaoTri</b></font></td></tr>
+            <hr/>
+            <tr><td align="left">- MaPhieu: int</td></tr>
+            <tr><td align="left">- MaHopDong: int</td></tr>
+            <tr><td align="left">- MaThietBi: int</td></tr>
+            <tr><td align="left">- ChiPhi: decimal</td></tr>
+            <tr><td align="left">- TrangThai: int</td></tr>
+            <hr/>
+            <tr><td align="left">+ TiepNhan()</td></tr>
+            <tr><td align="left">+ HoanTat()</td></tr>
+        </table>
+    >];
+
+    // Liên kết quan hệ
+    NguoiDung -> VaiTro [taillabel="0..*", headlabel="1", label="phân quyền"];
+    SanPham -> LoaiThietBi [taillabel="0..*", headlabel="1", label="phân loại"];
+    ThietBi -> SanPham [taillabel="0..*", headlabel="1", label="định danh"];
+    LichSuThietBi -> ThietBi [taillabel="0..*", headlabel="1", label="ghi nhật ký"];
+    HopDong -> NguoiDung [taillabel="0..*", headlabel="1", label="ký kết"];
+    ChiTietHopDong -> HopDong [taillabel="1..*", headlabel="1", label="thuộc"];
+    ChiTietHopDong -> ThietBi [taillabel="0..*", headlabel="1", label="cấp phát"];
+    KyHanThanhToan -> HopDong [taillabel="0..*", headlabel="1", label="phân kỳ"];
+    PhieuThu -> HopDong [taillabel="0..*", headlabel="1", label="thanh toán"];
+    PhieuChi -> HopDong [taillabel="0..1", headlabel="1", label="hoàn cọc"];
+    PhieuBaoTri -> HopDong [taillabel="0..*", headlabel="1", label="sự cố"];
+    PhieuBaoTri -> ThietBi [taillabel="0..*", headlabel="1", label="thiết bị"];
+}

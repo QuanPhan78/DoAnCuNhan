@@ -1,0 +1,505 @@
+' ==============================================================================
+' ROSESCRIPT 04: SINH CAC LOP PHAN TICH BCE (BOUNDARY, CONTROL, ENTITY)
+' (04_Analysis_Classes_BCE.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Quy chuan: 18 Entity Classes + 15 Boundary Classes + 7 Control Classes
+' Ngon ngu: 100% Tieng Viet khong dau (Pure ASCII)
+' ==============================================================================
+Option Explicit
+
+
+' ------------------------------------------------------------------------------
+' TIEN ICH TRO GIUP MO HINH HOA (MODELING HELPER FUNCTIONS)
+' ------------------------------------------------------------------------------
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+    Dim aCat As Category
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Categories.Count
+            Set aCat = parentCat.Categories.GetAt(i)
+            If Not aCat Is Nothing Then
+                If aCat.Name = catName Then
+                    Set GetOrCreateCategory = aCat
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set GetOrCreateCategory = parentCat.AddCategory(catName)
+    End If
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, st As String, doc As String) As Class
+    On Error Resume Next
+    Dim aCls As Class
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.Classes.Count
+            Set aCls = parentCat.Classes.GetAt(i)
+            If Not aCls Is Nothing Then
+                If aCls.Name = clsName Then
+                    Set GetOrCreateClass = aCls
+                    If st <> "" Then aCls.Stereotype = st
+                    If doc <> "" Then aCls.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aCls = parentCat.AddClass(clsName)
+        If Not aCls Is Nothing Then
+            If st <> "" Then aCls.Stereotype = st
+            If doc <> "" Then aCls.Documentation = doc
+        End If
+        Set GetOrCreateClass = aCls
+    End If
+End Function
+
+Function GetOrCreateUseCase(parentCat As Category, ucName As String, st As String, doc As String) As UseCase
+    On Error Resume Next
+    Dim aUc As UseCase
+    Dim i As Integer
+    If Not parentCat Is Nothing Then
+        For i = 1 To parentCat.UseCases.Count
+            Set aUc = parentCat.UseCases.GetAt(i)
+            If Not aUc Is Nothing Then
+                If aUc.Name = ucName Then
+                    Set GetOrCreateUseCase = aUc
+                    If st <> "" Then aUc.Stereotype = st
+                    If doc <> "" Then aUc.Documentation = doc
+                    Exit Function
+                End If
+            End If
+        Next i
+        Set aUc = parentCat.AddUseCase(ucName)
+        If Not aUc Is Nothing Then
+            If st <> "" Then aUc.Stereotype = st
+            If doc <> "" Then aUc.Documentation = doc
+        End If
+        Set GetOrCreateUseCase = aUc
+    End If
+End Function
+
+Sub SafeAddAssociation(clientCls As Class, supplierName As String)
+    On Error Resume Next
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Dim anAssoc As Association
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+    End If
+End Sub
+
+Sub SafeAddAttribute(theCls As Class, attrName As String, attrType As String)
+    On Error Resume Next
+    Dim anAttr As Attribute
+    If Not theCls Is Nothing Then
+        Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+        If Not anAttr Is Nothing Then
+            anAttr.ExportControl.Name = "Public"
+        End If
+    End If
+End Sub
+
+Sub SafeAddOperation(theCls As Class, opName As String, returnType As String)
+    On Error Resume Next
+    Dim anOp As Operation
+    If Not theCls Is Nothing Then
+        Set anOp = theCls.AddOperation(opName, returnType)
+    End If
+End Sub
+
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgBCE As Category
+    Dim pkgBound As Category, pkgCtrl As Category, pkgEnt As Category
+    
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo Model trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Set rootLog = theModel.RootCategory
+    Set pkgBCE = GetOrCreateCategory(rootLog, "01_Analysis_Classes_BCE")
+    Set pkgBound = GetOrCreateCategory(pkgBCE, "Boundary Classes")
+    Set pkgCtrl = GetOrCreateCategory(pkgBCE, "Control Classes")
+    Set pkgEnt = GetOrCreateCategory(pkgBCE, "Entity Classes")
+    
+    ' --------------------------------------------------------------------------
+    ' 1. KHOI TAO 18 ENTITY CLASSES VOI THUOC TINH VA PHUONG THUC CHUYEN BIET
+    ' --------------------------------------------------------------------------
+    Dim eNguoiDung As Class, eVaiTro As Class, eSanPham As Class, eLoaiThietBi As Class
+    Dim eThietBi As Class, eKhuyenMai As Class, eThongBao As Class, eHopDong As Class
+    Dim eChiTietHopDong As Class, eKyHanThanhToan As Class, ePhieuThu As Class
+    Dim ePhieuChi As Class, ePhieuBaoTri As Class, eLichSuThietBi As Class
+    Dim eBienBanBanGiao As Class, eYeuCauGiaHan As Class, ePhanCongCongViec As Class
+    Dim eLichSuNhacNo As Class
+    
+    ' 1.1 NguoiDung
+    Set eNguoiDung = GetOrCreateClass(pkgEnt, "NguoiDung", "entity", "Thuc the luu thong tin nguoi dung he thong")
+    SafeAddAttribute eNguoiDung, "MaNguoiDung", "int"
+    SafeAddAttribute eNguoiDung, "HoTen", "string"
+    SafeAddAttribute eNguoiDung, "Email", "string"
+    SafeAddAttribute eNguoiDung, "SoDienThoai", "string"
+    SafeAddAttribute eNguoiDung, "MatKhauHash", "string"
+    SafeAddAttribute eNguoiDung, "SoCCCD", "string"
+    SafeAddAttribute eNguoiDung, "MaVaiTro", "int"
+    SafeAddAttribute eNguoiDung, "IsBlacklisted", "bool"
+    SafeAddAttribute eNguoiDung, "NgayTao", "DateTime"
+    SafeAddOperation eNguoiDung, "DangNhap", "bool"
+    SafeAddOperation eNguoiDung, "DoiMatKhau", "bool"
+    SafeAddOperation eNguoiDung, "KiemTraQuyen", "bool"
+    SafeAddOperation eNguoiDung, "KhoaTaiKhoan", "void"
+    
+    ' 1.2 VaiTro
+    Set eVaiTro = GetOrCreateClass(pkgEnt, "VaiTro", "entity", "Thuc the vai tro va phan quyen RBAC")
+    SafeAddAttribute eVaiTro, "MaVaiTro", "int"
+    SafeAddAttribute eVaiTro, "TenVaiTro", "string"
+    SafeAddAttribute eVaiTro, "MoTa", "string"
+    SafeAddOperation eVaiTro, "LayDanhSachQuyen", "List<string>"
+    SafeAddOperation eVaiTro, "GanQuyen", "void"
+    
+    ' 1.3 SanPham
+    Set eSanPham = GetOrCreateClass(pkgEnt, "SanPham", "entity", "Thuc the danh muc san pham cau hinh thiet bi")
+    SafeAddAttribute eSanPham, "MaSanPham", "int"
+    SafeAddAttribute eSanPham, "TenSanPham", "string"
+    SafeAddAttribute eSanPham, "DonGiaNgay", "decimal"
+    SafeAddAttribute eSanPham, "DonGiaThang", "decimal"
+    SafeAddAttribute eSanPham, "TienCoc", "decimal"
+    SafeAddAttribute eSanPham, "MaLoai", "int"
+    SafeAddAttribute eSanPham, "MoTaCaiDat", "string"
+    SafeAddOperation eSanPham, "TinhGiaThue", "decimal"
+    SafeAddOperation eSanPham, "KiemTraSoLuongTon", "int"
+    SafeAddOperation eSanPham, "CapNhatGia", "void"
+    
+    ' 1.4 ThietBi
+    Set eThietBi = GetOrCreateClass(pkgEnt, "ThietBi", "entity", "Thuc the tung may vat ly dinh danh qua SoSerial duy nhat")
+    SafeAddAttribute eThietBi, "MaThietBi", "int"
+    SafeAddAttribute eThietBi, "MaSanPham", "int"
+    SafeAddAttribute eThietBi, "SoSerial", "string"
+    SafeAddAttribute eThietBi, "TrangThai", "int"
+    SafeAddAttribute eThietBi, "ViTriKho", "string"
+    SafeAddAttribute eThietBi, "NgayNhapKho", "DateTime"
+    SafeAddOperation eThietBi, "CapNhatTrangThai", "void"
+    SafeAddOperation eThietBi, "KiemTraKhaDung", "bool"
+    SafeAddOperation eThietBi, "ChuyenKho", "void"
+    SafeAddOperation eThietBi, "GiuCho24h", "void"
+    
+    ' 1.5 LoaiThietBi
+    Set eLoaiThietBi = GetOrCreateClass(pkgEnt, "LoaiThietBi", "entity", "Thuc the phan loai nhom thiet bi cong nghe")
+    SafeAddAttribute eLoaiThietBi, "MaLoai", "int"
+    SafeAddAttribute eLoaiThietBi, "TenLoai", "string"
+    SafeAddAttribute eLoaiThietBi, "MoTa", "string"
+    SafeAddOperation eLoaiThietBi, "LayDanhSachSanPham", "List<SanPham>"
+    SafeAddOperation eLoaiThietBi, "ThemLoaiMoi", "void"
+    
+    ' 1.6 KhuyenMai
+    Set eKhuyenMai = GetOrCreateClass(pkgEnt, "KhuyenMai", "entity", "Thuc the ma giam gia Voucher")
+    SafeAddAttribute eKhuyenMai, "MaKhuyenMai", "int"
+    SafeAddAttribute eKhuyenMai, "Code", "string"
+    SafeAddAttribute eKhuyenMai, "PhanTramGiam", "decimal"
+    SafeAddAttribute eKhuyenMai, "NgayHetHan", "DateTime"
+    SafeAddAttribute eKhuyenMai, "SoLuongConLai", "int"
+    SafeAddAttribute eKhuyenMai, "TrangThai", "bool"
+    SafeAddOperation eKhuyenMai, "KiemTraHopLe", "bool"
+    SafeAddOperation eKhuyenMai, "TinhSoTienGiam", "decimal"
+    SafeAddOperation eKhuyenMai, "SuDungVoucher", "void"
+    
+    ' 1.7 ThongBao
+    Set eThongBao = GetOrCreateClass(pkgEnt, "ThongBao", "entity", "Thuc the thong bao he thong gui nguoi dung")
+    SafeAddAttribute eThongBao, "MaThongBao", "int"
+    SafeAddAttribute eThongBao, "MaNguoiDung", "int"
+    SafeAddAttribute eThongBao, "TieuDe", "string"
+    SafeAddAttribute eThongBao, "NoiDung", "string"
+    SafeAddAttribute eThongBao, "DaDoc", "bool"
+    SafeAddAttribute eThongBao, "NgayTao", "DateTime"
+    SafeAddOperation eThongBao, "DanhDauDaDoc", "void"
+    SafeAddOperation eThongBao, "GuiThongBao", "void"
+    
+    ' 1.8 HopDong
+    Set eHopDong = GetOrCreateClass(pkgEnt, "HopDong", "entity", "Thuc the hop dong thue may va quan ly cong no")
+    SafeAddAttribute eHopDong, "MaHopDong", "int"
+    SafeAddAttribute eHopDong, "MaKhachHang", "int"
+    SafeAddAttribute eHopDong, "NgayBatDau", "DateTime"
+    SafeAddAttribute eHopDong, "NgayKetThuc", "DateTime"
+    SafeAddAttribute eHopDong, "TongTien", "decimal"
+    SafeAddAttribute eHopDong, "TienDaCoc", "decimal"
+    SafeAddAttribute eHopDong, "TienCocBaoDamMay", "decimal"
+    SafeAddAttribute eHopDong, "TrangThai", "int"
+    SafeAddAttribute eHopDong, "NhomTuoiNo", "int"
+    SafeAddAttribute eHopDong, "ChuKyKhachHang", "string"
+    SafeAddAttribute eHopDong, "TrangThaiHoanCoc", "int"
+    SafeAddAttribute eHopDong, "HanChotKy", "DateTime"
+    SafeAddOperation eHopDong, "DuyetHopDong", "void"
+    SafeAddOperation eHopDong, "TinhTongTien", "decimal"
+    SafeAddOperation eHopDong, "GiaHanHopDong", "void"
+    SafeAddOperation eHopDong, "ThanhLy", "void"
+    SafeAddOperation eHopDong, "HuyHopDong", "void"
+    SafeAddOperation eHopDong, "QuyetToanHoanCoc", "decimal"
+    
+    ' 1.9 ChiTietHopDong
+    Set eChiTietHopDong = GetOrCreateClass(pkgEnt, "ChiTietHopDong", "entity", "Thuc the chi tiet may thue trong don hang")
+    SafeAddAttribute eChiTietHopDong, "MaChiTiet", "int"
+    SafeAddAttribute eChiTietHopDong, "MaHopDong", "int"
+    SafeAddAttribute eChiTietHopDong, "MaThietBi", "int"
+    SafeAddAttribute eChiTietHopDong, "GiaChotThue", "decimal"
+    SafeAddAttribute eChiTietHopDong, "GhiChu", "string"
+    SafeAddOperation eChiTietHopDong, "LayThongTinThietBi", "ThietBi"
+    SafeAddOperation eChiTietHopDong, "CapNhatGiaThue", "void"
+    
+    ' 1.10 KyHanThanhToan
+    Set eKyHanThanhToan = GetOrCreateClass(pkgEnt, "KyHanThanhToan", "entity", "Thuc the phan ky no tra gop")
+    SafeAddAttribute eKyHanThanhToan, "MaKyHan", "int"
+    SafeAddAttribute eKyHanThanhToan, "MaHopDong", "int"
+    SafeAddAttribute eKyHanThanhToan, "SoKyHan", "int"
+    SafeAddAttribute eKyHanThanhToan, "SoTienPhai", "decimal"
+    SafeAddAttribute eKyHanThanhToan, "SoTienDaTra", "decimal"
+    SafeAddAttribute eKyHanThanhToan, "TienPhat", "decimal"
+    SafeAddAttribute eKyHanThanhToan, "NgayDenHan", "DateTime"
+    SafeAddAttribute eKyHanThanhToan, "TrangThai", "int"
+    SafeAddOperation eKyHanThanhToan, "TinhPhatTreHan", "decimal"
+    SafeAddOperation eKyHanThanhToan, "GachNo", "void"
+    SafeAddOperation eKyHanThanhToan, "KiemTraQuaHan", "bool"
+    
+    ' 1.11 PhieuThu
+    Set ePhieuThu = GetOrCreateClass(pkgEnt, "PhieuThu", "entity", "Thuc the phieu thu tien coc va tien thue")
+    SafeAddAttribute ePhieuThu, "MaPhieuThu", "int"
+    SafeAddAttribute ePhieuThu, "MaHopDong", "int"
+    SafeAddAttribute ePhieuThu, "MaKyHan", "int?"
+    SafeAddAttribute ePhieuThu, "SoTien", "decimal"
+    SafeAddAttribute ePhieuThu, "LoaiPhieu", "int"
+    SafeAddAttribute ePhieuThu, "HinhThucThanhToan", "int"
+    SafeAddAttribute ePhieuThu, "NgayGiaoDich", "DateTime"
+    SafeAddAttribute ePhieuThu, "MaGiaoDichNganHang", "string"
+    SafeAddAttribute ePhieuThu, "MaNhanVienThu", "int?"
+    SafeAddOperation ePhieuThu, "XacNhanThu", "void"
+    SafeAddOperation ePhieuThu, "InPhieuThu", "byte[]"
+    SafeAddOperation ePhieuThu, "TaoPhieuThuTuDong", "void"
+    
+    ' 1.12 PhieuChi
+    Set ePhieuChi = GetOrCreateClass(pkgEnt, "PhieuChi", "entity", "Thuc the phieu chi hoan tra tien coc")
+    SafeAddAttribute ePhieuChi, "MaPhieuChi", "int"
+    SafeAddAttribute ePhieuChi, "MaHopDong", "int"
+    SafeAddAttribute ePhieuChi, "SoTienHoanTra", "decimal"
+    SafeAddAttribute ePhieuChi, "NgayChi", "DateTime"
+    SafeAddAttribute ePhieuChi, "LyDoChi", "string"
+    SafeAddAttribute ePhieuChi, "MaNhanVienChi", "int"
+    SafeAddAttribute ePhieuChi, "HinhThucHoan", "int"
+    SafeAddOperation ePhieuChi, "InPhieuChi", "byte[]"
+    SafeAddOperation ePhieuChi, "ThucHienHoanTien", "bool"
+    
+    ' 1.13 PhieuBaoTri
+    Set ePhieuBaoTri = GetOrCreateClass(pkgEnt, "PhieuBaoTri", "entity", "Thuc the ticket su co va ho so bao tri theo SLA")
+    SafeAddAttribute ePhieuBaoTri, "MaPhieu", "int"
+    SafeAddAttribute ePhieuBaoTri, "MaHopDong", "int"
+    SafeAddAttribute ePhieuBaoTri, "MaThietBi", "int"
+    SafeAddAttribute ePhieuBaoTri, "MaNhanVienKyThuat", "int?"
+    SafeAddAttribute ePhieuBaoTri, "MoTaSuCo", "string"
+    SafeAddAttribute ePhieuBaoTri, "HinhAnhSuCo", "string"
+    SafeAddAttribute ePhieuBaoTri, "ChiPhi", "decimal"
+    SafeAddAttribute ePhieuBaoTri, "PhiDenBu", "decimal"
+    SafeAddAttribute ePhieuBaoTri, "TrangThai", "int"
+    SafeAddAttribute ePhieuBaoTri, "NgayTao", "DateTime"
+    SafeAddAttribute ePhieuBaoTri, "SLAStartTime", "DateTime"
+    SafeAddOperation ePhieuBaoTri, "TiepNhan", "void"
+    SafeAddOperation ePhieuBaoTri, "TamDungTinhTienSLA", "void"
+    SafeAddOperation ePhieuBaoTri, "PhanCongKTV", "void"
+    SafeAddOperation ePhieuBaoTri, "HoanTatSuaChua", "void"
+    
+    ' 1.14 LichSuThietBi
+    Set eLichSuThietBi = GetOrCreateClass(pkgEnt, "LichSuThietBi", "entity", "Thuc the nhat ky audit log trang thai may")
+    SafeAddAttribute eLichSuThietBi, "MaLichSu", "int"
+    SafeAddAttribute eLichSuThietBi, "MaThietBi", "int"
+    SafeAddAttribute eLichSuThietBi, "HanhDong", "string"
+    SafeAddAttribute eLichSuThietBi, "NgayTao", "DateTime"
+    SafeAddAttribute eLichSuThietBi, "GhiChu", "string"
+    SafeAddAttribute eLichSuThietBi, "NguoiThucHien", "string"
+    SafeAddOperation eLichSuThietBi, "GhiNhatKy", "void"
+    SafeAddOperation eLichSuThietBi, "TruyVanLichSu", "List<LichSuThietBi>"
+    
+    ' 1.15 BienBanBanGiao
+    Set eBienBanBanGiao = GetOrCreateClass(pkgEnt, "BienBanBanGiao", "entity", "Thuc the bien ban giao nhan may kem chu ky dien tu")
+    SafeAddAttribute eBienBanBanGiao, "MaBienBan", "int"
+    SafeAddAttribute eBienBanBanGiao, "MaHopDong", "int"
+    SafeAddAttribute eBienBanBanGiao, "MaThietBi", "int"
+    SafeAddAttribute eBienBanBanGiao, "LoaiBienBan", "int"
+    SafeAddAttribute eBienBanBanGiao, "TinhTrangNgoaiQuan", "string"
+    SafeAddAttribute eBienBanBanGiao, "ChuKyKhach", "string"
+    SafeAddAttribute eBienBanBanGiao, "ChuKyNhanVien", "string"
+    SafeAddAttribute eBienBanBanGiao, "NgayLap", "DateTime"
+    SafeAddAttribute eBienBanBanGiao, "TepDinhKemPDF", "string"
+    SafeAddOperation eBienBanBanGiao, "KyCanvas", "void"
+    SafeAddOperation eBienBanBanGiao, "XuatPDF", "byte[]"
+    SafeAddOperation eBienBanBanGiao, "DongKiem", "bool"
+    
+    ' 1.16 YeuCauGiaHan
+    Set eYeuCauGiaHan = GetOrCreateClass(pkgEnt, "YeuCauGiaHan", "entity", "Thuc the de xuat gia han hop dong thue")
+    SafeAddAttribute eYeuCauGiaHan, "MaYeuCau", "int"
+    SafeAddAttribute eYeuCauGiaHan, "MaHopDong", "int"
+    SafeAddAttribute eYeuCauGiaHan, "SoNgayGiaHan", "int"
+    SafeAddAttribute eYeuCauGiaHan, "LyDo", "string"
+    SafeAddAttribute eYeuCauGiaHan, "TrangThai", "int"
+    SafeAddAttribute eYeuCauGiaHan, "NgayTao", "DateTime"
+    SafeAddAttribute eYeuCauGiaHan, "NguoiDuyet", "int?"
+    SafeAddOperation eYeuCauGiaHan, "TaoYeuCau", "void"
+    SafeAddOperation eYeuCauGiaHan, "PheDuyet", "void"
+    SafeAddOperation eYeuCauGiaHan, "TuChoi", "void"
+    
+    ' 1.17 PhanCongCongViec
+    Set ePhanCongCongViec = GetOrCreateClass(pkgEnt, "PhanCongCongViec", "entity", "Thuc the phan cong nhiem vu cho Ky thuat vien")
+    SafeAddAttribute ePhanCongCongViec, "MaPhanCong", "int"
+    SafeAddAttribute ePhanCongCongViec, "MaPhieuBaoTri", "int"
+    SafeAddAttribute ePhanCongCongViec, "MaKyThuatVien", "int"
+    SafeAddAttribute ePhanCongCongViec, "NgayGiao", "DateTime"
+    SafeAddAttribute ePhanCongCongViec, "HanHoanThanh", "DateTime"
+    SafeAddAttribute ePhanCongCongViec, "TrangThai", "int"
+    SafeAddAttribute ePhanCongCongViec, "GhiChu", "string"
+    SafeAddOperation ePhanCongCongViec, "GiaoViec", "void"
+    SafeAddOperation ePhanCongCongViec, "CapNhatTienDo", "void"
+    SafeAddOperation ePhanCongCongViec, "NghiemThuCongViec", "void"
+    
+    ' 1.18 LichSuNhacNo
+    Set eLichSuNhacNo = GetOrCreateClass(pkgEnt, "LichSuNhacNo", "entity", "Thuc the nhat ky nhac no 4 cap")
+    SafeAddAttribute eLichSuNhacNo, "MaNhacNo", "int"
+    SafeAddAttribute eLichSuNhacNo, "MaHopDong", "int"
+    SafeAddAttribute eLichSuNhacNo, "MaKyHan", "int"
+    SafeAddAttribute eLichSuNhacNo, "NgayNhac", "DateTime"
+    SafeAddAttribute eLichSuNhacNo, "HinhThuc", "string"
+    SafeAddAttribute eLichSuNhacNo, "NoiDung", "string"
+    SafeAddAttribute eLichSuNhacNo, "KetQua", "string"
+    SafeAddAttribute eLichSuNhacNo, "NhanVienNhac", "int?"
+    SafeAddOperation eLichSuNhacNo, "GhiLichSuNhacNo", "void"
+    SafeAddOperation eLichSuNhacNo, "GuiSMSNhacNo", "void"
+    SafeAddOperation eLichSuNhacNo, "TaoCuocGoi", "void"
+    
+    ' --------------------------------------------------------------------------
+    ' 2. KHOI TAO 15 BOUNDARY CLASSES
+    ' --------------------------------------------------------------------------
+    Dim bNames(1 To 15) As String
+    bNames(1) = "DangKyView"
+    bNames(2) = "DangNhapView"
+    bNames(3) = "GioHangView"
+    bNames(4) = "DatThueView"
+    bNames(5) = "ThanhToanView"
+    bNames(6) = "VietQRModalView"
+    bNames(7) = "BanGiaoView"
+    bNames(8) = "KyCanvasModalView"
+    bNames(9) = "SuCoTicketView"
+    bNames(10) = "PhanCongBaoTriView"
+    bNames(11) = "GiaHanView"
+    bNames(12) = "SoCongNoView"
+    bNames(13) = "NghiemThuView"
+    bNames(14) = "HoanCocView"
+    bNames(15) = "BaoCaoBIView"
+    
+    Dim i As Integer
+    Dim dummyCls As Class
+    For i = 1 To 15
+        Set dummyCls = GetOrCreateClass(pkgBound, bNames(i), "boundary", "Lop giao dien")
+    Next i
+    
+    ' --------------------------------------------------------------------------
+    ' 3. KHOI TAO 7 CONTROL CLASSES
+    ' --------------------------------------------------------------------------
+    Dim cAccount As Class, cCart As Class, cPayment As Class, cHopDong As Class
+    Dim cBaoTri As Class, cPhanCong As Class, cCongNo As Class
+    
+    Set cAccount = GetOrCreateClass(pkgCtrl, "AccountControl", "control", "Lop dieu khien dang ky, dang nhap, BCrypt va Claims")
+    SafeAddOperation cAccount, "DangKyTaiKhoan", "bool"
+    SafeAddOperation cAccount, "XacThucDangNhap", "bool"
+    SafeAddOperation cAccount, "KiemTraClaims", "ClaimsPrincipal"
+    
+    Set cCart = GetOrCreateClass(pkgCtrl, "CartControl", "control", "Lop dieu khien gio hang va InventoryLock (SemaphoreSlim)")
+    SafeAddOperation cCart, "ThemGioHang", "void"
+    SafeAddOperation cCart, "KiemTraTonKhoVaGiuCho", "bool"
+    SafeAddOperation cCart, "GiaiPhongGiuChoQuaHan", "void"
+    
+    Set cPayment = GetOrCreateClass(pkgCtrl, "PaymentControl", "control", "Lop dieu khien Webhook NAPAS 247 va PaymentLock")
+    SafeAddOperation cPayment, "TiepNhanBankingWebhook", "IActionResult"
+    SafeAddOperation cPayment, "GachNoTuDong", "bool"
+    SafeAddOperation cPayment, "XacThucChuKyNapas", "bool"
+    
+    Set cHopDong = GetOrCreateClass(pkgCtrl, "HopDongControl", "control", "Lop dieu khien hop dong, ky Canvas va hoan coc")
+    SafeAddOperation cHopDong, "TaoHopDongMoi", "HopDong"
+    SafeAddOperation cHopDong, "LuuChuKyCanvas", "void"
+    SafeAddOperation cHopDong, "DuyetHopDong", "void"
+    SafeAddOperation cHopDong, "QuyetToanHoanCoc", "void"
+    
+    Set cBaoTri = GetOrCreateClass(pkgCtrl, "BaoTriControl", "control", "Lop dieu khien su co, SLA timer va phi den bu")
+    SafeAddOperation cBaoTri, "TiepNhanTicket", "PhieuBaoTri"
+    SafeAddOperation cBaoTri, "KichHoatTamDungSLA", "void"
+    SafeAddOperation cBaoTri, "CapNhatPhiDenBu", "void"
+    
+    Set cPhanCong = GetOrCreateClass(pkgCtrl, "PhanCongControl", "control", "Lop dieu khien phan cong viec cho Ky thuat vien")
+    SafeAddOperation cPhanCong, "PhanCongKTV", "void"
+    SafeAddOperation cPhanCong, "CapNhatTienDoCongViec", "void"
+    
+    Set cCongNo = GetOrCreateClass(pkgCtrl, "CongNoControl", "control", "Lop dieu khien cong no, phat 0.1%/ngay va nhac no")
+    SafeAddOperation cCongNo, "PhanKyNoGiaHan", "void"
+    SafeAddOperation cCongNo, "TinhPhatTreHan01PhanTram", "decimal"
+    SafeAddOperation cCongNo, "KhoaTaiKhoanBlacklist", "void"
+    
+    ' --------------------------------------------------------------------------
+    ' 4. THIET LAP CAC LIEN KET GIUA BOUNDARY - CONTROL - ENTITY
+    ' --------------------------------------------------------------------------
+    Dim bDangKy As Class, bDatThue As Class, bThanhToan As Class, bBanGiao As Class
+    Dim bSuCo As Class, bPhanCong As Class, bGiaHan As Class, bSoNo As Class
+    
+    Set bDangKy = GetOrCreateClass(pkgBound, "DangKyView", "boundary", "")
+    Set bDatThue = GetOrCreateClass(pkgBound, "DatThueView", "boundary", "")
+    Set bThanhToan = GetOrCreateClass(pkgBound, "ThanhToanView", "boundary", "")
+    Set bBanGiao = GetOrCreateClass(pkgBound, "BanGiaoView", "boundary", "")
+    Set bSuCo = GetOrCreateClass(pkgBound, "SuCoTicketView", "boundary", "")
+    Set bPhanCong = GetOrCreateClass(pkgBound, "PhanCongBaoTriView", "boundary", "")
+    Set bGiaHan = GetOrCreateClass(pkgBound, "GiaHanView", "boundary", "")
+    Set bSoNo = GetOrCreateClass(pkgBound, "SoCongNoView", "boundary", "")
+    
+    SafeAddAssociation bDangKy, "AccountControl"
+    SafeAddAssociation cAccount, "NguoiDung"
+    
+    SafeAddAssociation bDatThue, "CartControl"
+    SafeAddAssociation cCart, "ThietBi"
+    SafeAddAssociation cCart, "HopDong"
+    
+    SafeAddAssociation bThanhToan, "PaymentControl"
+    SafeAddAssociation cPayment, "PhieuThu"
+    SafeAddAssociation cPayment, "HopDong"
+    
+    SafeAddAssociation bBanGiao, "HopDongControl"
+    SafeAddAssociation cHopDong, "BienBanBanGiao"
+    SafeAddAssociation cHopDong, "ThietBi"
+    SafeAddAssociation cHopDong, "PhieuChi"
+    
+    SafeAddAssociation bSuCo, "BaoTriControl"
+    SafeAddAssociation cBaoTri, "PhieuBaoTri"
+    
+    SafeAddAssociation bPhanCong, "PhanCongControl"
+    SafeAddAssociation cPhanCong, "PhanCongCongViec"
+    
+    SafeAddAssociation bGiaHan, "CongNoControl"
+    SafeAddAssociation bSoNo, "CongNoControl"
+    SafeAddAssociation cCongNo, "YeuCauGiaHan"
+    SafeAddAssociation cCongNo, "KyHanThanhToan"
+    
+    ' Entity to Entity
+    SafeAddAssociation eVaiTro, "NguoiDung"
+    SafeAddAssociation eLoaiThietBi, "SanPham"
+    SafeAddAssociation eSanPham, "ThietBi"
+    SafeAddAssociation eHopDong, "ChiTietHopDong"
+    SafeAddAssociation eChiTietHopDong, "ThietBi"
+    SafeAddAssociation eHopDong, "KyHanThanhToan"
+    SafeAddAssociation eHopDong, "PhieuThu"
+    SafeAddAssociation eHopDong, "PhieuChi"
+    SafeAddAssociation eHopDong, "PhieuBaoTri"
+    SafeAddAssociation eThietBi, "LichSuThietBi"
+    
+    ' 5. Tao va mo so do BCE Analysis Class Diagram
+    Dim diagBCE As Diagram
+    Set diagBCE = pkgBCE.AddClassDiagram("BCE Analysis Class Diagram")
+    If Not diagBCE Is Nothing Then diagBCE.Activate
+    
+    MsgBox "Da tao xong toan bo lop phan tich BCE!"
+End Sub

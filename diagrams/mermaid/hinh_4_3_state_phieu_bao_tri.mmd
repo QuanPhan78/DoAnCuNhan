@@ -1,0 +1,23 @@
+stateDiagram-v2
+    direction TB
+
+    [*] --> TiepNhan: Khách hàng gửi yêu cầu báo lỗi SLA
+
+    state "0. TIẾP NHẬN (Submitted)<br/>Đồng hồ SLA bắt đầu đếm giờ" as TiepNhan
+    state "1. ĐANG XỬ LÝ (In Progress)<br/>Kỹ thuật viên kiểm tra tại chỗ" as DangXuLy
+    state "2. CHỜ LINH KIỆN (Waiting Parts)<br/>Định mức chi phí & Đặt linh kiện" as ChoLinhKien
+    state "3. HOÀN TẤT (Completed)<br/>Nghiệm thu kỹ thuật & Đóng phiếu" as HoanTat
+
+    TiepNhan --> DangXuLy: 1. Gán nhiệm vụ cho KTV (PhanCongCongViec)
+    DangXuLy --> ChoLinhKien: 2. Cần nhập linh kiện thay thế / Tính PhiDenBu
+    ChoLinhKien --> DangXuLy: 3. Linh kiện về kho / Khách xác nhận chi phí
+    DangXuLy --> HoanTat: 4. KTV sửa xong, kiểm tra vận hành đạt chuẩn
+    ChoLinhKien --> HoanTat: 5. Máy hỏng nặng không thể sửa -> Lập biên bản đền bù
+
+    HoanTat --> [*]: Lưu lịch sử bảo trì & Cập nhật trạng thái máy
+
+    classDef stateNode fill:#ffffff,stroke:#000000,stroke-width:1.5px,color:#000000;
+    classDef terminalNode fill:#f4f4f5,stroke:#000000,stroke-width:1.5px,color:#000000;
+
+    class TiepNhan,DangXuLy,ChoLinhKien stateNode
+    class HoanTat terminalNode

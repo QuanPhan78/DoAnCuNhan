@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Chụp ảnh CCCD và thiết bị để lập hồ sơ thuê và bảo trì.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Chọn ảnh hồ sơ thuê, biên lai và thiết bị.</string>
 </dict>
 </plist>

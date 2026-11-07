@@ -1,0 +1,69 @@
+' ==============================================================================
+' ROSESCRIPT MASTER RUNNER: DIEU PHOI TAO TOAN BO MO HINH HE THONG
+' (RunAll_BuildMasterModel.ebs)
+' ------------------------------------------------------------------------------
+' Phan mem: IBM Rational Rose 2003 / Enterprise Win32
+' De tai: He thong Quan ly Cho thue Thiet bi (RentalSystem) - HUIT 2025
+' Dieu phoi thuc thi 6 phan tap lenh:
+'   1. 00_Setup_Stereotypes_And_Packages.ebs
+'   2. 01_Business_UseCase_Diagram.ebs
+'   3. 02_1 den 02_7 (7 Core Workflows & 4 Edge Cases)
+'   4. 03_System_UseCase_Diagrams.ebs (14 SYS-UCs & 3 Subsystems)
+'   5. 04_Analysis_Classes_BCE.ebs (18 Entities + Boundaries + Controls)
+'   6. 05_Design_Classes_3Tier.ebs (Presentation, Business, Data Tiers)
+' ==============================================================================
+Option Explicit
+
+Sub Main
+    On Error Resume Next
+    Dim theModel As Model
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Loi: Vui long mo hoac tao mot Model moi trong Rational Rose truoc khi chay!", 16, "Thong bao"
+        Exit Sub
+    End If
+    
+    Dim scriptDir As String
+    ' Lay thu muc hien tai chua script
+    scriptDir = "D:\DoAnCuNhan\Rose_Diagrams\scripts\"
+    
+    Dim scripts(1 To 12) As String
+    scripts(1) = "00_Setup_Stereotypes_And_Packages.ebs"
+    scripts(2) = "01_Business_UseCase_Diagram.ebs"
+    scripts(3) = "02_1_Workflow_DangKy_XacThuc.ebs"
+    scripts(4) = "02_2_Workflow_DatThue_GiuCho.ebs"
+    scripts(5) = "02_3_Workflow_ThanhToan_DatCoc.ebs"
+    scripts(6) = "02_4_Workflow_BanGiao_KyBienBan.ebs"
+    scripts(7) = "02_5_Workflow_BaoCao_SuCo.ebs"
+    scripts(8) = "02_6_Workflow_GiaHan_PhanKyNo.ebs"
+    scripts(9) = "02_7_Workflow_TraMay_HoanCoc.ebs"
+    scripts(10) = "03_System_UseCase_Diagrams.ebs"
+    scripts(11) = "04_Analysis_Classes_BCE.ebs"
+    scripts(12) = "05_Design_Classes_3Tier.ebs"
+    
+    MsgBox "BAT DAU TIEN TRINH KHOI TAO MASTER MODEL!" & vbCrLf & vbCrLf & _
+           "Tong so 12 tap lenh con se duoc kiem tra va thuc thi." & vbCrLf & _
+           "Nhan OK de tiep tuc...", 64, "Master Runner"
+           
+    ' Goi thuc thi tuan tu bang RunScript
+    Dim i As Integer
+    Dim fullPath As String
+    For i = 1 To 12
+        fullPath = scriptDir & scripts(i)
+        ' Goi thuc thi script con
+        RoseApp.RunScript fullPath
+    Next i
+    
+    MsgBox "=======================================================" & vbCrLf & _
+           "DA KHOI TAO TOAN DIEN 100% MO HINH RENTALSYSTEM!" & vbCrLf & _
+           "=======================================================" & vbCrLf & vbCrLf & _
+           "Cac thanh phan mo hinh da sinh thanh cong:" & vbCrLf & _
+           "1. Stereotypes & Packages View: Use Case, Logical, Component" & vbCrLf & _
+           "2. Business Model: 2 Actors, 3 Workers, 7 BUCs" & vbCrLf & _
+           "3. 7 Core Workflows kem 4 Ca bien: Khach khong nhan may, Coc thieu, Den bu hong may, Tre han khong tra" & vbCrLf & _
+           "4. System Model: 14 SYS-UCs va 3 Subsystems (Customer, Admin, Maintenance)" & vbCrLf & _
+           "5. Analysis Model: 18 Entity Classes, 15 Boundary Classes, 7 Control Classes" & vbCrLf & _
+           "6. Design Model: 3 Tiers (Presentation, Business Logic, Data Access)" & vbCrLf & vbCrLf & _
+           "Quy khach vui long chon File -> Save As de luu mo hinh thanh tep:" & vbCrLf & _
+           "D:\DoAnCuNhan\Rose_Diagrams\RentalSystem_Master.mdl", 64, "Master Runner Hoan Tat"
+End Sub

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/incident_model.dart';
+import '../../models/role_enum.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/incident_provider.dart';
 import '../../widgets/custom_image_widget.dart';
 import '../../widgets/dashboard_widgets.dart'; // StatusBadge, BadgeStatus
 import '../../widgets/core/custom_app_bar.dart';
@@ -8,16 +12,123 @@ import '../../theme/app_text_styles.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_shadows.dart';
 
-class IncidentDetailScreen extends StatelessWidget {
+class IncidentDetailScreen extends StatefulWidget {
   final IncidentModel incident;
 
   const IncidentDetailScreen({super.key, required this.incident});
 
+  @override
+  State<IncidentDetailScreen> createState() => _IncidentDetailScreenState();
+}
+
+class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
+  late IncidentModel incident;
+  bool _refreshing = true;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    incident = widget.incident;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+  }
+
+  Future<void> _refresh() async {
+    if (!mounted || _busy) return;
+    setState(() => _refreshing = true);
+    try {
+      final latest = await context.read<IncidentProvider>().getIncident(incident.id);
+      if (mounted) setState(() => incident = latest);
+    } catch (error) {
+      if (mounted) _message(error.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  void _message(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _review({bool? accepted}) async {
+    final form = GlobalKey<FormState>();
+    var feedback = '';
+    var rating = incident.rating ?? 5;
+    final title = switch (accepted) {
+      true => 'Đồng ý nghiệm thu',
+      false => 'Từ chối nghiệm thu',
+      null => 'Đánh giá dịch vụ',
+    };
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(title),
+        content: Form(
+          key: form,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (accepted == null)
+                DropdownButtonFormField<int>(
+                  initialValue: rating,
+                  decoration: const InputDecoration(labelText: 'Số sao'),
+                  items: [for (var value = 1; value <= 5; value++)
+                    DropdownMenuItem(value: value, child: Text('$value sao'))],
+                  onChanged: (value) => rating = value!,
+                ),
+              TextFormField(
+                initialValue: accepted == null ? incident.feedback : null,
+                decoration: InputDecoration(labelText: accepted == false ? 'Lý do từ chối' : 'Nhận xét (tùy chọn)'),
+                maxLength: 1000,
+                maxLines: 2,
+                validator: (value) => accepted == false && (value ?? '').trim().isEmpty
+                    ? 'Nhập lý do từ chối.' : null,
+                onSaved: (value) => feedback = (value ?? '').trim(),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('Đóng')),
+          FilledButton(
+            onPressed: () {
+              if (!form.currentState!.validate()) return;
+              form.currentState!.save();
+              Navigator.pop(dialog, true);
+            },
+            child: const Text('Gửi'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || _busy) return;
+    final provider = context.read<IncidentProvider>();
+    setState(() => _busy = true);
+    try {
+      final latest = accepted == null
+          ? await provider.rateIncident(incident, rating, feedback)
+          : await provider.acceptIncident(incident, accepted, feedback);
+      if (!mounted) return;
+      setState(() => incident = latest);
+      _message(switch (accepted) {
+        true => 'Đã xác nhận nghiệm thu.',
+        false => 'Đã yêu cầu kỹ thuật viên xử lý lại.',
+        null => 'Đã lưu đánh giá.',
+      });
+    } catch (error) {
+      if (mounted) _message(error.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   BadgeStatus _getBadgeStatus(String status) {
     switch (status.toLowerCase()) {
       case 'đã hoàn thành':
+      case 'đã nghiệm thu':
         return BadgeStatus.success;
       case 'đang xử lý':
+      case 'chờ nghiệm thu':
         return BadgeStatus.processing;
       case 'chờ xử lý':
         return BadgeStatus.warning;
@@ -28,9 +139,14 @@ class IncidentDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCustomer = context.watch<AuthProvider>().currentUser?.role == Role.customer;
+    final canReview = isCustomer && !_busy && !_refreshing;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(title: 'Chi tiết Yêu cầu Hỗ trợ'),
+      appBar: CustomAppBar(title: 'Chi tiết sự cố', actions: [
+        IconButton(onPressed: _refreshing || _busy ? null : _refresh,
+          tooltip: 'Tải lại phiếu', icon: const Icon(Icons.refresh)),
+      ]),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -60,7 +176,7 @@ class IncidentDetailScreen extends StatelessWidget {
               icon: Icons.info_outline_rounded,
               content: Column(
                 children: [
-                  _buildInfoRow('Thiết bị', incident.deviceId, isHighlight: true),
+                  _buildInfoRow('Thiết bị', incident.deviceName ?? incident.deviceId, isHighlight: true),
                   _buildDivider(),
                   _buildInfoRow('Loại sự cố', incident.issueType),
                   _buildDivider(),
@@ -99,6 +215,12 @@ class IncidentDetailScreen extends StatelessWidget {
               ),
             ),
             
+            if (incident.result?.isNotEmpty == true) ...[
+              const SizedBox(height: 16),
+              _buildSectionCard(title: 'Kết quả xử lý', icon: Icons.build_outlined,
+                content: Text(incident.result!)),
+            ],
+
             // Hình ảnh đính kèm
             if (incident.attachments.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -129,6 +251,37 @@ class IncidentDetailScreen extends StatelessWidget {
               ),
             ],
             
+            if (_busy || _refreshing) ...[
+              const SizedBox(height: 16),
+              const LinearProgressIndicator(),
+            ],
+            if (isCustomer && incident.statusCode == 3) ...[
+              const SizedBox(height: 16),
+              _buildSectionCard(
+                title: 'Nghiệm thu',
+                icon: Icons.fact_check_outlined,
+                content: Wrap(spacing: 8, runSpacing: 8, children: [
+                  FilledButton(onPressed: canReview ? () => _review(accepted: true) : null,
+                    child: const Text('Đồng ý nghiệm thu')),
+                  OutlinedButton(onPressed: canReview ? () => _review(accepted: false) : null,
+                    child: const Text('Từ chối nghiệm thu')),
+                ]),
+              ),
+            ],
+            if (isCustomer && (incident.rating != null || incident.statusCode == 3 || incident.statusCode == 5)) ...[
+              const SizedBox(height: 16),
+              _buildSectionCard(
+                title: 'Đánh giá dịch vụ',
+                icon: Icons.star_outline,
+                content: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  if (incident.rating != null) Text('${incident.rating}/5 sao'),
+                  if (incident.feedback?.isNotEmpty == true) Text(incident.feedback!),
+                  if (incident.rating == null && (incident.statusCode == 3 || incident.statusCode == 5))
+                    OutlinedButton(onPressed: canReview ? () => _review() : null,
+                      child: const Text('Gửi đánh giá')),
+                ]),
+              ),
+            ],
             const SizedBox(height: 40),
           ],
         ),

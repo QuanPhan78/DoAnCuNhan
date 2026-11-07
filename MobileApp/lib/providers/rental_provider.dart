@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/rental_request_model.dart';
+import '../models/rental_status.dart';
 import '../repositories/rental_repository.dart';
 
 class RentalProvider with ChangeNotifier {
@@ -16,6 +17,9 @@ class RentalProvider with ChangeNotifier {
   String? get error => _error;
 
   RentalProvider(this._repository);
+
+  Future<RentalRequestModel> quoteRental(RentalRequestModel request) =>
+      _repository.quoteRental(request);
 
   Future<void> loadRequests({String? userId}) async {
     _isLoading = true;
@@ -50,24 +54,17 @@ class RentalProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> cancelRental(String id) async {
+  Future<void> requestCancellation(String id, String reason) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final success = await _repository.cancelRental(id);
-      if (success) {
-        final index = _requests.indexWhere((r) => r.id == id);
-        if (index != -1) {
-          _requests[index] = _requests[index].copyWith(status: _requests[index].status);
-        }
-        await loadRequests();
-      }
-      return success;
-    } catch (e) {
-      _error = 'Lỗi huỷ đơn thuê: $e';
-      return false;
+      await _repository.requestCancellation(id, reason);
+      _requests = _requests.map((request) => request.id == id
+          ? request.copyWith(status: RentalStatus.cancellationRequested, cancellationReason: reason)
+          : request).toList();
+      await loadRequests();
     } finally {
       _isLoading = false;
       notifyListeners();

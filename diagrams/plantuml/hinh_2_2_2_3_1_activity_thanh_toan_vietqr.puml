@@ -1,0 +1,77 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam backgroundColor #ffffff
+
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #000000
+    BorderThickness 1.2
+    FontSize 10.5
+    ArrowColor #000000
+    ArrowThickness 1.2
+}
+
+skinparam diamond {
+    BackgroundColor #f4f4f5
+    BorderColor #000000
+    FontSize 10
+}
+
+skinparam partition {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11.5
+    FontStyle bold
+}
+
+|Khách hàng|
+start
+:Mở trang thanh toán hợp đồng;
+:Chọn phương thức "VietQR động NAPAS 247";
+
+|Hệ thống RentalSystem|
+:Sinh chuỗi mã VietQR động theo chuẩn EMVCo:\n- STK ngân hàng thụ hưởng\n- Số tiền cọc chính xác\n- Cú pháp đối soát tự động: "HD{MaHopDong}";
+:Tính toán mã toàn vẹn dữ liệu CRC16-CCITT;
+
+|Khách hàng|
+:Quét mã QR bằng ứng dụng Mobile Banking;\n(Nội dung chuyển khoản được điền tự động)
+:Xác thực sinh trắc học / OTP & Hoàn tất chuyển khoản;
+
+|Cổng thanh toán VietQR / NAPAS 247|
+:Xử lý chuyển mạch liên ngân hàng 24/7;
+:Bắn biến động số dư qua Webhook:\nHTTP POST /Payment/BankingWebhook;
+
+|Hệ thống RentalSystem|
+:Tiếp nhận Webhook & Yêu cầu khóa bất đồng bộ:\nawait PaymentController.PaymentLock.WaitAsync();
+
+note right
+  Bảo vệ Idempotency Guard
+  chống xử lý trùng lặp giao dịch
+end note
+
+:Kiểm tra mã giao dịch ngân hàng (referenceCode)\nđã tồn tại trong bảng PhieuThu hay chưa?;
+
+if (Giao dịch đã được xử lý trước đó?) then (Đã tồn tại)
+    :Bỏ qua thao tác ghi sổ;
+    :Giải phóng khóa PaymentLock.Release();
+    :Phản hồi HTTP 200 OK ngay lập tức;
+    stop
+else (Giao dịch mới)
+    :Regex bóc tách mã hợp đồng từ nội dung chuyển khoản:\nRegex @"(?i)(?:HD)[\s\-_:#]*([0-9]{1,10})";
+    :Áp dụng giải thuật gạch nợ thác nước 4 tầng (Waterfall):\n1. Gạch nợ tiền cọc / kỳ hạn chỉ định\n2. Xóa phí phạt trễ hạn nếu có\n3. Khấu trừ phí bồi thường hư hỏng (PhiDenBu)\n4. Tích lũy số dư dôi dư vào TienTraThua;
+    :Tự động khởi tạo bản ghi PhieuThu\nvới MaNhanVienThu = null (Tự động hóa 100%);
+    :Cập nhật trạng thái HopDong.TrangThai = DaDatCoc;
+    :Lưu thay đổi CSDL: await context.SaveChangesAsync();
+    :Giải phóng khóa trong khối finally:\nPaymentLock.Release();
+    :Phản hồi HTTP 200 OK cho cổng thanh toán;
+    
+    |Khách hàng|
+    :Giao diện tự động cập nhật trạng thái "Đã thanh toán cọc";
+    stop
+endif
+
+@enduml

@@ -1,0 +1,79 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+actor "Kỹ thuật viên" as Tech
+actor "Nhân viên\nKinh doanh" as Sales
+participant "Giao diện:\nAdminHopDongView" as View
+participant "Điều khiển:\nHopDongController" as Ctrl
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+
+User -> Tech : Mang trả thiết bị tại kho hoặc bàn giao thu hồi
+activate Tech
+
+Tech -> Tech : Kiểm định linh kiện, số Serial & Tình trạng máy
+Tech -> View : Nhập biên bản nghiệm thu (phiDenBu nếu có)
+activate View
+deactivate Tech
+
+Sales -> View : Mở chi tiết hợp đồng & Xem quyết toán hoàn cọc
+activate Sales
+
+Sales -> Ctrl : POST HoanCoc(contractId, soTienHoan, lyDoChi)
+activate Ctrl
+
+group Giao dịch quyết toán hoàn trả tiền cọc & Thanh lý hợp đồng
+    Ctrl -> DB : Khởi tạo PhieuChi(MaHopDong, SoTienHoanTra, LyDoChi)
+    activate DB
+    Ctrl -> DB : Cập nhật HopDong.TrangThai = 2 (DaThanhLy)
+    Ctrl -> DB : Cập nhật ThietBi.TrangThai = 0 (SanSang về kho)
+    Ctrl -> DB : Thêm bản ghi LichSuThietBi (NhatKyThuHoi)
+    Ctrl -> DB : await SaveChangesAsync()
+    DB --> Ctrl : Lưu giao dịch quyết toán thành công
+    deactivate DB
+end
+
+Ctrl --> View : Thông báo lập phiếu chi & Thanh lý hoàn tất
+deactivate Ctrl
+
+View --> Sales : Cập nhật trạng thái hợp đồng đã đóng
+deactivate View
+deactivate Sales
+
+Ctrl -> User : Gửi thông báo quyết toán & Chuyển tiền hoàn cọc vào tài khoản
+activate User
+deactivate User
+
+@enduml

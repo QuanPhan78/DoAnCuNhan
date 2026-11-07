@@ -1,3 +1,4 @@
+import '../../models/role_enum.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -85,7 +86,6 @@ class _SecurityPermissionsScreenState extends State<SecurityPermissionsScreen> {
                 ListTile(
                   leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primary),
                   title: const Text('Đổi mật khẩu', style: AppTextStyles.body),
-                  subtitle: const Text('Cập nhật mật khẩu định kỳ để bảo vệ tài khoản', style: AppTextStyles.caption),
                   trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
                   onTap: () => _showChangePasswordDialog(context),
                 ),
@@ -114,15 +114,10 @@ class _SecurityPermissionsScreenState extends State<SecurityPermissionsScreen> {
             children: [
               _buildSectionHeader('Quyền hạn của bạn'),
               StatusBadge(
-                text: user.role.name.toUpperCase(),
+                text: user.role.displayName,
                 status: BadgeStatus.processing,
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hệ thống cấp các quyền sau đây dựa trên vai trò của tài khoản:',
-            style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
 
@@ -172,76 +167,119 @@ class _SecurityPermissionsScreenState extends State<SecurityPermissionsScreen> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
-    final oldPassController = TextEditingController();
-    final newPassController = TextEditingController();
-    final confirmPassController = TextEditingController();
-
-    showDialog(
+  Future<void> _showChangePasswordDialog(BuildContext context) async {
+    final changed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      barrierDismissible: false,
+      builder: (_) => const _ChangePasswordDialog(),
+    );
+
+    if (changed == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đổi mật khẩu thành công.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+}
+
+class _ChangePasswordDialog extends StatefulWidget {
+  const _ChangePasswordDialog();
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final _current = TextEditingController();
+  final _next = TextEditingController();
+  final _confirmation = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    _confirmation.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    final error = await context.read<AuthProvider>().changePassword(
+      _current.text,
+      _next.text,
+      _confirmation.text,
+    );
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    setState(() {
+      _submitting = false;
+      _error = error;
+    });
+  }
+
+  Widget _passwordField(TextEditingController controller, String label) {
+    return TextField(
+      controller: controller,
+      enabled: !_submitting,
+      obscureText: true,
+      decoration: InputDecoration(labelText: label),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_submitting,
+      child: AlertDialog(
         title: const Text('Đổi mật khẩu'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: oldPassController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu hiện tại',
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
-              ),
+              _passwordField(_current, 'Mật khẩu hiện tại'),
               const SizedBox(height: 12),
-              TextField(
-                controller: newPassController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu mới',
-                  prefixIcon: Icon(Icons.lock_reset),
-                ),
-              ),
+              _passwordField(_next, 'Mật khẩu mới'),
               const SizedBox(height: 12),
-              TextField(
-                controller: confirmPassController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Xác nhận mật khẩu mới',
-                  prefixIcon: Icon(Icons.check_circle_outline),
+              _passwordField(_confirmation, 'Nhập lại mật khẩu mới'),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-              ),
+              ],
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: _submitting ? null : () => Navigator.of(context).pop(),
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (newPassController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Vui lòng nhập mật khẩu mới!')),
-                );
-                return;
-              }
-              if (newPassController.text != confirmPassController.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mật khẩu xác nhận không khớp!')),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Đổi mật khẩu thành công!'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-            child: const Text('Cập nhật'),
+            onPressed: _submitting ? null : _submit,
+            child: _submitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Đổi mật khẩu'),
           ),
         ],
       ),

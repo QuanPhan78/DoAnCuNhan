@@ -237,15 +237,15 @@
 
                         <!-- Form Nghiệm thu -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Bước 1: Xác nhận tình trạng máy sau khi sửa</label>
+                            <label class="form-label fw-bold">Xác nhận tình trạng máy sau khi sửa</label>
                             <form asp-action="NghiemThu" method="post" class="mb-2">
                                 <input type="hidden" name="maPhieu" value="@Model.MaPhieu" />
                                 <input type="hidden" name="dongY" value="true" />
                                 <div class="mb-2">
-                                    <input type="text" name="yKien" class="form-control form-control-sm" placeholder="Nhận xét khi nhận máy (tùy chọn)..." />
+                                    <input type="text" name="yKien" maxlength="1000" class="form-control form-control-sm" placeholder="Nhận xét (tùy chọn)" />
                                 </div>
                                 <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">
-                                    <i class="fas fa-check-circle"></i> ✅ Đồng Ý Nhận Máy & Nghiệm Thu
+                                    <i class="fas fa-check-circle"></i> Đồng ý nghiệm thu
                                 </button>
                             </form>
 
@@ -253,19 +253,19 @@
                                 <input type="hidden" name="maPhieu" value="@Model.MaPhieu" />
                                 <input type="hidden" name="dongY" value="false" />
                                 <div class="mb-2">
-                                    <input type="text" name="yKien" required class="form-control form-control-sm" placeholder="Nhập lý do chưa hài lòng / lỗi còn tồn tại..." />
+                                    <input type="text" name="yKien" maxlength="1000" required class="form-control form-control-sm" placeholder="Lý do từ chối" />
                                 </div>
                                 <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                    <i class="fas fa-redo-alt"></i> ⚠️ Chưa Đạt - Yêu Cầu KTV Sửa Lại
+                                    <i class="fas fa-redo-alt"></i> Từ chối nghiệm thu
                                 </button>
                             </form>
                         </div>
                         <hr />
                     }
 
-                    @if (Model.TrangThai == 3 || Model.TrangThai == 5) {
+                    @if (Model.DanhGiaSao.HasValue || Model.TrangThai == 3 || Model.TrangThai == 5) {
                         <div>
-                            <label class="form-label fw-bold">Bước 2: Đánh giá chất lượng dịch vụ</label>
+                            <label class="form-label fw-bold">Đánh giá chất lượng dịch vụ</label>
                             @if (Model.DanhGiaSao.HasValue) {
                                 <div class="p-3 bg-light rounded text-center">
                                     <div class="text-warning fs-4 mb-1">
@@ -295,7 +295,7 @@
                                         </select>
                                     </div>
                                     <div class="mb-2">
-                                        <textarea name="yKienPhanHoi" class="form-control form-control-sm" rows="3" placeholder="Nhập nhận xét chi tiết về thái độ KTV, chất lượng máy..."></textarea>
+                                        <textarea name="yKienPhanHoi" maxlength="1000" class="form-control form-control-sm" rows="3" placeholder="Nhận xét (tùy chọn)"></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-warning btn-sm w-100 fw-bold">
                                         <i class="fas fa-star"></i> Gửi Đánh Giá Dịch Vụ

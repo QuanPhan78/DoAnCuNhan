@@ -1,0 +1,381 @@
+digraph RentalSystem_Physical_ERD {
+    graph [rankdir="LR", splines=ortho, nodesep=0.65, ranksep=1.1, dpi=300, bgcolor="#ffffff"];
+    node [shape=none, fontname="Segoe UI", fontsize=10];
+    edge [fontname="Segoe UI", fontsize=9.5, color="#000000", penwidth=1.2];
+
+    // ==========================================
+    // 1. PHÂN HỆ NGƯỜI DÙNG & PHÂN QUYỀN RBAC (4 BẢNG)
+    // ==========================================
+
+    VaiTros [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>VaiTros</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaVaiTro: int</td></tr>
+            <tr><td align="left">TenVaiTro: nvarchar(50)</td></tr>
+        </table>
+    >];
+
+    NguoiDungs [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>NguoiDungs</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaNguoiDung: int</td></tr>
+            <tr><td align="left" port="fk_vaitro"><i>FK</i>  MaVaiTro: int</td></tr>
+            <tr><td align="left">HoTen: nvarchar(100)</td></tr>
+            <tr><td align="left">SoDienThoai: varchar(20)</td></tr>
+            <tr><td align="left">Email: varchar(100)</td></tr>
+            <tr><td align="left">MatKhau: varchar(255)</td></tr>
+            <tr><td align="left">CCCD: varchar(20)</td></tr>
+            <tr><td align="left">DiaChi: nvarchar(255)</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+        </table>
+    >];
+
+    ThongBaos [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>ThongBaos</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaThongBao: int</td></tr>
+            <tr><td align="left" port="fk_user"><i>FK</i>  MaNguoiDung: int</td></tr>
+            <tr><td align="left">TieuDe: nvarchar(200)</td></tr>
+            <tr><td align="left">NoiDung: nvarchar(max)</td></tr>
+            <tr><td align="left">NgayTao: datetime</td></tr>
+            <tr><td align="left">DaDoc: bit</td></tr>
+            <tr><td align="left">LoaiThongBao: nvarchar(50)</td></tr>
+            <tr><td align="left">LienKet: nvarchar(255)</td></tr>
+        </table>
+    >];
+
+    PhanCongCongViecs [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>PhanCongCongViecs</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaPhanCong: int</td></tr>
+            <tr><td align="left" port="fk_nv"><i>FK</i>  MaNhanVien: int</td></tr>
+            <tr><td align="left" port="fk_nguoigiao"><i>FK</i>  MaNguoiGiao: int (NULL)</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int (NULL)</td></tr>
+            <tr><td align="left" port="fk_phieubt"><i>FK</i>  MaPhieuBaoTri: int (NULL)</td></tr>
+            <tr><td align="left">TieuDe: nvarchar(200)</td></tr>
+            <tr><td align="left">NoiDung: nvarchar(max)</td></tr>
+            <tr><td align="left">NgayGiao: datetime</td></tr>
+            <tr><td align="left">HanHoanThanh: datetime</td></tr>
+            <tr><td align="left">NgayHoanThanh: datetime (NULL)</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    // ==========================================
+    // 2. PHÂN HỆ THIẾT BỊ & KHO HÀNG SERIAL (4 BẢNG)
+    // ==========================================
+
+    LoaiThietBis [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>LoaiThietBis</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaLoai: int</td></tr>
+            <tr><td align="left">TenLoai: nvarchar(100)</td></tr>
+        </table>
+    >];
+
+    SanPhams [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>SanPhams</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaSanPham: int</td></tr>
+            <tr><td align="left" port="fk_loai"><i>FK</i>  MaLoai: int</td></tr>
+            <tr><td align="left">TenSanPham: nvarchar(200)</td></tr>
+            <tr><td align="left">CauHinh: nvarchar(max)</td></tr>
+            <tr><td align="left">MoTa: nvarchar(max)</td></tr>
+            <tr><td align="left">GiaThueNgay: decimal(18,2)</td></tr>
+            <tr><td align="left">TienCoc: decimal(18,2)</td></tr>
+            <tr><td align="left">HinhAnh: nvarchar(255)</td></tr>
+        </table>
+    >];
+
+    ThietBis [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>ThietBis</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaThietBi: int</td></tr>
+            <tr><td align="left" port="fk_sp"><i>FK</i>  MaSanPham: int</td></tr>
+            <tr><td align="left">SoSerial: varchar(100)</td></tr>
+            <tr><td align="left">TinhTrangMay: nvarchar(255)</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+        </table>
+    >];
+
+    LichSuThietBis [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>LichSuThietBis</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaLichSu: int</td></tr>
+            <tr><td align="left" port="fk_tb"><i>FK</i>  MaThietBi: int</td></tr>
+            <tr><td align="left">HanhDong: nvarchar(100)</td></tr>
+            <tr><td align="left">ThoiGian: datetime</td></tr>
+            <tr><td align="left" port="fk_user"><i>FK</i>  MaNguoiThucHien: int</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    // ==========================================
+    // 3. PHÂN HỆ HỢP ĐỒNG & ĐẶT THUÊ (4 BẢNG)
+    // ==========================================
+
+    KhuyenMais [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>KhuyenMais</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaKM: int</td></tr>
+            <tr><td align="left">Code: varchar(50)</td></tr>
+            <tr><td align="left">MaCode: varchar(50)</td></tr>
+            <tr><td align="left">PhanTramGiam: decimal(5,2)</td></tr>
+            <tr><td align="left">SoLuong: int</td></tr>
+            <tr><td align="left">NgayBatDau: datetime</td></tr>
+            <tr><td align="left">NgayKetThuc: datetime</td></tr>
+            <tr><td align="left">KichHoat: bit</td></tr>
+            <tr><td align="left">MoTa: nvarchar(255)</td></tr>
+        </table>
+    >];
+
+    HopDongs [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>HopDongs</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaHopDong: int</td></tr>
+            <tr><td align="left" port="fk_kh"><i>FK</i>  MaKhachHang: int</td></tr>
+            <tr><td align="left" port="fk_nv"><i>FK</i>  MaNhanVien: int (NULL)</td></tr>
+            <tr><td align="left" port="fk_km"><i>FK</i>  MaKhuyenMai: int (NULL)</td></tr>
+            <tr><td align="left">NgayBatDau: datetime</td></tr>
+            <tr><td align="left">NgayKetThuc: datetime</td></tr>
+            <tr><td align="left">TongTien: decimal(18,2)</td></tr>
+            <tr><td align="left">TienDaCoc: decimal(18,2)</td></tr>
+            <tr><td align="left">TienCocBaoDamMay: decimal(18,2)</td></tr>
+            <tr><td align="left">TienTraThua: decimal(18,2)</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+            <tr><td align="left">TrangThaiThanhToan: int</td></tr>
+            <tr><td align="left">NgayKy: datetime (NULL)</td></tr>
+            <tr><td align="left">HanChotKy: datetime (NULL)</td></tr>
+            <tr><td align="left">ChuKyKhachHang: nvarchar(255)</td></tr>
+            <tr><td align="left">ChuKyNhanVien: nvarchar(255)</td></tr>
+            <tr><td align="left">AnhCCCD_Truoc: nvarchar(255)</td></tr>
+            <tr><td align="left">AnhCCCD_Sau: nvarchar(255)</td></tr>
+            <tr><td align="left">SoKyHan: int</td></tr>
+            <tr><td align="left">NhomTuoiNo: int</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    ChiTietHopDongs [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>ChiTietHopDongs</b></font></td></tr>
+            <tr><td align="left" port="pk_hd"><b>PK, FK</b>  MaHopDong: int</td></tr>
+            <tr><td align="left" port="pk_tb"><b>PK, FK</b>  MaThietBi: int</td></tr>
+            <tr><td align="left">GiaChotThu: decimal(18,2)</td></tr>
+        </table>
+    >];
+
+    YeuCauGiaHans [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>YeuCauGiaHans</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaYeuCau: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int</td></tr>
+            <tr><td align="left">NgayYeuCau: datetime</td></tr>
+            <tr><td align="left">SoNgayGiaHan: int</td></tr>
+            <tr><td align="left">ChiPhiPhatSinh: decimal(18,2)</td></tr>
+            <tr><td align="left">LyDo: nvarchar(500)</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+            <tr><td align="left" port="fk_nguoiduyet"><i>FK</i>  MaNguoiDuyet: int (NULL)</td></tr>
+            <tr><td align="left">PhanHoi: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    // ==========================================
+    // 4. PHÂN HỆ TÀI CHÍNH, BẢO TRÌ & BÀN GIAO (6 BẢNG)
+    // ==========================================
+
+    KyHanThanhToans [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>KyHanThanhToans</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaKyHan: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int</td></tr>
+            <tr><td align="left">SoKyHan: int</td></tr>
+            <tr><td align="left">NgayDenHan: datetime</td></tr>
+            <tr><td align="left">SoTienPhai: decimal(18,2)</td></tr>
+            <tr><td align="left">SoTienDaTra: decimal(18,2)</td></tr>
+            <tr><td align="left">TienPhat: decimal(18,2)</td></tr>
+            <tr><td align="left">PhiPhatTreHan: decimal(18,2)</td></tr>
+            <tr><td align="left">SoNgayTreHan: int</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+            <tr><td align="left">NhomTuoiNo: int</td></tr>
+            <tr><td align="left">TrangThaiXacNhan: int</td></tr>
+            <tr><td align="left">MaGiaoDichChuyenKhoan: varchar(100)</td></tr>
+            <tr><td align="left">NgayThanhToan: datetime (NULL)</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    PhieuThus [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>PhieuThus</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaPhieuThu: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int</td></tr>
+            <tr><td align="left">LoaiPhieu: int</td></tr>
+            <tr><td align="left">SoTien: decimal(18,2)</td></tr>
+            <tr><td align="left">NgayGiaoDich: datetime</td></tr>
+            <tr><td align="left">HinhThucThanhToan: int</td></tr>
+            <tr><td align="left" port="fk_kyhan"><i>FK</i>  MaKyHan: int (NULL)</td></tr>
+            <tr><td align="left">MaGiaoDichNganHang: varchar(100)</td></tr>
+            <tr><td align="left">NganHangNhan: nvarchar(100)</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+            <tr><td align="left" port="fk_nvthu"><i>FK</i>  MaNhanVienThu: int (NULL)</td></tr>
+            <tr><td align="left">DaHuy: bit</td></tr>
+        </table>
+    >];
+
+    PhieuChis [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>PhieuChis</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaPhieuChi: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int</td></tr>
+            <tr><td align="left" port="fk_nvchi"><i>FK</i>  MaNhanVienChi: int</td></tr>
+            <tr><td align="left">LoaiChi: int</td></tr>
+            <tr><td align="left">SoTien: decimal(18,2)</td></tr>
+            <tr><td align="left">NgayChi: datetime</td></tr>
+            <tr><td align="left">HinhThucChi: int</td></tr>
+            <tr><td align="left">LyDoChi: nvarchar(500)</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+            <tr><td align="left">DaHuy: bit</td></tr>
+        </table>
+    >];
+
+    BienBanBanGiaos [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>BienBanBanGiaos</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaBienBan: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int</td></tr>
+            <tr><td align="left" port="fk_nvlap"><i>FK</i>  MaNhanVienLap: int</td></tr>
+            <tr><td align="left">LoaiBienBan: int</td></tr>
+            <tr><td align="left">NgayLap: datetime</td></tr>
+            <tr><td align="left">TinhTrangNgoaiQuan: nvarchar(max)</td></tr>
+            <tr><td align="left">PhuKienKemTheo: nvarchar(max)</td></tr>
+            <tr><td align="left">ChuKyXacNhan: nvarchar(255)</td></tr>
+            <tr><td align="left">HinhAnh1: nvarchar(255)</td></tr>
+            <tr><td align="left">HinhAnh2: nvarchar(255)</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    LichSuNhacNos [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>LichSuNhacNos</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaLichSuNhacNo: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int</td></tr>
+            <tr><td align="left" port="fk_kyhan"><i>FK</i>  MaKyHan: int (NULL)</td></tr>
+            <tr><td align="left">NgayNhac: datetime</td></tr>
+            <tr><td align="left">HanhDongNhac: nvarchar(100)</td></tr>
+            <tr><td align="left">SoTienNhac: decimal(18,2)</td></tr>
+            <tr><td align="left" port="fk_nguoigui"><i>FK</i>  NguoiGuiId: int (NULL)</td></tr>
+            <tr><td align="left">GhiChu: nvarchar(500)</td></tr>
+        </table>
+    >];
+
+    PhieuBaoTris [label=<
+        <table border="1" cellborder="0" cellspacing="0" cellpadding="4" bgcolor="#ffffff">
+            <tr><td bgcolor="#27272a" align="center" port="header"><font color="#ffffff"><b>PhieuBaoTris</b></font></td></tr>
+            <tr><td align="left" port="pk"><b>PK</b>  MaPhieu: int</td></tr>
+            <tr><td align="left" port="fk_tb"><i>FK</i>  MaThietBi: int</td></tr>
+            <tr><td align="left" port="fk_hd"><i>FK</i>  MaHopDong: int (NULL)</td></tr>
+            <tr><td align="left" port="fk_ktv"><i>FK</i>  MaKyThuatVien: int (NULL)</td></tr>
+            <tr><td align="left">NgayBaoLoi: datetime</td></tr>
+            <tr><td align="left">MoTaLoi: nvarchar(max)</td></tr>
+            <tr><td align="left">NguyenNhan: nvarchar(max)</td></tr>
+            <tr><td align="left">BienPhapXuLy: nvarchar(max)</td></tr>
+            <tr><td align="left">PhiDenBu: decimal(18,2)</td></tr>
+            <tr><td align="left">TamDungTinhTien: bit</td></tr>
+            <tr><td align="left">TrangThai: int</td></tr>
+        </table>
+    >];
+
+    // ==========================================
+    // LIÊN KẾT QUAN HỆ KHÓA NGOẠI (18 BẢNG)
+    // ==========================================
+
+    // VaiTros -> NguoiDungs (1 - N)
+    VaiTros:pk -> NguoiDungs:fk_vaitro [taillabel="1", headlabel="N", label="  phân quyền"];
+
+    // NguoiDungs -> ThongBaos (1 - N)
+    NguoiDungs:pk -> ThongBaos:fk_user [taillabel="1", headlabel="N", label="  nhận"];
+
+    // NguoiDungs -> HopDongs (Khách hàng) (1 - N)
+    NguoiDungs:pk -> HopDongs:fk_kh [taillabel="1", headlabel="N", label="  thuê máy"];
+
+    // NguoiDungs -> HopDongs (Nhân viên kinh doanh) (1 - N)
+    NguoiDungs:pk -> HopDongs:fk_nv [taillabel="1", headlabel="N", label="  lập HĐ"];
+
+    // LoaiThietBis -> SanPhams (1 - N)
+    LoaiThietBis:pk -> SanPhams:fk_loai [taillabel="1", headlabel="N", label="  phân loại"];
+
+    // SanPhams -> ThietBis (1 - N)
+    SanPhams:pk -> ThietBis:fk_sp [taillabel="1", headlabel="N", label="  quản lý Serial"];
+
+    // ThietBis -> LichSuThietBis (1 - N)
+    ThietBis:pk -> LichSuThietBis:fk_tb [taillabel="1", headlabel="N", label="  lưu vết"];
+
+    // NguoiDungs -> LichSuThietBis (1 - N)
+    NguoiDungs:pk -> LichSuThietBis:fk_user [taillabel="1", headlabel="N"];
+
+    // KhuyenMais -> HopDongs (1 - N)
+    KhuyenMais:pk -> HopDongs:fk_km [taillabel="1", headlabel="N", label="  áp dụng"];
+
+    // HopDongs -> ChiTietHopDongs (1 - N)
+    HopDongs:pk -> ChiTietHopDongs:pk_hd [taillabel="1", headlabel="N", label="  chi tiết"];
+
+    // ThietBis -> ChiTietHopDongs (1 - N)
+    ThietBis:pk -> ChiTietHopDongs:pk_tb [taillabel="1", headlabel="N", label="  gán máy"];
+
+    // HopDongs -> KyHanThanhToans (1 - N)
+    HopDongs:pk -> KyHanThanhToans:fk_hd [taillabel="1", headlabel="N", label="  phân kỳ"];
+
+    // HopDongs -> PhieuThus (1 - N)
+    HopDongs:pk -> PhieuThus:fk_hd [taillabel="1", headlabel="N", label="  thu tiền"];
+
+    // KyHanThanhToans -> PhieuThus (1 - N)
+    KyHanThanhToans:pk -> PhieuThus:fk_kyhan [taillabel="1", headlabel="N", label="  gạch nợ kỳ"];
+
+    // HopDongs -> PhieuChis (1 - N)
+    HopDongs:pk -> PhieuChis:fk_hd [taillabel="1", headlabel="N", label="  hoàn cọc"];
+
+    // NguoiDungs -> PhieuChis (1 - N)
+    NguoiDungs:pk -> PhieuChis:fk_nvchi [taillabel="1", headlabel="N", label="  thực hiện chi"];
+
+    // HopDongs -> BienBanBanGiaos (1 - N)
+    HopDongs:pk -> BienBanBanGiaos:fk_hd [taillabel="1", headlabel="N", label="  bàn giao/trả"];
+
+    // NguoiDungs -> BienBanBanGiaos (1 - N)
+    NguoiDungs:pk -> BienBanBanGiaos:fk_nvlap [taillabel="1", headlabel="N", label="  lập biên bản"];
+
+    // ThietBis -> PhieuBaoTris (1 - N)
+    ThietBis:pk -> PhieuBaoTris:fk_tb [taillabel="1", headlabel="N", label="  báo lỗi"];
+
+    // HopDongs -> PhieuBaoTris (1 - N)
+    HopDongs:pk -> PhieuBaoTris:fk_hd [taillabel="1", headlabel="N"];
+
+    // NguoiDungs -> PhieuBaoTris (Kỹ thuật viên) (1 - N)
+    NguoiDungs:pk -> PhieuBaoTris:fk_ktv [taillabel="1", headlabel="N", label="  sửa chữa"];
+
+    // HopDongs -> YeuCauGiaHans (1 - N)
+    HopDongs:pk -> YeuCauGiaHans:fk_hd [taillabel="1", headlabel="N", label="  gia hạn"];
+
+    // NguoiDungs -> YeuCauGiaHans (Người duyệt) (1 - N)
+    NguoiDungs:pk -> YeuCauGiaHans:fk_nguoiduyet [taillabel="1", headlabel="N", label="  duyệt"];
+
+    // HopDongs -> LichSuNhacNos (1 - N)
+    HopDongs:pk -> LichSuNhacNos:fk_hd [taillabel="1", headlabel="N", label="  nhắc nợ"];
+
+    // KyHanThanhToans -> LichSuNhacNos (1 - N)
+    KyHanThanhToans:pk -> LichSuNhacNos:fk_kyhan [taillabel="1", headlabel="N"];
+
+    // NguoiDungs -> PhanCongCongViecs (Nhân viên được giao) (1 - N)
+    NguoiDungs:pk -> PhanCongCongViecs:fk_nv [taillabel="1", headlabel="N", label="  thực hiện"];
+
+    // NguoiDungs -> PhanCongCongViecs (Người giao việc) (1 - N)
+    NguoiDungs:pk -> PhanCongCongViecs:fk_nguoigiao [taillabel="1", headlabel="N", label="  điều phối"];
+
+    // HopDongs -> PhanCongCongViecs (1 - N)
+    HopDongs:pk -> PhanCongCongViecs:fk_hd [taillabel="1", headlabel="N"];
+
+    // PhieuBaoTris -> PhanCongCongViecs (1 - N)
+    PhieuBaoTris:pk -> PhanCongCongViecs:fk_phieubt [taillabel="1", headlabel="N"];
+}

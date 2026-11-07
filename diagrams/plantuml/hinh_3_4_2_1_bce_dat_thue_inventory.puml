@@ -1,0 +1,68 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam boundary {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam control {
+    BorderColor #000000
+    BackgroundColor #f4f4f5
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam entity {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 10
+}
+
+actor "Khách hàng" as ActorKH
+boundary "Giao diện Giỏ hàng\n(CartView)" as BoundaryCart
+boundary "Giao diện Xác nhận thuê\n(CheckoutView)" as BoundaryCheckout
+control "Điều khiển Giỏ hàng\n(CartController)" as ControlCart
+control "Khóa tương tranh tồn kho\n(SemaphoreSlim: InventoryLock)" as ControlLock
+entity "Hợp đồng thuê\n(HopDong)" as EntityHopDong
+entity "Chi tiết Hợp đồng\n(ChiTietHopDong)" as EntityChiTiet
+entity "Thiết bị vật lý Serial\n(ThietBi)" as EntityThietBi
+entity "Cơ sở dữ liệu\n(ApplicationDbContext)" as EntityDB
+
+ActorKH --> BoundaryCart : 1. Chọn máy & Xem giỏ hàng
+ActorKH --> BoundaryCheckout : 2. Xác nhận thời hạn & Gửi đơn
+
+BoundaryCart --> ControlCart : 3. Yêu cầu tải giỏ hàng
+BoundaryCheckout --> ControlCart : 4. POST /Cart/Checkout()
+
+ControlCart --> ControlLock : 5. await InventoryLock.WaitAsync()
+ControlCart --> EntityDB : 6. Kiểm tra tồn kho khả dụng thời gian thực
+EntityDB --> EntityThietBi : 7. Cập nhật ThietBi.TrangThai = 3 (Giữ chỗ)
+EntityDB --> EntityHopDong : 8. Tạo HopDong (TrangThai = 0, HanChotKy = 24h)
+EntityHopDong --> EntityChiTiet : 9. Gán mã thiết bị vật lý cụ thể
+
+ControlCart --> ControlLock : 10. InventoryLock.Release() (khối finally)
+
+@enduml

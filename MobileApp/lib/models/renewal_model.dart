@@ -23,6 +23,7 @@ class RenewalModel {
       'contractId': contractId,
       'customerId': customerId,
       'duration': duration,
+      'days': int.tryParse(duration),
       'notes': notes,
       'status': status,
       'requestedAt': requestedAt,

@@ -1,0 +1,104 @@
+@startuml
+scale max 3800*3800
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam participant {
+    BorderColor #000000
+    BackgroundColor #27272a
+    FontColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam sequence {
+    ArrowColor #000000
+    ArrowThickness 1.2
+    LifeLineBorderColor #52525b
+    LifeLineBackgroundColor #ffffff
+    GroupBorderColor #000000
+    GroupBackgroundColor #f4f4f5
+    GroupHeaderFontColor #000000
+}
+
+autonumber 1 "<b>[0]</b>"
+
+actor "Khách hàng" as User
+participant "Giao diện:\nMyTicketsView" as View
+participant "Điều khiển Sự cố:\nBaoTriController" as BtCtrl
+actor "Quản trị viên\n(Admin / Điều phối)" as Admin
+participant "Điều phối nhân sự:\nPhanCongController" as PcCtrl
+actor "Kỹ thuật viên\n(KyThuat)" as Tech
+participant "Cơ sở dữ liệu:\nApplicationDbContext" as DB
+
+User -> View : Gửi phiếu báo hỏng máy (Mã máy, mô tả lỗi, ảnh)
+activate View
+
+View -> BtCtrl : POST TaoPhieu(BaoTriViewModel model)
+activate BtCtrl
+
+BtCtrl -> DB : Khởi tạo PhieuBaoTri (TrangThai = ChoTiepNhan)
+activate DB
+BtCtrl -> DB : await SaveChangesAsync()
+DB --> BtCtrl : Tạo phiếu thành công (MaPhieuBaoTri)
+deactivate DB
+
+BtCtrl --> View : Trả về thông báo đã tiếp nhận sự cố
+deactivate BtCtrl
+View --> User : Hiển thị mã phiếu theo dõi tiến độ
+deactivate View
+
+Admin -> BtCtrl : Mở danh sách sự cố & Đánh giá SLA
+activate Admin
+activate BtCtrl
+opt Sự cố gián đoạn > 24 giờ
+    Admin -> BtCtrl : Bấm chọn TamDungTinhTien(phieuId)
+    BtCtrl -> DB : Cập nhật HopDong.TamDungTinhTien = true
+    activate DB
+    DB --> BtCtrl : Xác nhận tạm dừng cước thuê
+    deactivate DB
+end
+deactivate BtCtrl
+
+Admin -> PcCtrl : Phân công kỹ thuật viên phụ trách
+activate PcCtrl
+PcCtrl -> DB : Cập nhật PhieuBaoTri(MaKTV, TrangThai = DangXuLy)
+activate DB
+DB --> PcCtrl : Lưu phân công nhiệm vụ
+deactivate DB
+PcCtrl --> Admin : Thông báo đã điều phối thành công
+deactivate PcCtrl
+deactivate Admin
+
+Tech -> DB : Xem nhiệm vụ tại /Admin/PhanCong/MyTasks
+activate Tech
+activate DB
+DB --> Tech : Chi tiết thiết bị & Địa chỉ khách hàng
+deactivate DB
+
+Tech -> Tech : Đến hiện trường kiểm tra, sửa chữa / Đổi máy
+Tech -> BtCtrl : POST HoanTat(phieuId, chiPhi, ketQuaSuaChua)
+activate BtCtrl
+BtCtrl -> DB : Cập nhật PhieuBaoTri.TrangThai = HoanTat
+activate DB
+BtCtrl -> DB : Cập nhật HopDong.TamDungTinhTien = false (Khôi phục)
+BtCtrl -> DB : await SaveChangesAsync()
+DB --> BtCtrl : Lưu trạng thái hoàn tất
+deactivate DB
+BtCtrl --> Tech : Nghiệm thu bảo trì hoàn thành
+deactivate BtCtrl
+deactivate Tech
+
+BtCtrl --> User : Gửi thông báo sự cố đã được khắc phục hoàn tất
+
+@enduml

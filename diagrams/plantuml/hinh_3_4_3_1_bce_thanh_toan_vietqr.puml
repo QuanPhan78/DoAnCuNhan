@@ -1,0 +1,69 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam boundary {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam control {
+    BorderColor #000000
+    BackgroundColor #f4f4f5
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam entity {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 10
+}
+
+actor "Khách hàng" as ActorKH
+actor "Cổng Open Banking\n(NAPAS 247 / Casso)" as ActorBank
+boundary "Giao diện Thanh toán\n(PaymentView)" as BoundaryPayment
+boundary "Cổng Webhook Ngân hàng\n(BankingWebhook Endpoint)" as BoundaryWebhook
+control "Điều khiển Thanh toán\n(PaymentController)" as ControlPayment
+control "Khóa tương tranh đối soát\n(HopDongController.PaymentLock)" as ControlLock
+entity "Phiếu thu tự động\n(PhieuThu: MaNVThu = null)" as EntityPhieuThu
+entity "Kỳ hạn thanh toán\n(KyHanThanhToan)" as EntityKyHan
+entity "Hợp đồng thuê\n(HopDong)" as EntityHopDong
+entity "Cơ sở dữ liệu\n(ApplicationDbContext)" as EntityDB
+
+ActorKH --> BoundaryPayment : 1. Quét mã VietQR động
+ActorBank --> BoundaryWebhook : 2. Bắn bản tin Webhook POST giao dịch
+
+BoundaryPayment --> ControlPayment : 3. Yêu cầu tạo mã QR động
+BoundaryWebhook --> ControlPayment : 4. Chuyển tiếp Payload biến động số dư
+
+ControlPayment --> ControlLock : 5. await PaymentLock.WaitAsync()
+ControlPayment --> EntityDB : 6. Giao dịch Serializable & Idempotency Check
+EntityDB --> EntityPhieuThu : 7. Sinh PhieuThu (Gạch nợ 4 tầng tự động)
+EntityDB --> EntityKyHan : 8. Cập nhật kỳ hạn nợ & Xóa phạt
+EntityDB --> EntityHopDong : 9. Đồng bộ TrangThaiThanhToan
+
+ControlPayment --> ControlLock : 10. PaymentLock.Release() (trong khối finally)
+
+@enduml

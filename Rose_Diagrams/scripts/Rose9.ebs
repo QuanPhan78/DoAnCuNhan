@@ -1,0 +1,241 @@
+' ==============================================================================
+' RATIONAL ROSE SCRIPT: HINH 3.4.7.1 - SO DO 3 LOP MUC THIET KE (BCE)
+' CHUC NANG: TRA MAY, NGHIEM THU & HOAN TRA TIEN COC
+' ==============================================================================
+
+Option Explicit
+
+Function GetOrCreateCategory(parentCat As Category, catName As String) As Category
+    On Error Resume Next
+
+    Dim aCat As Category
+    Dim i As Integer
+
+    If parentCat Is Nothing Then Exit Function
+
+    For i = 1 To parentCat.Categories.Count
+        Set aCat = parentCat.Categories.GetAt(i)
+        If Not aCat Is Nothing Then
+            If aCat.Name = catName Then
+                Set GetOrCreateCategory = aCat
+                Exit Function
+            End If
+        End If
+    Next i
+
+    Set GetOrCreateCategory = parentCat.AddCategory(catName)
+End Function
+
+Function GetOrCreateClass(parentCat As Category, clsName As String, _
+                          st As String, docStr As String) As Class
+    On Error Resume Next
+
+    Dim aCls As Class
+    Dim i As Integer
+
+    If parentCat Is Nothing Then Exit Function
+
+    For i = 1 To parentCat.Classes.Count
+        Set aCls = parentCat.Classes.GetAt(i)
+        If Not aCls Is Nothing Then
+            If aCls.Name = clsName Then
+                If st <> "" Then aCls.Stereotype = st
+                If docStr <> "" Then aCls.Documentation = docStr
+                Set GetOrCreateClass = aCls
+                Exit Function
+            End If
+        End If
+    Next i
+
+    Set aCls = parentCat.AddClass(clsName)
+    If Not aCls Is Nothing Then
+        If st <> "" Then aCls.Stereotype = st
+        If docStr <> "" Then aCls.Documentation = docStr
+    End If
+
+    Set GetOrCreateClass = aCls
+End Function
+
+Sub SafeAddAttr(theCls As Class, attrName As String, _
+                attrType As String, vis As String)
+    On Error Resume Next
+
+    Dim anAttr As Attribute
+
+    If theCls Is Nothing Then Exit Sub
+
+    Set anAttr = theCls.AddAttribute(attrName, attrType, "")
+    If Not anAttr Is Nothing Then
+        anAttr.ExportControl.Name = vis
+    End If
+End Sub
+
+Sub SafeAddOp(theCls As Class, opName As String, _
+              retType As String, vis As String)
+    On Error Resume Next
+
+    Dim anOp As Operation
+
+    If theCls Is Nothing Then Exit Sub
+
+    Set anOp = theCls.AddOperation(opName, retType)
+    If Not anOp Is Nothing Then
+        anOp.ExportControl.Name = vis
+    End If
+End Sub
+
+Sub SafeAddRel(clientCls As Class, supplierName As String)
+    On Error Resume Next
+
+    Dim anAssoc As Association
+
+    If Not clientCls Is Nothing And supplierName <> "" Then
+        Set anAssoc = clientCls.AddAssociation("", supplierName)
+    End If
+End Sub
+
+Sub Main
+    On Error Resume Next
+
+    Dim theModel As Model
+    Dim rootLog As Category
+    Dim pkgRoot As Category
+    Dim pkgUC As Category
+    Dim diagBCE As Diagram
+
+    Dim bTraMay As Class
+    Dim bChiTietHopDong As Class
+
+    Dim cHopDongController As Class
+
+    Dim eHopDong As Class
+    Dim eThietBi As Class
+    Dim eBienBanBanGiao As Class
+    Dim ePhieuChi As Class
+
+    Set theModel = RoseApp.CurrentModel
+    If theModel Is Nothing Then
+        MsgBox "Hay mo mot Rational Rose model truoc khi chay script.", _
+               48, "RentalSystem"
+        Exit Sub
+    End If
+
+    Set rootLog = theModel.RootCategory
+
+    ' 1. Tao cac goi quan ly
+    Set pkgRoot = GetOrCreateCategory(rootLog, "04_Design_3_Layers_UseCases")
+    Set pkgUC = GetOrCreateCategory(pkgRoot, "3_4_7_TraMay_HoanCoc")
+
+    ' --------------------------------------------------------------------------
+    ' 2. TANG BIEN (BOUNDARY)
+    ' --------------------------------------------------------------------------
+    Set bTraMay = GetOrCreateClass( _
+        pkgUC, "TraMayView", "boundary", _
+        "Giao dien tiep nhan tra may va hien thi thong tin nghiem thu")
+
+    Call SafeAddAttr(bTraMay, "maHopDong", "int", "Private")
+    Call SafeAddAttr(bTraMay, "ghiChuTinhTrangMay", "string", "Private")
+    Call SafeAddAttr(bTraMay, "hinhThucHoanCoc", "int", "Private")
+
+    Call SafeAddOp(bTraMay, "HienThiThongTinHopDong", "void", "Public")
+    Call SafeAddOp(bTraMay, "GuiThongTinTraMay", "void", "Public")
+    Call SafeAddOp(bTraMay, "XacNhanTraMay", "void", "Public")
+
+    Set bChiTietHopDong = GetOrCreateClass( _
+        pkgUC, "HopDongChiTietView", "boundary", _
+        "Giao dien xem thong tin hop dong va ket qua hoan coc")
+
+    Call SafeAddAttr(bChiTietHopDong, "lblTienCoc", "decimal", "Private")
+    Call SafeAddAttr(bChiTietHopDong, "lblTienThucTe", "decimal", "Private")
+    Call SafeAddAttr(bChiTietHopDong, "lblTienHoan", "decimal", "Private")
+
+    Call SafeAddOp(bChiTietHopDong, "HienThiQuyetToan", "void", "Public")
+    Call SafeAddOp(bChiTietHopDong, "GuiYeuCauHoanCoc", "void", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 3. TANG DIEU KHIEN (CONTROL)
+    ' HopDongController va cac action tra may / hoan coc trong ma nguon
+    ' --------------------------------------------------------------------------
+    Set cHopDongController = GetOrCreateClass( _
+        pkgUC, "HopDongController", "control", _
+        "Xu ly nghiep vu tra may, thanh ly hop dong va hoan coc")
+
+    Call SafeAddAttr(cHopDongController, "_context", _
+                     "ApplicationDbContext", "Private")
+
+    Call SafeAddOp(cHopDongController, "TraMayTruocHan", _
+                   "Task<IActionResult>", "Public")
+
+    Call SafeAddOp(cHopDongController, "LapBienBanBanGiao", _
+                   "Task<IActionResult>", "Public")
+
+    Call SafeAddOp(cHopDongController, "HoanCoc", _
+                   "Task<IActionResult>", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 4. TANG THUC THE (ENTITY)
+    ' --------------------------------------------------------------------------
+    Set eHopDong = GetOrCreateClass( _
+        pkgUC, "HopDong", "entity", _
+        "Hop dong cho thue, luu trang thai va thong tin hoan coc")
+
+    Call SafeAddAttr(eHopDong, "MaHopDong", "int", "Public")
+    Call SafeAddAttr(eHopDong, "TrangThai", "int", "Public")
+    Call SafeAddAttr(eHopDong, "TienCocThucHoan", "decimal", "Public")
+    Call SafeAddAttr(eHopDong, "TrangThaiHoanCoc", "int", "Public")
+    Call SafeAddAttr(eHopDong, "NgayHoanCoc", "DateTime", "Public")
+    Call SafeAddOp(eHopDong, "CapNhatTrangThaiHoanCoc", "void", "Public")
+
+    Set eThietBi = GetOrCreateClass( _
+        pkgUC, "ThietBi", "entity", _
+        "Thiet bi duoc thu hoi va cap nhat trang thai sau khi tra")
+
+    Call SafeAddAttr(eThietBi, "MaThietBi", "int", "Public")
+    Call SafeAddAttr(eThietBi, "SoSerial", "string", "Public")
+    Call SafeAddAttr(eThietBi, "TrangThai", "int", "Public")
+
+    Set eBienBanBanGiao = GetOrCreateClass( _
+        pkgUC, "BienBanBanGiao", "entity", _
+        "Bien ban ghi nhan viec ban giao hoac thu hoi thiet bi")
+
+    Call SafeAddAttr(eBienBanBanGiao, "MaBienBan", "int", "Public")
+    Call SafeAddAttr(eBienBanBanGiao, "MaHopDong", "int", "Public")
+    Call SafeAddAttr(eBienBanBanGiao, "NgayLap", "DateTime", "Public")
+    Call SafeAddAttr(eBienBanBanGiao, "TinhTrangNgoaiQuan", "string", "Public")
+    Call SafeAddAttr(eBienBanBanGiao, "GhiChu", "string", "Public")
+
+    Set ePhieuChi = GetOrCreateClass( _
+        pkgUC, "PhieuChi", "entity", _
+        "Chung tu chi tien hoan coc gan voi hop dong")
+
+    Call SafeAddAttr(ePhieuChi, "MaPhieuChi", "int", "Public")
+    Call SafeAddAttr(ePhieuChi, "MaHopDong", "int", "Public")
+    Call SafeAddAttr(ePhieuChi, "SoTien", "decimal", "Public")
+    Call SafeAddAttr(ePhieuChi, "HinhThucChi", "int", "Public")
+    Call SafeAddAttr(ePhieuChi, "GhiChu", "string", "Public")
+
+    ' --------------------------------------------------------------------------
+    ' 5. THIET LAP LIEN KET
+    ' --------------------------------------------------------------------------
+    Call SafeAddRel(bTraMay, "HopDongController")
+    Call SafeAddRel(bChiTietHopDong, "HopDongController")
+
+    Call SafeAddRel(cHopDongController, "HopDong")
+    Call SafeAddRel(cHopDongController, "ThietBi")
+    Call SafeAddRel(cHopDongController, "BienBanBanGiao")
+    Call SafeAddRel(cHopDongController, "PhieuChi")
+
+    Call SafeAddRel(eHopDong, "BienBanBanGiao")
+    Call SafeAddRel(eHopDong, "PhieuChi")
+
+    ' --------------------------------------------------------------------------
+    ' 6. TAO VA MO SO DO BCE
+    ' --------------------------------------------------------------------------
+    Set diagBCE = pkgUC.AddClassDiagram( _
+        "Hinh_3_4_7_1_BCE_TraMay_HoanCoc")
+
+    If Not diagBCE Is Nothing Then
+        diagBCE.Activate
+    End If
+
+End Sub

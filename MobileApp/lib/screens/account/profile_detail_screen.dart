@@ -115,7 +115,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   const Divider(height: 1, color: AppColors.divider),
                   _buildDetailRow(
                     icon: Icons.credit_card_outlined,
-                    label: 'Số CCCD/CMND',
+                    label: 'Số CCCD',
                     value: user.cccd?.isNotEmpty == true ? user.cccd! : 'Chưa cập nhật',
                   ),
                   const Divider(height: 1, color: AppColors.divider),
@@ -190,7 +190,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Cập nhật thông tin cá nhân'),
+          title: const Text('Sửa hồ sơ'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -227,7 +227,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   controller: cccdController,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Số CCCD/CMND',
+                    labelText: 'Số CCCD',
                     prefixIcon: Icon(Icons.credit_card_outlined),
                     border: OutlineInputBorder(),
                   ),

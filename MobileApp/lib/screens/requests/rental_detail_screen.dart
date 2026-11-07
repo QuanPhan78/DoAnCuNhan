@@ -10,7 +10,8 @@ import '../../theme/app_radius.dart';
 import '../../theme/app_shadows.dart';
 import '../../widgets/core/custom_app_bar.dart';
 import '../../widgets/core/custom_button.dart';
-import '../../widgets/core/confirmation_dialog.dart';
+import '../../widgets/cancellation_reason_dialog.dart';
+import '../../providers/auth_provider.dart';
 import 'package:intl/intl.dart';
 
 class RentalDetailScreen extends StatelessWidget {
@@ -18,38 +19,34 @@ class RentalDetailScreen extends StatelessWidget {
 
   const RentalDetailScreen({super.key, required this.initialRequest});
 
-  void _cancelRequest(BuildContext context, RentalProvider provider, RentalRequestModel request) async {
-    final confirm = await ConfirmationDialog.show(
-      context: context,
-      title: 'Hủy đơn thuê',
-      content: 'Bạn có chắc chắn muốn hủy đơn thuê này không?',
-      confirmText: 'Hủy Đơn',
-      cancelText: 'Đóng',
-      isDestructive: true,
-    );
-
-    if (confirm == true) {
-      final success = await provider.cancelRental(request.id);
-      if (success) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Hủy đơn thành công'),
-          backgroundColor: AppColors.success,
-        ));
-      }
+  Future<void> _cancelRequest(BuildContext context, RentalProvider provider, RentalRequestModel request) async {
+    final reason = await showCancellationReasonDialog(context);
+    if (reason == null || !context.mounted || provider.isLoading) return;
+    try {
+      await provider.requestCancellation(request.id, reason);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã gửi yêu cầu hủy. Vui lòng chờ duyệt.')),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
     }
   }
 
-  void _viewContract(BuildContext context, String contractId) {
-    final allContracts = context.read<ContractProvider>().contracts;
+  Future<void> _viewContract(BuildContext context, String contractId) async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
     try {
-      final contract = allContracts.firstWhere((c) => c.id == contractId);
-      Navigator.pushNamed(context, '/contract_detail', arguments: contract);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Không tìm thấy hợp đồng'),
-        backgroundColor: AppColors.error,
-      ));
+      final contract = await context.read<ContractProvider>().getContract(contractId, user.id, user.role);
+      if (context.mounted) Navigator.pushNamed(context, '/contract_detail', arguments: contract);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
     }
   }
 
@@ -74,6 +71,8 @@ class RentalDetailScreen extends StatelessWidget {
               children: [
                 // Timeline
                 _buildTimeline(request.status),
+                if (request.cancellationReason?.isNotEmpty == true)
+                  _buildInfoRow('Lý do hủy', request.cancellationReason!),
                 const SizedBox(height: 24),
                 
                 // Device info
@@ -134,8 +133,8 @@ class RentalDetailScreen extends StatelessWidget {
                 
                 if (request.status == RentalStatus.pending)
                   CustomButton(
-                    text: 'HỦY ĐƠN',
-                    onPressed: () => _cancelRequest(context, provider, request),
+                    text: 'Yêu cầu hủy',
+                    onPressed: provider.isLoading ? null : () => _cancelRequest(context, provider, request),
                     type: ButtonType.destructive,
                     isFullWidth: true,
                   ),
@@ -144,7 +143,7 @@ class RentalDetailScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   CustomButton(
                     text: 'XEM HỢP ĐỒNG',
-                    onPressed: () => _viewContract(context, request.contractId!),
+                    onPressed: () => _viewContract(context, request.id),
                     type: ButtonType.primary,
                     isFullWidth: true,
                   ),
@@ -158,94 +157,29 @@ class RentalDetailScreen extends StatelessWidget {
   }
 
   Widget _buildTimeline(RentalStatus currentStatus) {
-    // Only show valid timeline, if cancelled or rejected, show it distinctly
-    if (currentStatus == RentalStatus.cancelled || currentStatus == RentalStatus.rejected) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
-          borderRadius: AppRadius.mdRadius,
-          border: Border.all(color: AppColors.error),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.cancel, color: AppColors.error),
-            const SizedBox(width: 8),
-            Text(currentStatus.displayName, style: AppTextStyles.h2.copyWith(color: AppColors.error)),
-          ],
-        ),
-      );
-    }
-
-    final steps = [
+    const steps = [
       RentalStatus.pending,
-      RentalStatus.confirmed,
-      RentalStatus.preparing,
-      RentalStatus.delivering,
-      RentalStatus.installed,
       RentalStatus.renting,
+      RentalStatus.returnedPendingSettlement,
       RentalStatus.completed,
     ];
-
-    int currentIndex = currentStatus.stepIndex;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.lgRadius,
-        boxShadow: AppShadows.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(steps.length, (index) {
-          final step = steps[index];
-          final isCompleted = index <= currentIndex;
-          final isLast = index == steps.length - 1;
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isCompleted ? AppColors.primary : AppColors.divider,
-                    ),
-                    child: Icon(
-                      Icons.check,
-                      size: 16,
-                      color: isCompleted ? Colors.white : Colors.transparent,
-                    ),
-                  ),
-                  if (!isLast)
-                    Container(
-                      width: 2,
-                      height: 30,
-                      color: isCompleted ? AppColors.primary : AppColors.divider,
-                    ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 2.0),
-                  child: Text(
-                    step.displayName,
-                    style: AppTextStyles.body.copyWith(
-                      fontWeight: isCompleted ? FontWeight.bold : FontWeight.normal,
-                      color: isCompleted ? AppColors.textPrimary : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
-      ),
+    final current = steps.indexOf(currentStatus);
+    if (current < 0) {
+      return _buildSectionCard(
+        title: currentStatus.displayName,
+        icon: Icons.info_outline,
+        content: const SizedBox.shrink(),
+      );
+    }
+    return Column(
+      children: [
+        for (var index = 0; index < steps.length; index++)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(index <= current ? Icons.check_circle : Icons.circle_outlined),
+            title: Text(steps[index].displayName),
+          ),
+      ],
     );
   }
 

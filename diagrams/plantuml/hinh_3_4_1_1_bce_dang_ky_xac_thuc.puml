@@ -1,0 +1,62 @@
+@startuml
+scale max 3800*3800
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 10.5
+skinparam backgroundColor #ffffff
+
+skinparam actor {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam boundary {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam control {
+    BorderColor #000000
+    BackgroundColor #f4f4f5
+    FontColor #000000
+    FontSize 10.5
+    FontStyle bold
+}
+
+skinparam entity {
+    BorderColor #000000
+    BackgroundColor #ffffff
+    FontColor #000000
+    FontSize 10.5
+}
+
+skinparam arrow {
+    Color #000000
+    Thickness 1.2
+    FontColor #000000
+    FontSize 10
+}
+
+actor "Khách hàng" as ActorKH
+boundary "Giao diện Đăng nhập\n(LoginView)" as BoundaryLogin
+boundary "Giao diện Đăng ký\n(RegisterView)" as BoundaryReg
+control "Điều khiển Tài khoản\n(AccountController)" as ControlAccount
+entity "Người dùng\n(NguoiDung)" as EntityUser
+entity "Vai trò RBAC\n(VaiTro)" as EntityRole
+entity "Cơ sở dữ liệu\n(ApplicationDbContext)" as EntityDB
+
+ActorKH --> BoundaryLogin : 1. Nhập thông tin đăng nhập
+ActorKH --> BoundaryReg : 2. Điền form tạo tài khoản mới
+
+BoundaryLogin --> ControlAccount : 3. Gửi yêu cầu Login(model)
+BoundaryReg --> ControlAccount : 4. Gửi yêu cầu Register(model)
+
+ControlAccount --> EntityDB : 5. Truy vấn & Lưu trữ thông tin
+EntityDB --> EntityUser : 6. Khởi tạo / Nạp bản ghi người dùng
+EntityUser --> EntityRole : 7. Tham chiếu vai trò chuẩn (KhachHang)
+
+@enduml
